@@ -1,0 +1,10 @@
+.footer {
+    background-color: var(--cor-primaria);
+    
+    width: -webkit-fill-available;
+    color: var(--cor-texto-escuro);
+    padding: 2rem 0;
+    text-align: center;
+    margin-top: auto;
+    border-top: 1px solid var(--cor-borda);
+}
