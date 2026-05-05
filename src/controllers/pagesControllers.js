@@ -50,17 +50,17 @@ export const getContact = (req, res) => {
   });
 };
 
-export const getRegister = (req, res) => {
-  renderPage(req, res, "../pages/auth/register", {
-    titulo: "Registrar Conta",
-    message: "Crie sua conta para começar a comprar!",
-  });
-};
-
 export const getLogin = (req, res) => {
   renderPage(req, res, "../pages/auth/login", {
     titulo: "Realizar Login",
     message: "seja Bem vindo de volta...",
+  });
+};
+
+export const getRegister = (req, res) => {
+  renderPage(req, res, "../pages/auth/register", {
+    titulo: "Registrar Conta",
+    message: "Crie sua conta para começar a comprar!",
   });
 };
 
@@ -75,5 +75,12 @@ export const getCart = (req, res) => {
   renderPage(req, res, "../pages/public/cart", {
     titulo: "Meu Carrinho",
     message: "Seu carrinho de compras!",
+  });
+};
+
+export const getProfile = (req, res) => {
+  renderPage(req, res, "../pages/public/profile", {
+    titulo: "Meu Perfil",
+    message: "Gerencie suas informações de perfil!",
   });
 };

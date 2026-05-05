@@ -1,0 +1,45 @@
+<!-- Global HTMX Loading Indicator -->
+<div id="global-loading-indicator">
+    <div class="spinner"></div>
+</div>
+
+<style>
+    /* Styling for the global loading indicator */
+    #global-loading-indicator {
+        display: none;
+        /* Hidden by default */
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.7);
+        /* Semi-transparent white background */
+        z-index: 9999;
+        /* Ensure it's on top of everything */
+    }
+
+    body.htmx-request #global-loading-indicator {
+        display: flex;
+        /* Show when an HTMX request is active on the body */
+    }
+
+    /* Basic spinner animation (example) */
+    .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: var(--cor-primaria);
+        /* Using a variable from variables.css */
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>

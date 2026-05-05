@@ -1,0 +1,105 @@
+<section class="register-page">
+  <div class="register-container">
+    <h1 class="register-title"><%= titulo %></h1>
+    <p class="register-message"><%= message %></p>
+
+    <form class="register-form" hx-post="/register" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+      <div class="form-group">
+        <label for="name">Nome Completo</label>
+        <input type="text" id="name" name="name" placeholder="Seu nome completo" required>
+      </div>
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" placeholder="Seu e-mail" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <input type="password" id="password" name="password" placeholder="Crie uma senha" required>
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword">Confirmar Senha</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirme sua senha" required>
+      </div>
+      <button type="submit" class="btn-primary">Registrar</button>
+    </form>
+
+    <p class="login-prompt">Já tem uma conta? <a href="/login" class="login-link" hx-get="/login" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">Faça login aqui!</a></p>
+  </div>
+</section>
+
+<style>
+  .register-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    background-color: var(--cor-fundo-claro);
+    padding: var(--espacamento-grande);
+  }
+
+  .register-container {
+    background-color: #fff;
+    padding: var(--espacamento-grande);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px; /* Um pouco mais largo que o login para acomodar mais campos */
+    text-align: center;
+  }
+
+  .register-title {
+    color: var(--cor-primaria);
+    margin-bottom: var(--espacamento-medio);
+    font-family: var(--fonte-titulo);
+  }
+
+  .register-message {
+    color: var(--cor-texto-escuro);
+    margin-bottom: var(--espacamento-grande);
+  }
+
+  .register-form .form-group {
+    margin-bottom: var(--espacamento-medio);
+    text-align: left;
+  }
+
+  .register-form label {
+    display: block;
+    margin-bottom: var(--espacamento-pequeno);
+    color: var(--cor-texto-escuro);
+    font-weight: bold;
+  }
+
+  .register-form input[type="text"],
+  .register-form input[type="email"],
+  .register-form input[type="password"] {
+    width: 100%;
+    padding: var(--espacamento-medio);
+    border: 1px solid var(--cor-borda);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1rem;
+  }
+
+  .register-form input[type="text"]:focus,
+  .register-form input[type="email"]:focus,
+  .register-form input[type="password"]:focus {
+    border-color: var(--cor-secundaria);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--cor-secundaria-rgb), 0.2);
+  }
+
+  .login-link {
+    color: var(--cor-primaria);
+    text-decoration: none;
+  }
+
+  .login-link:hover {
+    text-decoration: underline;
+  }
+
+  .login-prompt {
+    margin-top: var(--espacamento-grande);
+    color: var(--cor-texto-escuro);
+  }
+</style>

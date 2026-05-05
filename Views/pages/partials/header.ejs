@@ -1,73 +1,70 @@
 <header class="header">
   <nav class="navbar">
-    
+
     <a href="/" class="nav-logo">Encanto Rústico</a>
 
     <ul class="nav-menu">
-      <li><a href="/" class="nav-link <%= currentPath === '/' ? 'active' : '' %>"
-          hx-get="/" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">Home</a>
+      <li><a href="/" class="nav-link <%= currentPath === '/' ? 'active' : '' %>">Home</a>
       </li>
-      <li><a href="/products" class="nav-link <%= isActive('/products') ? 'active' : '' %>"
-          hx-get="/products" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">Produtos</a>
+      <li><a href="/products" class="nav-link <%= isActive('/products') ? 'active' : '' %>">Produtos</a>
       </li>
-      <li><a href="/about" class="nav-link <%= isActive('/about') ? 'active' : '' %>"
-          hx-get="/about" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">Sobre</a>
+      <li><a href="/about" class="nav-link <%= isActive('/about') ? 'active' : '' %>">Sobre</a>
       </li>
-      <li><a href="/contact" class="nav-link <%= isActive('/contact') ? 'active' : '' %>"
-          hx-get="/contact" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">Contato</a>
+      <li><a href="/contact" class="nav-link <%= isActive('/contact') ? 'active' : '' %>">Contato</a>
       </li>
 
-      <% if (user && user.role === 'admin') { %>
+      <% if (user && user.role==='admin' ) { %>
         <li><a href="/admin/dashboard" class="nav-link <%= isActive('/admin') ? 'active' : '' %>">Admin</a></li>
-      <% } %>
+        <% } %>
+          <!-- Icons are now inside the nav-menu -->
+          <li class="header-icons-container">
+            <div class="header-icons">
+              <% if (user) { %>
+                <a href="/profile" class="nav-link <%= isActive('/profile') ? 'active' : '' %>"
+                  aria-label="Perfil do Usuário">
+                  <span class="material-icons notranslate md-22">person</span>
+                </a>
 
-      <!-- Icons are now inside the nav-menu -->
-      <li class="header-icons-container">
-        <div class="header-icons">
-          <% if (user) { %>
-            <a href="/profile" class="nav-link <%= isActive('/profile') ? 'active' : '' %>" aria-label="Perfil do Usuário"
-              hx-get="/profile" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">
-              <span class="material-icons notranslate md-22">person</span>
-            </a>
-
-            <% if (user.role==='admin' ) { %>
-              <a href="/admin/dashboard" class="nav-link <%= isActive('/admin/dashboard') ? 'active' : '' %>" aria-label="Painel do Administrador">
-                <span class="material-icons notranslate md-22">admin_panel_settings</span>
-              </a>
-              <% } %>
-
-                <% if (user.role==='delivery' || user.role==='admin' ) { %>
-                  <a href="/admin/delivery" class="nav-link <%= isActive('/admin/delivery') ? 'active' : '' %>"
-                    aria-label="Painel do Entregador">
-                    <span class="material-icons notranslate md-22">local_shipping</span>
+                <% if (user.role==='admin' ) { %>
+                  <a href="/admin/dashboard" class="nav-link <%= isActive('/admin/dashboard') ? 'active' : '' %>"
+                    aria-label="Painel do Administrador">
+                    <span class="material-icons notranslate md-22">admin_panel_settings</span>
                   </a>
                   <% } %>
 
-                    <% if (user.role==='staff' || user.role==='admin' ) { %>
-                      <a href="/admin/inventory" class="nav-link <%= isActive('/admin/inventory') ? 'active' : '' %>" aria-label="Estoque">
-                        <span class="material-icons notranslate md-22">inventory</span>
+                    <% if (user.role==='delivery' || user.role==='admin' ) { %>
+                      <a href="/admin/delivery" class="nav-link <%= isActive('/admin/delivery') ? 'active' : '' %>"
+                        aria-label="Painel do Entregador">
+                        <span class="material-icons notranslate md-22">local_shipping</span>
                       </a>
                       <% } %>
 
-                        <a href="/logout" class="nav-link" aria-label="Sair">
-                          <span class="material-icons notranslate md-22">logout</span>
-                        </a>
-                        <% } else { %>
-                          <a href="/login" class="nav-link <%= isActive('/login') ? 'active' : '' %>" aria-label="Login"
-                            hx-get="/login" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">
-                            <span class="material-icons notranslate md-22">person</span>
+                        <% if (user.role==='staff' || user.role==='admin' ) { %>
+                          <a href="/admin/inventory"
+                            class="nav-link <%= isActive('/admin/inventory') ? 'active' : '' %>" aria-label="Estoque">
+                            <span class="material-icons notranslate md-22">inventory</span>
                           </a>
                           <% } %>
-                            <a href="/favorites" class="nav-link <%= isActive('/favorites') ? 'active' : '' %>" aria-label="Meus Favoritos"
-                              hx-get="/favorites" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">
-                              <span class="material-icons notranslate md-22">favorite_border</span>
+
+                            <a href="/logout" class="nav-link" aria-label="Sair">
+                              <span class="material-icons notranslate md-22">logout</span>
                             </a>
-                            <a href="/cart" class="nav-link <%= isActive('/cart') ? 'active' : '' %>" aria-label="Meu Carrinho"
-                              hx-get="/cart" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">
-                              <span class="material-icons notranslate md-22">shopping_cart</span>
-                            </a>
-        </div>
-      </li>
+                            <% } else { %>
+                              <a href="/login" class="nav-link <%= isActive('/login') ? 'active' : '' %>"
+                                aria-label="Login">
+                                <span class="material-icons notranslate md-22">person</span>
+                              </a>
+                              <% } %>
+                                <a href="/favorites" class="nav-link <%= isActive('/favorites') ? 'active' : '' %>"
+                                  aria-label="Meus Favoritos">
+                                  <span class="material-icons notranslate md-22">favorite_border</span>
+                                </a>
+                                <a href="/cart" class="nav-link <%= isActive('/cart') ? 'active' : '' %>"
+                                  aria-label="Meu Carrinho">
+                                  <span class="material-icons notranslate md-22">shopping_cart</span>
+                                </a>
+            </div>
+          </li>
     </ul>
 
     <div class="hamburger">
@@ -80,6 +77,27 @@
   <div class="nav-overlay"></div>
 
 </header>
+<script>
+  const hamburger = document.querySelector('.hamburger');
+  const navMenu = document.querySelector('.nav-menu');
+  const navOverlay = document.querySelector('.nav-overlay');
 
+  if (hamburger && navMenu && navOverlay) {
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('active');
+      navMenu.classList.toggle('active');
+      navOverlay.classList.toggle('active');
+      document.body.classList.toggle('no-scroll');
+    });
+  }
 
-  <script src="/js/main.js"></script>
+  // Garante que todos os elementos necessários estejam presentes antes de adicionar o listener do overlay
+  if (hamburger && navMenu && navOverlay) {
+    navOverlay.addEventListener('click', () => {
+      hamburger.classList.remove('active');
+      navMenu.classList.remove('active');
+      navOverlay.classList.remove('active');
+      document.body.classList.remove('no-scroll');
+    });
+  }
+</script>

@@ -10,15 +10,16 @@
     <link rel="stylesheet" href="/css/main.css">
 </head>
 
-<body>
+<body hx-boost="true" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">
 
     <%- include('../pages/partials/header') %>
+
     <main id="main-content">
         <%- include(page) %>
     </main>
 
 </body>
 
-
+<script src="/js/main.js"></script>
 
 </html>

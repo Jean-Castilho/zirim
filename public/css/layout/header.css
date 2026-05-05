@@ -36,7 +36,7 @@
 
 /* Estilos para links de navegação */
 .nav-link {
-    color: var(--cor-texto-escuro); /* Usando variável para links no header */
+    color: var(--cor-texto-claro); /* Usando variável para links no header */
     font-weight: bold; /* Manter valor fixo */
     padding-bottom: 8px;
     border-bottom: 3px solid transparent;
@@ -73,7 +73,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--cor-texto-escuro); /* Usando variável */
+    color: var(--cor-texto-claro); /* Usando variável */
 }
 
 .header-icons .nav-link:hover {
@@ -96,13 +96,17 @@
     width: 25px;
     height: 3px;
     margin: 5px auto;
-    background-color: var(--cor-texto-escuro); /* Usando variável */
+    background-color: var(--cor-destaque); /* Usando variável */
     -webkit-transition: all 0.3s ease-in-out;
     transition: all 0.3s ease-in-out;
 }
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+
+    .nav-link{
+        color: var(--cor-texto-escuro); /* Usando variável para texto em fundo escuro */
+    }
 
     /* Ponto de interrupção para telas menores */
     .navbar {
