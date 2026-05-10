@@ -111,7 +111,12 @@ export default class UserService {
     if (!user) { // 401 Unauthorized é mais apropriado para falha de login
       throw new UnauthorizedError("Email ou senha incorretos.");
     }
+
+    console.log(password);
+
     const ismatch = await compararSenha(password, user.password);
+
+    console.log(ismatch);
 
     if (!ismatch) { // 401 Unauthorized
       throw new UnauthorizedError("Email ou senha incorretos.");
