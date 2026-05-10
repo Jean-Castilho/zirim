@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import dotenv from "dotenv";
 
 export async function criarHashPass(password) {
   const saltRounds = parseInt(process.env.SALT_ROUNDS || "12", 10);

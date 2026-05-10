@@ -3,7 +3,7 @@
     <h1 class="login-title"><%= titulo %></h1>
     <p class="login-message"><%= message %></p>
 
-    <form class="login-form" hx-post="/login" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+    <form id="loginForm" class="login-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label for="email">E-mail ou Usuário</label>
@@ -22,6 +22,59 @@
       </div>
       <button type="submit" class="btn-primary">Entrar</button>
     </form>
+
+    <script>
+      document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const formData = new URLSearchParams(new FormData(form));
+        
+        try {
+          const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData.toString()
+          });
+          
+          const contentType = response.headers.get("content-type");
+          let result;
+          if (contentType && contentType.includes("application/json")) {
+            result = await response.json();
+          } else {
+            result = await response.text();
+          }
+          
+          if (response.ok) {
+            console.log('Login com sucesso:', result);
+            if (typeof showNotification === 'function') {
+                showNotification('Login realizado com sucesso!', 'success');
+            } else {
+                alert('Login realizado com sucesso!');
+            }
+            setTimeout(() => {
+                window.location.href = '/profile'; // ou a rota que preferir
+            }, 1000);
+          } else {
+            console.error('Erro no login:', result);
+            if (typeof showNotification === 'function') {
+                showNotification(result.message || 'Erro ao realizar login', 'error');
+            } else {
+                alert(result.message || 'Erro ao realizar login');
+            }
+          }
+        } catch (error) {
+          console.error('Erro de rede:', error);
+          if (typeof showNotification === 'function') {
+              showNotification('Erro de conexão ao tentar fazer login.', 'error');
+          } else {
+              alert('Erro de conexão ao tentar fazer login.');
+          }
+        }
+      });
+    </script>
 
     <p class="register-prompt">Não tem uma conta? <a href="/register" class="register-link" hx-get="/register" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">Crie uma agora!</a></p>
   </div>

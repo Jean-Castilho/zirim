@@ -25,4 +25,15 @@ router.get("/profile", getProfile);
 
 router.get("/favorites", getFavorites);
 
+router.get("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Erro ao destruir a sessão:", err);
+      return res.status(500).redirect('/');
+    }
+    res.clearCookie('connect.sid');
+    res.redirect('/');
+  });
+});
+
 export default router;

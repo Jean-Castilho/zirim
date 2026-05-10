@@ -34,7 +34,9 @@ export const getProducts = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+};git config --global user.name "Your Name"
+git config --global user.email "youremail@example.com"
+
 
 export const getAbout = (req, res) => {
   renderPage(req, res, "../pages/public/about", {
@@ -65,6 +67,9 @@ export const getRegister = (req, res) => {
 };
 
 export const getFavorites = (req, res) => {
+
+  
+
   renderPage(req, res, "../pages/public/favorites", {
     titulo: "Meus Favoritos",
     message: "Seus itens favoritos!",
@@ -72,6 +77,9 @@ export const getFavorites = (req, res) => {
 };
 
 export const getCart = (req, res) => {
+
+
+
   renderPage(req, res, "../pages/public/cart", {
     titulo: "Meu Carrinho",
     message: "Seu carrinho de compras!",
@@ -79,7 +87,12 @@ export const getCart = (req, res) => {
 };
 
 export const getProfile = (req, res) => {
-  renderPage(req, res, "../pages/public/profile", {
+
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+
+  renderPage(req, res, "../pages/auth/profile", {
     titulo: "Meu Perfil",
     message: "Gerencie suas informações de perfil!",
   });
