@@ -1,26 +1,30 @@
+import ProductController from "../controllers/productControllers.js";
+
+const productController = new ProductController();
+
 const renderPage = (req, res, page, options = {}) => {
-    if (req.headers["hx-request"]) {
-        res.render(page.replace("../", ""), options);
-    } else {
-        res.render(res.locals.layout || './layout/main', {
-            page,
-            ...options,
-        });
-    }
+  if (req.headers["hx-request"]) {
+    res.render(page.replace("../", ""), options);
+  } else {
+    res.render(res.locals.layout || './layout/main', {
+      page,
+      ...options,
+    });
+  }
 };
 
 export const getHome = async (req, res, next) => {
-    try {
-        const products = []; /*await productControllers.getCollection().find().limit(10).toArray();*/
+  try {
+    const products = []; /*await productControllers.getCollection().find().limit(5).toArray();*/
 
-        renderPage(req, res, "../pages/public/home", {
-            titulo: "Encanto Rústico",
-            message: "Bem-vindo à nossa loja de móveis e decorações!",
-            products: products,
-        });
-    } catch (error) {
-        next(error);
-    }
+    renderPage(req, res, "../pages/public/home", {
+      titulo: "Encanto Rústico",
+      message: "Bem-vindo à nossa loja de móveis e decorações!",
+      products: products,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getProducts = async (req, res, next) => {
@@ -34,9 +38,7 @@ export const getProducts = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};git config --global user.name "Your Name"
-git config --global user.email "youremail@example.com"
-
+};
 
 export const getAbout = (req, res) => {
   renderPage(req, res, "../pages/public/about", {
@@ -52,6 +54,8 @@ export const getContact = (req, res) => {
   });
 };
 
+
+
 export const getLogin = (req, res) => {
   renderPage(req, res, "../pages/auth/login", {
     titulo: "Realizar Login",
@@ -66,9 +70,25 @@ export const getRegister = (req, res) => {
   });
 };
 
+export const getSendOtp = (req, res) => {
+  renderPage(req, res, "../pages/auth/send-otp", {
+    titulo: "Solicitar",
+    message: "solicite aqui seu codigo de verificação",
+  });
+};
+
+export const getVerifyOtp = (req, res) => {
+  renderPage(req, res, "../pages/auth/verify-otp", {
+    titulo: "Verificar",
+    message: "verifique aqui seu codigo de verificação",
+  });
+};
+
+
+
 export const getFavorites = (req, res) => {
 
-  
+
 
   renderPage(req, res, "../pages/public/favorites", {
     titulo: "Meus Favoritos",
@@ -97,3 +117,18 @@ export const getProfile = (req, res) => {
     message: "Gerencie suas informações de perfil!",
   });
 };
+
+
+export const getdasboardAdmin = (req, res) => {
+
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/login");
+  }
+
+  renderPage(req, res, "../pages/admin/dashboard", {
+    titulo: "Administaçao",
+    message: "Gerencie as informações da loja",
+  });
+};
+
+

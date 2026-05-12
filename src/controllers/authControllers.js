@@ -1,4 +1,6 @@
 import UserService from "../services.js/userService.js";
+import { verifyCode } from "../services.js/otpSrevice.js"; // Import verifyCode
+import { GeneralError } from "../errors/customErrors.js"; // Import GeneralError
 
 export const PostLogin = async (req, res, next) => {
     const { email, password } = req.body;
@@ -61,6 +63,40 @@ export const PostRegister = async (req, res, next) => {
                 .json({ message: "Usuário registrado com sucesso", user: dataRegister.user });
         });
         
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Novo controlador para verificação de OTP
+export const PostVerifyOtp = async (req, res, next) => {
+    const { email, otp } = req.body;
+    const userService = new UserService();
+
+    try {
+        const user = await userService.getUserByEmail(email);
+
+        if (!user) {
+            throw new GeneralError("Usuário não encontrado.", 404);
+        }
+
+        const otpEntry = await verifyCode(user._id, email, otp);
+
+        if (!otpEntry) {
+            throw new GeneralError("Código OTP inválido ou expirado.", 400);
+        }
+
+        // Marcar o e-mail do usuário como verificado
+        await userService.markEmailAsVerified(user._id);
+
+        // Atualizar o status de e-mail verificado na sessão do usuário
+        if (req.session.user && req.session.user._id === user._id.toString()) {
+            req.session.user.email.verified = true;
+            await req.session.save();
+        }
+
+        return res.status(200).json({ message: "Email verificado com sucesso!", redirect: "/login" });
+
     } catch (error) {
         next(error);
     }
