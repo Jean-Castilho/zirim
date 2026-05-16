@@ -19,14 +19,93 @@ import {
 } from "./validationData.js";
 
 export default class UserService {
+  
   getCollection() {
     const db = getDataBase();
     return db.collection("users");
   }
 
+
   async allUsers() {
     return await this.getCollection().find().toArray();
   }
+
+  async getUserById(id) {
+    if (!id) return null;
+    return await this.getCollection().findOne({ _id: new ObjectId(id) });
+  }
+
+  async getUserByEmail(email) {
+    if (!email) return null;
+    const normalized = String(email).trim().toLowerCase();
+    return await this.getCollection().findOne({ "email.endereco": normalized },{
+        projection: {
+            email: 1,
+            password: 1, // ou 'senha', dependendo do seu Schema;
+            numero: 1,
+        }
+    });
+  }
+
+  async getUserbyData(data){
+    if (!data) return null;
+    return await this.getCollection().findOne(data);
+  }
+
+  
+  async getUserByPhone(phone) {
+   if (!phone) return null;
+    return await this.getCollection().findOne({ "phone.number": phone });
+  }
+
+
+  async verifieldUser({ email, phone } = {}) {
+    const query = {};
+    if (email) query["email"] = email;
+    if (phone) query["phone"] = phone;
+    if (Object.keys(query).length === 0) return null;
+
+    return await this.getCollection().findOne(query);
+  }
+
+  
+
+
+
+  async login(req, res) {
+    const { email, password } = req.body;
+
+    const user = await this.getUserByEmail(email);
+
+    if (!user) { // 401 Unauthorized é mais apropriado para falha de login
+      throw new UnauthorizedError("Email ou senha incorretos.");
+    }
+
+    console.log(user);
+
+    const ismatch = await compararSenha(password, user.password);
+
+    console.log(ismatch);
+
+    if (!ismatch) { // 401 Unauthorized
+      throw new UnauthorizedError("Email ou senha incorretos.");
+    }
+
+    // Mantém o campo aninhado como "email.endereço"
+    const token = criarToken({
+      id: user._id,
+      email: user.email.endereco,
+    });
+
+    req.session.user = {
+      ...user,
+      _id: user._id.toString() // Converte ObjectId para string
+    };
+
+    console.log('Session saved for user:', req.session.user);
+    return { message: "Login realizado", user, token };
+  }
+
 
   async creatUser(req, res) {
     const dataUser = {
@@ -101,66 +180,6 @@ export default class UserService {
     };
   };
 
-  async login(req, res) {
-    const { email, password } = req.body;
-
-    const user = await this.getUserByEmail(email);
-
-    console.log(user);
-
-    if (!user) { // 401 Unauthorized é mais apropriado para falha de login
-      throw new UnauthorizedError("Email ou senha incorretos.");
-    }
-
-    console.log(password);
-
-    const ismatch = await compararSenha(password, user.password);
-
-    console.log(ismatch);
-
-    if (!ismatch) { // 401 Unauthorized
-      throw new UnauthorizedError("Email ou senha incorretos.");
-    }
-
-    // Mantém o campo aninhado como "email.endereço"
-    const token = criarToken({
-      id: user._id,
-      email: user.email.endereco,
-    });
-
-    req.session.user = {
-      ...user,
-      _id: user._id.toString() // Converte ObjectId para string
-    };
-
-    console.log('Session saved for user:', req.session.user);
-    return { message: "Login realizado", user, token };
-  }
-
-  async verifieldUser({ email, phone } = {}) {
-    const query = {};
-    if (email) query["email"] = email;
-    if (phone) query["phone"] = phone;
-    if (Object.keys(query).length === 0) return null;
-
-    return await this.getCollection().findOne(query);
-  }
-
-  async getUserByEmail(email) {
-    if (!email) return null;
-    const normalized = String(email).trim().toLowerCase();
-    return await this.getCollection().findOne({ "email.endereco": normalized });
-  }
-  
-  async getUserByPhone(phone) {
-   if (!phone) return null;
-    return await this.getCollection().findOne({ "phone.number": phone });
-  }
-
-  async getUserById(id) {
-    if (!id) return null;
-    return await this.getCollection().findOne({ _id: new ObjectId(id) });
-  }
 
   async resetPassword(id, updateData) {
     if (!ObjectId.isValid(id)) {

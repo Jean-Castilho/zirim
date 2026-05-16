@@ -55,12 +55,8 @@
                 alert('Login realizado com sucesso!');
             }
             setTimeout(() => {
-
-              if (result.user.role === 'admin') {
-                window.location.href = '/admin/dashboard';
-              } else if (result.user.role === 'user') {
-                window.location.href = '/profile'; 
-                
+              if (result.user.email) {
+                window.location.href = '/verify-otp'; 
               }
             }, 1000);
           } else {

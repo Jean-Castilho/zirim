@@ -12,7 +12,6 @@ import {
   getCart,
   getProfile,
   getdasboardAdmin,
-  getSendOtp,
   getVerifyOtp,
 } from "../controllers/pagesControllers.js";
 
@@ -29,9 +28,6 @@ router.get("/contact", getContact);
 router.get("/register", getRegister);
 
 router.get("/login", generateCsrfToken, getLogin);
-
-
-router.get("/send-otp", getSendOtp);
 
 router.get("/verify-otp", getVerifyOtp);
 

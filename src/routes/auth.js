@@ -6,7 +6,8 @@ import {
 
 import { 
    PostLogin,
-   PostRegister
+   PostRegister,
+   PostVerifyOtp
 } from "../controllers/authControllers.js";
 
 const router = express.Router();
@@ -16,5 +17,6 @@ const cookieSameSite = process.env.NODE_ENV === 'production' ? 'Lax' : 'Lax'; //
 
 router.post("/login", validateCsrfToken, PostLogin);
 router.post("/register", PostRegister);
+router.post("/verify-otp", PostVerifyOtp);
 
 export default router;

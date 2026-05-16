@@ -1,4 +1,5 @@
 import ProductController from "../controllers/productControllers.js";
+import { sendOtpEmail } from "../services/contactService.js";
 
 const productController = new ProductController();
 
@@ -70,25 +71,23 @@ export const getRegister = (req, res) => {
   });
 };
 
-export const getSendOtp = (req, res) => {
-  renderPage(req, res, "../pages/auth/send-otp", {
-    titulo: "Solicitar",
-    message: "solicite aqui seu codigo de verificação",
-  });
-};
+export const getVerifyOtp = async (req, res) => {
+  const normalized = String(req.session.user.email.endereco).trim().toLowerCase();
+  console.log(normalized);
 
-export const getVerifyOtp = (req, res) => {
+  const result = await sendOtpEmail(normalized);
+
+  console.log(result);
+
   renderPage(req, res, "../pages/auth/verify-otp", {
     titulo: "Verificar",
-    message: "verifique aqui seu codigo de verificação",
+    message: "verifique aqui seu codigo",
+    email: normalized
   });
 };
-
 
 
 export const getFavorites = (req, res) => {
-
-
 
   renderPage(req, res, "../pages/public/favorites", {
     titulo: "Meus Favoritos",
@@ -97,8 +96,6 @@ export const getFavorites = (req, res) => {
 };
 
 export const getCart = (req, res) => {
-
-
 
   renderPage(req, res, "../pages/public/cart", {
     titulo: "Meu Carrinho",
@@ -130,5 +127,3 @@ export const getdasboardAdmin = (req, res) => {
     message: "Gerencie as informações da loja",
   });
 };
-
-
