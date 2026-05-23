@@ -1,0 +1,268 @@
+<section class="profile-page">
+  <div class="profile-container">
+    <h1 class="profile-title"><%= titulo %></h1>
+    <p class="profile-message"><%= message %></p>
+
+    <div class="profile-content">
+      <div class="user-info-card">
+        <h2>Informações do Usuário</h2>
+        <div class="info-group">
+          <label>Nome:</label>
+          <p><%= user?.name || 'Não informado' %></p>
+        </div>
+        <div class="info-group">
+          <label>Email:</label>
+          <p>
+            <%= user?.email?.endereco || 'Não informado' %> 
+            <% if (user?.email?.endereco) { %>
+              <span class="badge <%= user?.email?.verified ? 'verified' : 'unverified' %>">
+                <%= user?.email?.verified ? 'Verificado' : 'Não verificado' %>
+              </span>
+            <% } %>
+          </p>
+        </div>
+        <div class="info-group">
+          <label>Telefone:</label>
+          <p>
+            <%= user?.phone?.number || 'Não informado' %> 
+            <% if (user?.phone?.number) { %>
+              <span class="badge <%= user?.phone?.verified ? 'verified' : 'unverified' %>">
+                <%= user?.phone?.verified ? 'Verificado' : 'Não verificado' %>
+              </span>
+            <% } %>
+          </p>
+        </div>
+        <div class="info-group">
+          <label>Cargo:</label>
+          <p><%= user?.role === 'admin' ? 'Administrador' : 'Usuário' %></p>
+        </div>
+        <div class="profile-actions" style="margin-top: 1rem;">
+          <a href="/logout" class="btn-logout">Sair da Conta</a>
+        </div>
+      </div>
+
+      <div class="user-orders-card">
+        <h2>Meus Pedidos</h2>
+        <% if (user?.orderns && user.orderns.length > 0) { %>
+          <ul class="orders-list">
+            <% user.orderns.forEach(order => { %>
+              <li class="order-item">
+                <div class="order-header">
+                  <strong>Pedido #<%= order._id || order.id || 'N/A' %></strong>
+                  <span class="order-date"><%= new Date(order.createdAt || order.date || Date.now()).toLocaleDateString('pt-BR') %></span>
+                </div>
+                <div class="order-details">
+                  <div class="order-status">Status: <%= order.status || 'Processando' %></div>
+                  <div class="order-total">Total: R$ <%= (order.total || 0).toFixed(2) %></div>
+                </div>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="no-orders">Você ainda não realizou nenhum pedido.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .profile-page {
+    display: flex;
+    justify-content: center;
+    padding: var(--espacamento-grande);
+    background-color: var(--cor-fundo-claro);
+    min-height: 78vh;
+  }
+
+  .profile-container {
+    width: 100%;
+    max-width: 1150px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: var(--espacamento-grande);
+  }
+
+  .profile-title {
+    color: var(--cor-primaria);
+    font-family: var(--fonte-titulo);
+    margin-bottom: var(--espacamento-pequeno);
+    text-align: center;
+  }
+
+  .profile-message {
+    color: var(--cor-texto-escuro);
+    text-align: center;
+    margin-bottom: var(--espacamento-grande);
+  }
+
+  .profile-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacamento-grande);
+  }
+
+  .user-info-card, .user-orders-card {
+    background-color: var(--cor-fundo-claro);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: var(--espacamento-grande);
+  }
+
+  .user-info-card h2, .user-orders-card h2 {
+    color: var(--cor-primaria);
+    margin-bottom: var(--espacamento-medio);
+    border-bottom: 2px solid var(--cor-secundaria);
+    padding-bottom: var(--espacamento-pequeno);
+    display: inline-block;
+  }
+
+  .info-group {
+    margin-bottom: var(--espacamento-medio);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info-group label {
+    font-weight: bold;
+    color: var(--cor-texto-escuro);
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .info-group p {
+    color: var(--cor-texto-escuro);
+    margin: 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    word-break: break-all;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge.verified {
+    background-color: #2ecc71; /* Verde */
+  }
+
+  .badge.unverified {
+    background-color: var(--cor-destaque); /* Vermelho */
+  }
+
+  .btn-logout {
+    display: inline-block;
+    background-color: var(--cor-destaque);
+    color: var(--cor-texto-claro);
+    padding: var(--espacamento-pequeno) var(--espacamento-medio);
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+    text-align: center;
+  }
+
+  .btn-logout:hover {
+    filter: brightness(90%);
+  }
+
+  .orders-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacamento-medio);
+  }
+
+  .order-item {
+    background-color: #fff;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    padding: var(--espacamento-medio);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow 0.3s;
+  }
+
+  .order-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--cor-fundo-neutro);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+
+  .order-header strong {
+    color: var(--cor-primaria);
+    font-size: 1.1rem;
+  }
+
+  .order-date {
+    color: var(--cor-texto-escuro);
+    font-size: 0.9rem;
+  }
+
+  .order-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .order-status {
+    font-weight: bold;
+    color: var(--cor-secundaria);
+    background-color: rgba(243, 156, 18, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  .order-total {
+    font-weight: bold;
+    color: var(--cor-texto-escuro);
+    font-size: 1.1rem;
+  }
+
+  .no-orders {
+    color: var(--cor-texto-escuro);
+    font-style: italic;
+    background-color: #fff;
+    padding: var(--espacamento-medio);
+    border-radius: 4px;
+    border: 1px dashed var(--cor-borda);
+    text-align: center;
+  }
+
+  @media (min-width: 768px) {
+    .profile-content {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+    .user-info-card {
+      flex: 1;
+      position: sticky;
+      top: 20px;
+    }
+    .user-orders-card {
+      flex: 2;
+    }
+  }
+</style>

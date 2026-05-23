@@ -5,7 +5,7 @@ import products from "./routes/product.js"
 const Server = function (app) {
     app.use("/", pages);
     app.use("/", auth);
-    app.use("/", products);
+    app.use("/products", products);
 };
 
 export default Server;

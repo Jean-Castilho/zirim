@@ -81,11 +81,7 @@ export default class UserService {
       throw new UnauthorizedError("Email ou senha incorretos.");
     }
 
-    console.log(user);
-
     const ismatch = await compararSenha(password, user.password);
-
-    console.log(ismatch);
 
     if (!ismatch) { // 401 Unauthorized
       throw new UnauthorizedError("Email ou senha incorretos.");
@@ -102,7 +98,6 @@ export default class UserService {
       _id: user._id.toString() // Converte ObjectId para string
     };
 
-    console.log('Session saved for user:', req.session.user);
     return { message: "Login realizado", user, token };
   }
 

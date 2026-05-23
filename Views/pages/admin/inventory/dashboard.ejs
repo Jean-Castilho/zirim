@@ -1,0 +1,71 @@
+<div class="admin-container" style="padding: 40px 20px; max-width: 1200px; margin: 0 auto;">
+  
+  <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--cor-borda); padding-bottom: 20px;">
+    <div>
+      <h1 style="font-size: 2rem; color: var(--cor-primaria); margin-bottom: 5px;"><%= titulo %></h1>
+      <p style="color: var(--cor-texto-escuro);"><%= message %></p>
+    </div>
+    <div>
+      <a href="/admin/inventory/add" class="btn" style="background-color: var(--cor-secundaria); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+        <i class="material-icons">add</i> Adicionar Produto
+      </a>
+    </div>
+  </header>
+
+  <div class="table-responsive" style="overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead style="background-color: var(--cor-primaria); color: var(--cor-texto-claro);">
+        <tr>
+          <th style="padding: 15px; border-bottom: 1px solid #ddd;">  Imagem</th>
+          <th style="padding: 15px; border-bottom: 1px solid #ddd;">Nome do Produto</th>
+          <th style="padding: 15px; border-bottom: 1px solid #ddd;">Categoria</th>
+          <th style="padding: 15px; border-bottom: 1px solid #ddd;">Preço (R$)</th>
+          <th style="padding: 15px; border-bottom: 1px solid #ddd;">Estoque</th>
+          <th style="padding: 15px; border-bottom: 1px solid #ddd; text-align: center;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (products && products.length > 0) { %>
+          <% products.forEach(product => { %>
+            <tr style="border-bottom: 1px solid var(--cor-fundo-neutro); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f9f9f9'" onmouseout="this.style.backgroundColor='transparent'">
+              <td style="padding: 15px; text-align: center;">
+                <img src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/40' %>" alt="<%= product.name %>" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--cor-borda);">
+              </td>
+              <td style="padding: 15px;"><%= product.name %></td>
+              <td style="padding: 15px; text-transform: capitalize;"><%= product.categoria %></td>
+              <td style="padding: 15px; font-weight: bold; color: var(--cor-secundaria);"><%= product.preco %></td>
+              <td style="padding: 15px;">
+                <span style="padding: 5px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; background-color: <%= product.estoque > 10 ? '#e8f5e9' : '#ffebee' %>; color: <%= product.estoque > 10 ? '#2e7d32' : '#c62828' %>;">
+                  <%= product.estoque %>
+                </span>
+              </td>
+              <td style="padding: 15px; text-align: center;">
+                <div style="display: flex; justify-content: center; gap: 10px;">
+                  <button title="Editar" style="background: none; border: none; cursor: pointer; color: #1976d2; display: flex; align-items: center; justify-content: center; padding: 5px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#e3f2fd'" onmouseout="this.style.backgroundColor='transparent'">
+                    <i class="material-icons" style="font-size: 20px;">edit</i>
+                  </button>
+                  <button title="Excluir" style="background: none; border: none; cursor: pointer; color: var(--cor-secundaria); display: flex; align-items: center; justify-content: center; padding: 5px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#ffebee'" onmouseout="this.style.backgroundColor='transparent'">
+                    <i class="material-icons" style="font-size: 20px;">delete</i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="6" style="padding: 30px; text-align: center; color: #777;">
+              <i class="material-icons" style="font-size: 40px; color: #ccc; margin-bottom: 10px; display: block;">inventory_2</i>
+              Nenhum produto cadastrado no inventário.
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  
+  <div style="margin-top: 20px; text-align: right;">
+    <a href="/admin/dashboard" style="color: var(--cor-texto-escuro); text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+      <i class="material-icons" style="font-size: 18px;">arrow_back</i> Voltar ao Painel
+    </a>
+  </div>
+</div>

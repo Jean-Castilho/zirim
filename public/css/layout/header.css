@@ -37,7 +37,7 @@
 /* Estilos para links de navegação */
 .nav-link {
     color: var(--cor-texto-claro); /* Usando variável para links no header */
-    font-weight: bold; /* Manter valor fixo */
+    font-weight: 900; /* Manter valor fixo - mais grosso */
     padding-bottom: 8px;
     border-bottom: 3px solid transparent;
 

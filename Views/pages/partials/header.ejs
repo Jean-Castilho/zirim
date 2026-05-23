@@ -13,9 +13,6 @@
       <li><a href="/contact" class="nav-link <%= isActive('/contact') ? 'active' : '' %>">Contato</a>
       </li>
 
-      <% if (user && user.role==='admin' ) { %>
-        <li><a href="/admin/dashboard" class="nav-link <%= isActive('/admin') ? 'active' : '' %>">Admin</a></li>
-        <% } %>
           <!-- Icons are now inside the nav-menu -->
           <li class="header-icons-container">
             <div class="header-icons">

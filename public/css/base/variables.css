@@ -1,17 +1,18 @@
 /* Variáveis de Cores */
 :root {
-    --cor-primaria: #2c3e50; /* Azul escuro, para cabeçalhos, rodapés, etc. */
-    --cor-secundaria: #f39c12; /* Laranja vibrante, para destaques, botões */
-    --cor-destaque: #e74c3c; /* Vermelho, para avisos, erros, ou elementos importantes */
-    --cor-texto-claro: #ecf0f1; /* Cinza claro, para texto em fundos escuros */
-    --cor-texto-escuro: #273849; /* Azul acinzentado, para texto principal */
-    --cor-fundo-claro: #f8f9fa; /* Fundo muito claro, para seções de conteúdo */
+    --cor-primaria: #111111; /* Preto para cabeçalhos, rodapés, etc. */
+    --cor-secundaria: #e10732; /* Vermelho cereja para destaques, botões */
+    --cor-destaque: #cd1d0d; /* Vermelho mais escuro para hover */
+    --cor-texto-claro: #f5f5f5; /* Cinza claro para texto em fundos escuros */
+    --cor-texto-escuro: #333333; /* Cinza escuro para texto principal */
+    --cor-fundo-claro: #ffffff; /* Fundo muito claro, para seções de conteúdo */
     --cor-fundo-neutro: #e0e0e0; /* Cinza neutro, para divisores ou fundos secundários */
-    --cor-borda: #bdc3c7; /* Cinza para bordas */
+    --cor-borda: #cccccc; /* Cinza para bordas */
 
     /* Variáveis de Fontes */
-    --fonte-principal: 'Arial', sans-serif;
-    --fonte-titulo: 'Georgia', serif;
+    --fonte-principal: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    --fonte-titulo: 'Montserrat', 'Helvetica Neue', sans-serif;
+    --fonte-botoes: 'Open Sans', 'Roboto', sans-serif;
 
     /* Variáveis de Espaçamento */
     --espacamento-pequeno: 0.5rem;

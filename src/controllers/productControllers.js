@@ -66,7 +66,7 @@ export default class ProductController {
 
     const productData = {
       // --- Informações Principais ---
-      name: req.body.name,
+      nome: req.body.name,
       preco: parseFloat(req.body.preco),
       imagens: successfulUploads,
       // --- Organização e Estilo ---
@@ -147,19 +147,12 @@ export default class ProductController {
       slug: body.slug,
       preco: parseFloat(body.preco),
       imagens: finalImages,
+      categoria: body.categoria,
+      descricao: body.descricao,
       estilo: body.estilo,
       colecao: body.colecao,
       estoque: body.estoque,
-      garantia: body.garantia,
       ativo: body.ativo,
-      categoria: body.categoria,
-      descricao: body.descricao,
-      dimensoes: {
-        altura: body.altura,
-        largura: body.largura,
-        profundidade: body.profundidade,
-      },
-      peso: body.peso,
     };
 
     await this.getCollection().updateOne(

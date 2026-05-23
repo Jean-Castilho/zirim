@@ -1,1 +1,72 @@
-products
+<div class="products-container" style="padding: 40px 20px; max-width: 1200px; margin: 0 auto;">
+  
+  <header style="text-align: center; margin-bottom: 40px;">
+    <h1 style="font-size: 2.5rem; color: #333;"><%= titulo %></h1>
+    <p style="font-size: 1.1rem; color: #666;"><%= message %></p>
+  </header>
+
+  <!-- Filtros -->
+  <div class="filters" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <span style="font-weight: bold; margin-right: 10px;">Filtrar por:</span>
+      <a href="/products" style="margin-right: 15px; text-decoration: none; color: #555;">Todos</a>
+      <a href="/products?category=feminino" style="margin-right: 15px; text-decoration: none; color: #555;">Feminino</a>
+      <a href="/products?category=masculino" style="margin-right: 15px; text-decoration: none; color: #555;">Masculino</a>
+      <a href="/products?category=calcados" style="text-decoration: none; color: #555;">Calçados</a>
+    </div>
+    <div>
+      <label for="sort" style="font-weight: bold; margin-right: 5px;">Ordenar:</label>
+      <select id="sort" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="relevance">Relevância</option>
+        <option value="lowest_price">Menor Preço</option>
+        <option value="highest_price">Maior Preço</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Grid de Produtos -->
+  <div class="products-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 30px;">
+    
+    <% if (products && products.length > 0) { %>
+      <% products.forEach(product => { %>
+        <div class="product-card" style="background: #fff; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+          
+          <div style="position: relative;">
+            <img src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>" alt="<%= product.name %>" style="width: 100%; height: 250px; object-fit: cover;">
+            <button style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <i class="material-icons" style="color: #ccc; font-size: 20px;">favorite_border</i>
+            </button>
+          </div>
+
+          <div style="padding: 15px; text-align: center;">
+            <span style="font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px;"><%= product.categoria || 'Geral' %></span>
+            <h3 style="font-size: 1.2rem; margin: 10px 0; color: #333;"><%= product.name %></h3>
+            <p style="font-size: 1.3rem; font-weight: bold; color: #D2042D;">R$ <%= product.preco %></p>
+            
+            <button style="margin-top: 15px; width: 100%; padding: 10px; background-color: #333; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#555'" onmouseout="this.style.backgroundColor='#333'">
+              Adicionar ao Carrinho
+            </button>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div style="grid-column: 1 / -1; text-align: center; padding: 50px 0;">
+        <i class="material-icons" style="font-size: 48px; color: #ccc;">sentiment_dissatisfied</i>
+        <p style="font-size: 1.2rem; color: #777; margin-top: 10px;">Nenhum produto encontrado.</p>
+      </div>
+    <% } %>
+
+  </div>
+
+  <!-- Paginação -->
+  <% if (products && products.length > 0) { %>
+    <div class="pagination" style="display: flex; justify-content: center; margin-top: 50px; gap: 5px;">
+      <button style="padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;">&laquo; Anterior</button>
+      <button style="padding: 8px 15px; border: 1px solid #D2042D; background: #D2042D; color: white; cursor: pointer; border-radius: 4px;">1</button>
+      <button style="padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;">2</button>
+      <button style="padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;">3</button>
+      <button style="padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;">Próxima &raquo;</button>
+    </div>
+  <% } %>
+
+</div>

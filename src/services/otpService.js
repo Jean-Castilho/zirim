@@ -5,6 +5,7 @@ export const generateOTP = () => {
 }
 
 export const armazenCodeOtp = async (params, code) => {
+  console.log(code)
   await getDataBase().collection("otps-code").insertOne({ params, code });
 };
 

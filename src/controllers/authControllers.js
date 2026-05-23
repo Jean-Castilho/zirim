@@ -11,9 +11,7 @@ export const PostLogin = async (req, res, next) => {
 
     try {
         const dataLogin = await userService.login(req, res);
-        
 
-        console.log('Login successful, session ID:', req.sessionID);
         console.log('Session user:', req.session.user);
 
         req.session.save((err) => {
@@ -31,7 +29,7 @@ export const PostLogin = async (req, res, next) => {
                 .status(200)
                 .json({ message: "Login realizado", user: dataLogin.user });
         });
-        
+
     } catch (error) {
         next(error);
     }
@@ -63,7 +61,7 @@ export const PostRegister = async (req, res, next) => {
                 .status(201)
                 .json({ message: "Usuário registrado com sucesso", user: dataRegister.user });
         });
-        
+
     } catch (error) {
         next(error);
     }
@@ -73,7 +71,7 @@ export const PostRegister = async (req, res, next) => {
 export const PostVerifyOtp = async (req, res, next) => {
     const { email, otp } = req.body;
     console.log(req.body);
-    
+
     const userService = new UserService();
 
     try {
@@ -88,8 +86,8 @@ export const PostVerifyOtp = async (req, res, next) => {
         if (!otpEntry) {
             throw new GeneralError("Código OTP inválido ou expirado.", 400);
         }
-        
-        
+
+
 
         // Atualizar o status de e-mail verificado na sessão do usuário
         if (req.session.user && req.session.user._id === user._id.toString()) {
@@ -101,7 +99,7 @@ export const PostVerifyOtp = async (req, res, next) => {
 
 
 
-        return res.status(200).json({ message: "Email verificado com sucesso!", redirect: "/login" });
+        return res.status(200).json({ message: "Email verificado com sucesso!", redirect: "/profile" });
 
     } catch (error) {
         next(error);

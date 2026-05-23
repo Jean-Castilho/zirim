@@ -16,11 +16,11 @@ const renderPage = (req, res, page, options = {}) => {
 
 export const getHome = async (req, res, next) => {
   try {
-    const products = []; /*await productControllers.getCollection().find().limit(5).toArray();*/
+    const products = await productController.getCollection().find().limit(4).toArray();
 
     renderPage(req, res, "../pages/public/home", {
-      titulo: "Encanto Rústico",
-      message: "Bem-vindo à nossa loja de móveis e decorações!",
+      titulo: "Zirim - Moda e Calçados",
+      message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
       products: products,
     });
   } catch (error) {
@@ -30,11 +30,11 @@ export const getHome = async (req, res, next) => {
 
 export const getProducts = async (req, res, next) => {
   try {
-    const allProducts = []; /*await productControllers.getCollection().find().toArray();*/
+    const products = await productController.getCollection().find().toArray();
     renderPage(req, res, "../pages/public/products", {
       titulo: "Produtos",
       message: "Confira nossos produtos!",
-      products: allProducts,
+      products: products,
     });
   } catch (error) {
     next(error);
@@ -74,10 +74,8 @@ export const getRegister = (req, res) => {
 export const getVerifyOtp = async (req, res) => {
   const normalized = String(req.session.user.email.endereco).trim().toLowerCase();
   console.log(normalized);
-
+  
   const result = await sendOtpEmail(normalized);
-
-  console.log(result);
 
   renderPage(req, res, "../pages/auth/verify-otp", {
     titulo: "Verificar",
@@ -109,6 +107,8 @@ export const getProfile = (req, res) => {
     return res.redirect("/login");
   }
 
+  
+
   renderPage(req, res, "../pages/auth/profile", {
     titulo: "Meu Perfil",
     message: "Gerencie suas informações de perfil!",
@@ -125,5 +125,45 @@ export const getdasboardAdmin = (req, res) => {
   renderPage(req, res, "../pages/admin/dashboard", {
     titulo: "Administaçao",
     message: "Gerencie as informações da loja",
+  });
+};
+
+export const getdelivery = (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/login");
+  }
+
+  renderPage(req, res, "../pages/admin/delivery/dashboard", {
+    titulo: "Entregas",
+    message: "Gerencie as entregas",
+  });
+};
+
+export const getinventory = async (req, res, next) => {
+  try {
+    if (!req.session.user || req.session.user.role !== "admin") {
+      return res.redirect("/login");
+    }
+
+    const products = await productController.getCollection().find().toArray();
+
+    renderPage(req, res, "../pages/admin/inventory/dashboard", {
+      titulo: "Gerenciamento de Inventário",
+      message: "Controle de estoque e produtos",
+      products: products
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAddProduct = (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/login");
+  }
+
+  renderPage(req, res, "../pages/admin/inventory/add-product", {
+    titulo: "Adicionar Produto",
+    message: "Cadastre um novo produto no inventário",
   });
 };

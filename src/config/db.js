@@ -11,6 +11,8 @@ if (!uri) {
 }
 
 const client = new MongoClient(uri);
+const DB_NAME = "zirim";
+const INIT_COLLECTION_NAME = "_app_init";
 
 let db;
 let bucket;
@@ -21,7 +23,19 @@ export const connectDataBase = async () => {
     await client.connect();
     console.log("Conexão com o MongoDB estabelecida com sucesso.");
 
-    db = client.db("Harpia");
+    db = client.db(DB_NAME);
+
+    const existingCollection = await db
+      .listCollections({ name: INIT_COLLECTION_NAME })
+      .toArray();
+
+    if (existingCollection.length === 0) {
+      await db.createCollection(INIT_COLLECTION_NAME);
+      console.log(
+        `Banco de dados "${DB_NAME}" criado com a coleção inicial "${INIT_COLLECTION_NAME}".`,
+      );
+    }
+
     bucket = new GridFSBucket(db, { bucketName: "uploads" });
   } catch (error) {
     console.error("Erro ao conectar ao banco de dados:", error);
