@@ -1,7 +1,7 @@
 .header {
     width: 100%;
     background-color: var(--cor-primaria); /* Usando variável */
-    color: var(--cor-texto-claro); /* Usando variável para texto em fundo escuro */
+    color: var(--cor-texto-escuro); /* Usando variável para texto em fundo escuro */
     padding: var(--espacamento-medio) 0; /* Usando variável */
     box-shadow: var(--sombra-padrao);
 

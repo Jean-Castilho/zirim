@@ -41,6 +41,36 @@ export const getProducts = async (req, res, next) => {
   }
 };
 
+export const getProductDetails = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).render("../pages/public/product-details", {
+        titulo: "Detalhes do Produto",
+        product: null,
+        errorMessage: "ID de produto obrigatório.",
+      });
+    }
+
+    const product = await productController.getProductById(id);
+
+    if (!product) {
+      return res.status(404).render("../pages/public/product-details", {
+        titulo: "Produto não encontrado",
+        product: null,
+        errorMessage: "Produto não encontrado.",
+      });
+    }
+
+    renderPage(req, res, "../pages/public/product-details", {
+      titulo: product.nome || product.name || "Detalhes do Produto",
+      product,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getAbout = (req, res) => {
   renderPage(req, res, "../pages/public/about", {
     titulo: "Sobre Nós",
@@ -114,7 +144,6 @@ export const getProfile = (req, res) => {
     message: "Gerencie suas informações de perfil!",
   });
 };
-
 
 export const getdasboardAdmin = (req, res) => {
 

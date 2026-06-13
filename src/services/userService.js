@@ -51,13 +51,11 @@ export default class UserService {
     if (!data) return null;
     return await this.getCollection().findOne(data);
   }
-
   
   async getUserByPhone(phone) {
    if (!phone) return null;
     return await this.getCollection().findOne({ "phone.number": phone });
   }
-
 
   async verifieldUser({ email, phone } = {}) {
     const query = {};
@@ -68,17 +66,13 @@ export default class UserService {
     return await this.getCollection().findOne(query);
   }
 
-  
-
-
-
   async login(req, res) {
     const { email, password } = req.body;
 
     const user = await this.getUserByEmail(email);
 
     if (!user) { // 401 Unauthorized é mais apropriado para falha de login
-      throw new UnauthorizedError("Email ou senha incorretos.");
+      throw new UnauthorizedError("Usuario nao encontrado.");
     }
 
     const ismatch = await compararSenha(password, user.password);
@@ -252,4 +246,5 @@ export default class UserService {
     }
     return { message: "Usuário excluído com sucesso." };
   }
+
 }

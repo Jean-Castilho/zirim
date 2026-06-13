@@ -1,6 +1,6 @@
 import UserService from "../services/userService.js";
-import { verifyCode } from "../services/otpService.js"; // Import verifyCode
-import { GeneralError } from "../errors/customErrors.js"; // Import GeneralError
+import { verifyCode } from "../services/otpService.js";
+import { GeneralError } from "../errors/customErrors.js";
 
 export const PostLogin = async (req, res, next) => {
     const { email, password } = req.body;
@@ -67,7 +67,6 @@ export const PostRegister = async (req, res, next) => {
     }
 };
 
-// Novo controlador para verificação de OTP
 export const PostVerifyOtp = async (req, res, next) => {
     const { email, otp } = req.body;
     console.log(req.body);

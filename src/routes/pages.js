@@ -4,7 +4,8 @@ import { getGridFSBucket } from "../config/db.js";
 
 import {
   getHome, 
-  getProducts, 
+  getProducts,
+  getProductDetails, 
   getRegister, 
   getLogin, 
   getContact, 
@@ -25,22 +26,7 @@ router.get("/", getHome);
 
 router.get("/products", getProducts);
 
-router.get("/image/:filename", (req, res) => {
-  try {
-    const bucket = getGridFSBucket();
-    const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
-
-    downloadStream.on("error", () => {
-      res.status(404).send("Imagem não encontrada");
-    });
-
-    res.setHeader("Content-Type", "image/webp");
-    res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache de 1 ano
-    downloadStream.pipe(res);
-  } catch (error) {
-    res.status(500).send("Erro interno ao buscar a imagem.");
-  }
-});
+router.get("/product/:id", getProductDetails);
 
 router.get("/about", getAbout);
 
@@ -51,6 +37,7 @@ router.get("/register", getRegister);
 router.get("/login", generateCsrfToken, getLogin);
 
 router.get("/verify-otp", getVerifyOtp);
+
 
 router.get("/cart", getCart);
 
@@ -67,7 +54,6 @@ router.get("/admin/delivery", getdelivery);
 router.get("/admin/inventory", getinventory);
 
 router.get("/admin/inventory/add", getAddProduct);
-
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {

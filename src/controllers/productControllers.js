@@ -107,6 +107,11 @@ export default class ProductController {
 
   }
 
+  async getProductById(id) {
+    if (!ObjectId.isValid(id)) return null;
+    return await this.getCollection().findOne({ _id: new ObjectId(id) });
+  }
+
   async updateProduct(req) {
     const { id } = req.params;
     const { body, files } = req;
@@ -213,7 +218,5 @@ export default class ProductController {
 
     return result;
   }
-
-
 
 }
