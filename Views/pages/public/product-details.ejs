@@ -2,226 +2,253 @@
 
 
 <section class="product-details-page">
-  <% const productName = product?.nome || product?.name || 'Produto';
-     const productCategory = product?.categoria || product?.category || 'Geral';
-     const productPrice = product?.preco || 0;
-     const productDescription = product?.descricao || product?.description || 'Sem descrição disponível.';
-     const productEstoque = product?.estoque || 0;
-     let productCores = product?.cores ? (Array.isArray(product.cores) ? product.cores : String(product.cores).split(',')) : [];
-     productCores = productCores.map(c => c.trim()).filter(Boolean);
-     productCores = productCores.length > 0 ? productCores : null;
+  <% const productName=product?.nome || product?.name || 'Produto' ; const productCategory=product?.categoria ||
+    product?.category || 'Geral' ; const productPrice=product?.preco || 0; const productDescription=product?.descricao
+    || product?.description || 'Sem descrição disponível.' ; const productEstoque=product?.estoque || 0; let
+    productCores=product?.cores ? (Array.isArray(product.cores) ? product.cores : String(product.cores).split(',')) :
+    []; productCores=productCores.map(c=> c.trim()).filter(Boolean);
+    productCores = productCores.length > 0 ? productCores : null;
 
-     let productTamanhos = product?.tamanhos ? (Array.isArray(product.tamanhos) ? product.tamanhos : String(product.tamanhos).split(',')) : [];
-     productTamanhos = productTamanhos.map(t => t.trim()).filter(Boolean);
-     productTamanhos = productTamanhos.length > 0 ? productTamanhos : null;
-     const productImages = Array.isArray(product?.imagens) ? product.imagens : [];
+    let productTamanhos = product?.tamanhos ? (Array.isArray(product.tamanhos) ? product.tamanhos :
+    String(product.tamanhos).split(',')) : [];
+    productTamanhos = productTamanhos.map(t => t.trim()).filter(Boolean);
+    productTamanhos = productTamanhos.length > 0 ? productTamanhos : null;
+    const productImages = Array.isArray(product?.imagens) ? product.imagens : [];
 
 
-     const placeholders = [
-       'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1200&q=80',
-       'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80',
-       'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80',
-       'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
-       'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80'
-     ];
-     const galleryImages = [...productImages.map(img => '/image/' + img), ...placeholders].slice(0, 5);
-  %>
+    const placeholders = [
+    'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80'
+    ];
+    const galleryImages = [...productImages.map(img => '/image/' + img), ...placeholders].slice(0, 5);
+    %>
 
-  <% if (!product) { %>
-    <div class="product-not-found">
-      <h2>Produto não encontrado</h2>
-      <p>Verifique se o link está correto ou tente novamente mais tarde.</p>
-      <a href="/products" class="btn-back-products">Voltar para produtos</a>
-    </div>
-  <% } else { %>
-    <div class="product-details-container">
-      <!-- Galeria de Imagens -->
-      <div class="product-gallery">
-        <div class="main-image-container">
-          <img id="mainImage" src="<%= galleryImages[0] %>" alt="<%= productName %>" class="main-image">
-          <% if (productEstoque > 0) { %>
-            <span class="stock-badge">Em Estoque</span>
-          <% } else { %>
-            <span class="stock-badge out-of-stock">Indisponível</span>
-          <% } %>
-        </div>
-        
-        <div class="gallery-thumbnails">
-          <% galleryImages.forEach((img, idx) => { %>
-            <img src="<%= img %>" alt="<%= productName %> view <%= idx + 1 %>" class="thumbnail <%= idx === 0 ? 'active' : '' %>" onclick="document.getElementById('mainImage').src='<%= img %>'">
-          <% }) %>
-        </div>
+    <% if (!product) { %>
+      <div class="product-not-found">
+        <h2>Produto não encontrado</h2>
+        <p>Verifique se o link está correto ou tente novamente mais tarde.</p>
+        <a href="/products" class="btn-back-products">Voltar para produtos</a>
       </div>
+      <% } else { %>
+        <div class="product-details-container">
+          <!-- Galeria de Imagens -->
+          <div class="product-gallery">
+            <div class="main-image-container">
+              <img id="mainImage" src="<%= galleryImages[0] %>" alt="<%= productName %>" class="main-image">
+              <% if (productEstoque> 0) { %>
+                <span class="stock-badge">Em Estoque</span>
+                <% } else { %>
+                  <span class="stock-badge out-of-stock">Indisponível</span>
+                  <% } %>
+            </div>
 
-      <!-- Informações do Produto -->
-      <div class="product-info">
-        <div class="breadcrumb">
-          <a href="/products">Produtos</a> / <span><%= productCategory %></span>
-        </div>
-
-        <h1 class="product-title"><%= productName %></h1>
-        
-        <div class="rating-section">
-          <div class="stars">
-            <% for(let i = 0; i < 5; i++) { %>
-              <i class="material-icons">star</i>
-            <% } %>
+            <div class="gallery-thumbnails">
+              <% galleryImages.forEach((img, idx)=> { %>
+                <img src="<%= img %>" alt="<%= productName %> view <%= idx + 1 %>"
+                  class="thumbnail <%= idx === 0 ? 'active' : '' %>"
+                  onclick="document.getElementById('mainImage').src='<%= img %>'">
+                <% }) %>
+            </div>
           </div>
-          <span class="rating-text">5.0 (45 avaliações)</span>
-        </div>
 
-        <div class="price-section">
-          <div class="price">
-            <span class="currency">R$</span>
-            <span class="amount"><%= productPrice.toFixed(2) %></span>
-          </div>
-          <p class="price-note">Preço sujeito a alterações</p>
-        </div>
+          <!-- Informações do Produto -->
+          <div class="product-info">
+            <div class="breadcrumb">
+              <a href="/products">Produtos</a> / <span>
+                <%= productCategory %>
+              </span>
+            </div>
 
-        <p class="description"><%= productDescription %></p>
+            <h1 class="product-title">
+              <%= productName %>
+            </h1>
 
-        <!-- Especificações -->
-        <div class="specifications">
-          <h3>Especificações</h3>
-          <div class="spec-item">
-            <span class="spec-label">Categoria:</span>
-            <span class="spec-value"><%= productCategory %></span>
-          </div>
-          <% if (productCores) { %>
-          <div class="spec-item">
-            <span class="spec-label">Cores disponíveis:</span>
-            <span class="spec-value"><%= productCores.join(', ') %></span>
+            <div class="rating-section">
+              <div class="stars">
+                <% for(let i=0; i < 5; i++) { %>
+                  <i class="material-icons">star</i>
+                  <% } %>
+              </div>
+              <span class="rating-text">5.0 (45 avaliações)</span>
+            </div>
+
+            <div class="price-section">
+              <div class="price">
+                <span class="currency">R$</span>
+                <span class="amount">
+                  <%= productPrice.toFixed(2) %>
+                </span>
+              </div>
+              <p class="price-note">Preço sujeito a alterações</p>
+
+              <p class="description">
+                <%= productDescription %>
+              </p>
+
+            </div>
+
+            <!-- Especificações -->
+            <div class="specifications">
+              <h3>Especificações</h3>
+              <div class="spec-item">
+                <span class="spec-label">Categoria:</span>
+                <span class="spec-value">
+                  <%= productCategory %>
+                </span>
+              </div>
+              <% if (productCores) { %>
+                <div class="spec-item">
+                  <span class="spec-label">Cores disponíveis:</span>
+                  <span class="spec-value">
+                    <%= productCores.join(', ') %></span>
           </div>
           <% } %>
           <% if (productTamanhos) { %>
           <div class="spec-item">
             <span class="spec-label">Tamanhos disponíveis:</span>
-            <span class="spec-value"><%= productTamanhos.join(', ') %></span>
+            <span class="spec-value"><%= productTamanhos.join(' , ') %></span>
           </div>
           <% } %>
           <div class="spec-item">
             <span class="spec-label">Estoque:</span>
-            <span class="spec-value"><%= productEstoque > 0 ? productEstoque + ' unidades' : 'Indisponível' %></span>
-          </div>
-        </div>
+            <span class="spec-value"><%= productEstoque > 0 ? productEstoque + ' unidades' : 'Indisponível' %>
+                  </span>
+                </div>
+            </div>
 
-        <!-- Opções de Variação -->
-        <% if (productCores && productCores.length > 0) { %>
-        <div class="variation-section">
-          <label>Cor:</label>
-          <div class="pill-selector" id="colorPillSelector">
-            <% productCores.forEach((cor) => { %>
-              <div class="pill-option pill-option-color" data-value="<%= cor %>">
-                <span class="color-swatch"></span>
-                <%= cor %>
+
+
+            <div class="selectors">
+              <!-- Opções de Variação -->
+              <% if (productCores && productCores.length> 0) { %>
+                <div class="variation-section">
+                  <label>Cor:</label>
+                  <div class="pill-selector" id="colorPillSelector">
+                    <% productCores.forEach((cor)=> { %>
+                      <div class="pill-option pill-option-color" data-value="<%= cor %>">
+                        <span class="color-swatch"></span>
+                      </div>
+                      <% }) %>
+                  </div>
+                  <input type="hidden" id="selectedColor" name="color">
+                </div>
+                <% } %>
+
+
+                  <% if (productTamanhos && productTamanhos.length> 0) { %>
+                    <div class="variation-section">
+                      <label>Tamanho:</label>
+                      <div class="pill-selector" id="sizePillSelector">
+                        <% productTamanhos.forEach((tamanho)=> { %>
+                          <div class="pill-option" data-value="<%= tamanho %>">
+                            <%= tamanho %>
+                          </div>
+                          <% }) %>
+                      </div>
+                      <input type="hidden" id="selectedSize" name="size">
+                    </div>
+                    <% } %>
+
+                      <!-- Seletor de Quantidade -->
+                      <div class="quantity-section">
+                        <div class="quantity-control">
+                          <button type="button" class="qty-btn" onclick="decreaseQty()">−</button>
+                          <input type="number" id="quantity" value="1" min="1" max="<%= productEstoque %>" readonly>
+                          <button type="button" class="qty-btn" onclick="increaseQty()">+</button>
+                        </div>
+                      </div>
+
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="action-buttons">
+              <% if (productEstoque> 0) { %>
+                <button class="btn-primary" id="addToCartButton" onclick="addToCart('<%= product._id %>')" disabled>
+                  <i class="material-icons">shopping_cart</i>
+                  Adicionar ao Carrinho
+                </button>
+                <% } else { %>
+                  <button class="btn-primary disabled" id="addToCartButton" disabled>
+                    <i class="material-icons">shopping_cart</i> Produto Indisponível
+                  </button>
+                  <% } %>
+                    <button class="btn-secondary" onclick="addToFavorites('<%= product._id %>')">
+                      <i class="material-icons">favorite_border</i>
+                      Favoritar
+                    </button>
+            </div>
+            <!-- Garantia -->
+            <div class="guarantee-section">
+              <div class="guarantee-item">
+                <i class="material-icons">local_shipping</i>
+                <div>
+                  <strong>Frete Grátis</strong>
+                  <p>Em compras acima de R$ 100</p>
+                </div>
               </div>
-            <% }) %>
+              <div class="guarantee-item">
+                <i class="material-icons">shield_check</i>
+                <div>
+                  <strong>Garantia</strong>
+                  <p>12 meses de cobertura</p>
+                </div>
+              </div>
+              <div class="guarantee-item">
+                <i class="material-icons">undo</i>
+                <div>
+                  <strong>Devolução</strong>
+                  <p>30 dias para trocar</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <input type="hidden" id="selectedColor" name="color">
+        </div>
+
+        <!-- Seção de Descrição Expandida -->
+        <div class="expanded-description">
+          <h2>Sobre este Produto</h2>
+          <p>
+            <%= productDescription %>
+          </p>
+          <p>Este produto foi cuidadosamente selecionado para atender aos mais altos padrões de qualidade e design.
+            Perfeito para quem busca estilo e conforto em uma única peça.</p>
+        </div>
+
+        <!-- Produtos Relacionados -->
+        <div class="related-products">
+          <h2>Você pode gostar também</h2>
+          <p class="related-subtitle">Confira outros produtos da mesma categoria</p>
+          <div class="related-grid">
+            <div class="related-card">
+              <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
+                alt="Produto relacionado">
+              <h4>Produto Relacionado 1</h4>
+              <p class="price">R$ 199.99</p>
+            </div>
+            <div class="related-card">
+              <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80"
+                alt="Produto relacionado">
+              <h4>Produto Relacionado 2</h4>
+              <p class="price">R$ 249.99</p>
+            </div>
+            <div class="related-card">
+              <img src="https://images.unsplash.com/photo-1516826957135-7331811a5ebf?auto=format&fit=crop&w=400&q=80"
+                alt="Produto relacionado">
+              <h4>Produto Relacionado 3</h4>
+              <p class="price">R$ 279.99</p>
+            </div>
+            <div class="related-card">
+              <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80"
+                alt="Produto relacionado">
+              <h4>Produto Relacionado 4</h4>
+              <p class="price">R$ 229.99</p>
+            </div>
+          </div>
         </div>
         <% } %>
-
-        <% if (productTamanhos && productTamanhos.length > 0) { %>
-        <div class="variation-section">
-          <label>Tamanho:</label>
-          <div class="pill-selector" id="sizePillSelector">
-            <% productTamanhos.forEach((tamanho) => { %>
-              <div class="pill-option" data-value="<%= tamanho %>"><%= tamanho %></div>
-            <% }) %>
-          </div>
-          <input type="hidden" id="selectedSize" name="size">
-        </div>
-        <% } %>
-
-        <!-- Seletor de Quantidade -->
-        <div class="quantity-section">
-          <div class="quantity-control">
-            <button type="button" class="qty-btn" onclick="decreaseQty()">−</button>
-            <input type="number" id="quantity" value="1" min="1" max="<%= productEstoque %>" readonly>
-            <button type="button" class="qty-btn" onclick="increaseQty()">+</button>
-          </div>
-        </div>
-
-        <!-- Botões de Ação -->
-        <div class="action-buttons">
-          <% if (productEstoque > 0) { %>
-            <button class="btn-primary" id="addToCartButton" onclick="addToCart('<%= product._id %>')" disabled>
-              <i class="material-icons">shopping_cart</i>
-              Adicionar ao Carrinho
-            </button>
-          <% } else { %>
-            <button class="btn-primary disabled" id="addToCartButton" disabled>
-              <i class="material-icons">shopping_cart</i> Produto Indisponível
-            </button>
-          <% } %>
-          <button class="btn-secondary" onclick="addToFavorites('<%= product._id %>')">
-            <i class="material-icons">favorite_border</i>
-            Favoritar
-          </button>
-        </div>
-
-        <!-- Garantia -->
-        <div class="guarantee-section">
-          <div class="guarantee-item">
-            <i class="material-icons">local_shipping</i>
-            <div>
-              <strong>Frete Grátis</strong>
-              <p>Em compras acima de R$ 100</p>
-            </div>
-          </div>
-          <div class="guarantee-item">
-            <i class="material-icons">shield_check</i>
-            <div>
-              <strong>Garantia</strong>
-              <p>12 meses de cobertura</p>
-            </div>
-          </div>
-          <div class="guarantee-item">
-            <i class="material-icons">undo</i>
-            <div>
-              <strong>Devolução</strong>
-              <p>30 dias para trocar</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Seção de Descrição Expandida -->
-    <div class="expanded-description">
-      <h2>Sobre este Produto</h2>
-      <p><%= productDescription %></p>
-      <p>Este produto foi cuidadosamente selecionado para atender aos mais altos padrões de qualidade e design. Perfeito para quem busca estilo e conforto em uma única peça.</p>
-    </div>
-
-    <!-- Produtos Relacionados -->
-    <div class="related-products">
-      <h2>Você pode gostar também</h2>
-      <p class="related-subtitle">Confira outros produtos da mesma categoria</p>
-      <div class="related-grid">
-        <div class="related-card">
-          <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80" alt="Produto relacionado">
-          <h4>Produto Relacionado 1</h4>
-          <p class="price">R$ 199.99</p>
-        </div>
-        <div class="related-card">
-          <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80" alt="Produto relacionado">
-          <h4>Produto Relacionado 2</h4>
-          <p class="price">R$ 249.99</p>
-        </div>
-        <div class="related-card">
-          <img src="https://images.unsplash.com/photo-1516826957135-7331811a5ebf?auto=format&fit=crop&w=400&q=80" alt="Produto relacionado">
-          <h4>Produto Relacionado 3</h4>
-          <p class="price">R$ 279.99</p>
-        </div>
-        <div class="related-card">
-          <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80" alt="Produto relacionado">
-          <h4>Produto Relacionado 4</h4>
-          <p class="price">R$ 229.99</p>
-        </div>
-      </div>
-    </div>
-  <% } %>
 </section>
 
 <script>
@@ -259,7 +286,7 @@
   }
 
 
-  
+
   const colorMap = {
     'vermelho': '#FF0000',
     'azul': '#0000FF',
@@ -300,15 +327,15 @@
   const simulatedProductVariations = [
     <% productCores.forEach((cor) => { %>
       <% productTamanhos.forEach((tamanho) => { %>
-        // Example: You'd replace this with actual stock data from your product object
-        // For demonstration, let's make some combinations out of stock
-        { color: '<%= cor %>', size: '<%= tamanho %>', stock: Math.floor(Math.random() * 10) },
+    // Example: You'd replace this with actual stock data from your product object
+    // For demonstration, let's make some combinations out of stock
+    { color: '<%= cor %>', size: '<%= tamanho %>', stock: Math.floor(Math.random() * 10) },
       <% }) %>
     <% }) %>
     // Add variations for products with only colors or only sizes if applicable
     <% if (productCores && productCores.length > 0 && (!productTamanhos || productTamanhos.length === 0)) { %>
       <% productCores.forEach((cor) => { %>
-        { color: '<%= cor %>', size: 'N/A', stock: Math.floor(Math.random() * 10) },
+      { color: '<%= cor %>', size: 'N/A', stock: Math.floor(Math.random() * 10) },
       <% }) %>
     <% } %>
     <% if (productTamanhos && productTamanhos.length > 0 && (!productCores || productCores.length === 0)) { %>
@@ -539,7 +566,7 @@
     const currentVariationStock = getStockForVariation(selectedColor, selectedSize);
 
     if ((document.getElementById('colorPillSelector') && !selectedColor) ||
-        (document.getElementById('sizePillSelector') && !selectedSize)) {
+      (document.getElementById('sizePillSelector') && !selectedSize)) {
       alert('Por favor, selecione todas as opções de variação (cor e/ou tamanho).');
       return;
     }
