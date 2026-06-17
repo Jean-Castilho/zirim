@@ -123,22 +123,6 @@
     background-color: #b00326;
   }
 
-  .add-to-cart-btn {
-    font-size: 0.9rem;
-    margin: 10px;
-    width: 80%;
-    padding: 8px;
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  .add-to-cart-btn:hover {
-    background-color: #555;
-  }
-
   .view-details-btn {
     display: inline-block;
     margin-bottom: 20px;
@@ -225,7 +209,6 @@
             <img src="<%= imgSrc %>" alt="<%= product.nome %>">
             <h3><%= product.nome %></h3>
             <p class="product-card-price">R$ <%= product.preco %></p>
-            <button class="add-to-cart-btn">Adicionar ao Carrinho</button>
             <a href="/product/<%= product._id %>" class="view-details-btn">Ver Detalhes</a>
           </div>
         <% }) %>

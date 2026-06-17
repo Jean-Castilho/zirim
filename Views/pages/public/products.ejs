@@ -1,6 +1,6 @@
 <style>
   .products-container {
-    padding: 40px 20px;
+    padding: 10px 20px 50px 20px;
     max-width: 1200px;
     margin: 0 auto;
   }
@@ -134,28 +134,11 @@
     color: #D2042D;
   }
 
-  .btn-add-cart {
-    margin-top: 15px;
-    width: 100%;
-    padding: 10px;
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .btn-add-cart:hover {
-    background-color: #555;
-  }
-
   .btn-view-details {
     display: inline-block;
-    margin-top: 12px;
+    margin-bottom: 10px;
     width: 80%;
-    padding: 10px;
+    padding: 7px;
     background-color: transparent;
     color: #D2042D;
     border: 1px solid #D2042D;
@@ -241,10 +224,15 @@
         <div class="product-card">
           
           <div class="product-image-wrapper">
+            
             <img src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>" alt="<%= product.name %>">
+           
             <button class="btn-favorite">
               <i class="material-icons">favorite_border</i>
             </button>
+          
+
+
           </div>
 
           <div class="product-details">
@@ -252,9 +240,6 @@
             <h3 class="product-title"><%= product.name || product.nome %></h3>
             <p class="product-price">R$ <%= product.preco %></p>
 
-            <button class="btn-add-cart" onclick="quickAddToCart('<%= product._id %>')">
-              Adicionar ao Carrinho
-            </button>
             <a href="/product/<%= product._id %>" class="btn-view-details">
               Ver Detalhes
             </a>
