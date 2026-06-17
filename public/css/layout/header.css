@@ -1,7 +1,9 @@
 .header {
     width: 100%;
-    background-color: var(--cor-primaria); /* Usando variável */
-    color: var(--cor-texto-escuro); /* Usando variável para texto em fundo escuro */
+    background-color: var(--cor-primaria);
+    /* Usando variável */
+    color: var(--cor-texto-escuro);
+    /* Usando variável para texto em fundo escuro */
     box-shadow: var(--sombra-padrao);
 
     position: sticky;
@@ -14,42 +16,52 @@
     justify-content: space-between;
     align-items: center;
     width: 90%;
-    max-width: 1200px; /* Manter valor fixo para largura máxima */
+    max-width: 1200px;
+    /* Manter valor fixo para largura máxima */
+    padding: 15px;
     margin: 0 auto;
 }
 
 .nav-logo {
     font-family: var(--fonte-titulo);
     font-size: 1.5rem;
-    font-weight: 700; /* Manter valor fixo */
-    color: var(--cor-secundaria); /* Usando variável */
+    font-weight: 700;
+    /* Manter valor fixo */
+    color: var(--cor-secundaria);
+    /* Usando variável */
     text-decoration: none;
 }
 
 .nav-menu {
     list-style: none;
     display: flex;
-    gap: var(--espacamento-grande); /* Usando variável */
+    gap: var(--espacamento-grande);
+    /* Usando variável */
     align-items: center;
 }
 
 /* Estilos para links de navegação */
 .nav-link {
-    color: var(--cor-texto-claro); /* Usando variável para links no header */
-    font-weight: 900; /* Manter valor fixo - mais grosso */
+    color: var(--cor-texto-claro);
+    /* Usando variável para links no header */
+    font-weight: 900;
+    /* Manter valor fixo - mais grosso */
     padding-bottom: 8px;
     border-bottom: 3px solid transparent;
 
     transition: all 0.3s ease;
     text-transform: uppercase;
-    font-size: 0.875rem; /* Manter valor fixo */
+    font-size: 0.875rem;
+    /* Manter valor fixo */
     text-decoration: none;
 }
 
 .nav-link:hover,
 .nav-link.active {
-    color: var(--cor-destaque); /* Usando variável */
-    border-bottom-color: var(--cor-destaque); /* Usando variável */
+    color: var(--cor-destaque);
+    /* Usando variável */
+    border-bottom-color: var(--cor-destaque);
+    /* Usando variável */
     text-decoration: none;
 }
 
@@ -63,16 +75,20 @@
     gap: 1rem;
     align-items: center;
 }
+
 /* Estilos para ícones no cabeçalho */
 .header-icons .nav-link {
-    padding: var(--espacamento-pequeno); /* Usando variável */
-    font-size: 24px; /* Manter valor fixo para ícones */
+    padding: var(--espacamento-pequeno);
+    /* Usando variável */
+    font-size: 24px;
+    /* Manter valor fixo para ícones */
     border-bottom: none;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--cor-texto-claro); /* Usando variável */
+    color: var(--cor-texto-claro);
+    /* Usando variável */
 }
 
 .header-icons .nav-link:hover {
@@ -81,7 +97,8 @@
 }
 
 .header-icons .nav-link.active {
-    color: var(--cor-destaque); /* Usando variável */
+    color: var(--cor-destaque);
+    /* Usando variável */
     background-color: rgba(0, 0, 0, 0.05);
 }
 
@@ -95,7 +112,8 @@
     width: 25px;
     height: 3px;
     margin: 5px auto;
-    background-color: var(--cor-destaque); /* Usando variável */
+    background-color: var(--cor-destaque);
+    /* Usando variável */
     -webkit-transition: all 0.3s ease-in-out;
     transition: all 0.3s ease-in-out;
 }
@@ -103,8 +121,9 @@
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
 
-    .nav-link{
-        color: var(--cor-texto-escuro); /* Usando variável para texto em fundo escuro */
+    .nav-link {
+        color: var(--cor-texto-escuro);
+        /* Usando variável para texto em fundo escuro */
     }
 
     /* Ponto de interrupção para telas menores */
@@ -122,7 +141,8 @@
         left: -100%;
         width: 55%;
         height: 100vh;
-        background-color: var(--cor-fundo-claro); /* Usando variável */
+        background-color: var(--cor-fundo-claro);
+        /* Usando variável */
         flex-direction: column;
         /* Itens do menu empilhados verticalmente */
         align-items: flex-start;
@@ -133,7 +153,8 @@
         /* Transição suave para o slide do menu */
         z-index: 1001;
         /* Garante que o menu esteja acima de outros conteúdos */
-        box-shadow: var(--sombra-padrao); /* Manter valor fixo */
+        box-shadow: var(--sombra-padrao);
+        /* Manter valor fixo */
         overflow-y: auto;
         /* Habilita rolagem se o conteúdo do menu for muito longo */
         scroll-behavior: smooth;
@@ -160,7 +181,8 @@
     .nav-menu .nav-link:hover,
     .nav-menu .nav-link.active {
         color: var(--cor-destaque);
-        background-color: rgba(0, 0, 0, 0.05); /* Manter valor fixo */
+        background-color: rgba(0, 0, 0, 0.05);
+        /* Manter valor fixo */
         /* Destaca o link ativo/hover */
         border-bottom-color: transparent;
         /* Garante que não haja borda */
@@ -180,12 +202,14 @@
     }
 
     .hamburger.active .bar:nth-child(1) {
-        transform: translateY(var(--espacamento-pequeno)) rotate(45deg); /* Usando variável */
+        transform: translateY(var(--espacamento-pequeno)) rotate(45deg);
+        /* Usando variável */
         /* Gira a primeira barra */
     }
 
     .hamburger.active .bar:nth-child(3) {
-        transform: translateY(calc(-1 * var(--espacamento-pequeno))) rotate(-45deg); /* Usando variável */
+        transform: translateY(calc(-1 * var(--espacamento-pequeno))) rotate(-45deg);
+        /* Usando variável */
         /* Gira a terceira barra */
     }
 
@@ -196,7 +220,8 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* Manter valor fixo */
+        background-color: rgba(0, 0, 0, 0.5);
+        /* Manter valor fixo */
         /* Fundo semi-transparente */
         z-index: 998;
         /* Abaixo do nav-menu */
@@ -222,7 +247,8 @@
         margin-left: 0;
         /* Remove a margem automática */
         width: 100%;
-        /* Ocupa a largura total */ /* Manter valor fixo */
+        /* Ocupa a largura total */
+        /* Manter valor fixo */
         padding-top: 1rem;
         /* Adiciona espaço acima dos ícones */
         border-top: 1px solid rgba(255, 255, 255, 0.1);

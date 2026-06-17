@@ -523,6 +523,11 @@ button,
 }
 
 @media (max-width: 768px) {
+
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
     .product-details-page {
         padding: 20px 16px;
     }
@@ -553,6 +558,12 @@ button,
 }
 
 @media (max-width: 480px) {
+
+    
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
     .product-title {
         font-size: 1.5rem;
     }
@@ -563,10 +574,6 @@ button,
 
     .gallery-thumbnails {
         grid-template-columns: repeat(3, 1fr);
-    }
-
-    .related-grid {
-        grid-template-columns: 1fr;
     }
 
     .guarantee-item {
