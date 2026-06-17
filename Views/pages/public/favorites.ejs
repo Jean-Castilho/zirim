@@ -1,1 +1,232 @@
-favorits
+<style>
+  .favorites-container {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .favorites-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .favorites-header h1 {
+    font-size: 2.5rem;
+    color: #333;
+  }
+
+  .favorites-header p {
+    font-size: 1.1rem;
+    color: #666;
+  }
+
+  /* Grid de Produtos */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 30px;
+  }
+
+  .product-card {
+    background: #fff;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+
+  .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+  }
+
+  .product-image-wrapper {
+    position: relative;
+  }
+
+  .product-image-wrapper img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+  }
+
+  .btn-favorite {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .btn-favorite i {
+    color: #D2042D;
+    font-size: 20px;
+  }
+
+  .product-details {
+    padding: 15px;
+    text-align: center;
+  }
+
+  .product-category {
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .product-title {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    color: #333;
+  }
+
+  .product-price {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #D2042D;
+  }
+
+  .btn-add-cart {
+    margin-top: 15px;
+    width: 100%;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .btn-add-cart:hover {
+    background-color: #555;
+  }
+
+  .btn-view-details {
+    display: inline-block;
+    margin-top: 12px;
+    width: 80%;
+    padding: 10px;
+    background-color: transparent;
+    color: #D2042D;
+    border: 1px solid #D2042D;
+    border-radius: 4px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .btn-view-details:hover {
+    background-color: #D2042D;
+    color: #fff;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px 0;
+  }
+
+  .empty-state i {
+    font-size: 48px;
+    color: #ccc;
+  }
+
+  .empty-state p {
+    font-size: 1.2rem;
+    color: #777;
+    margin-top: 10px;
+  }
+</style>
+
+<div class="favorites-container">
+  
+  <header class="favorites-header">
+    <h1><%= titulo %></h1>
+    <p><%= message %></p>
+  </header>
+
+  <!-- Grid de Produtos Favoritos -->
+  <div class="products-grid">
+    
+    <% if (products && products.length > 0) { %>
+      <% products.forEach(product => { %>
+        <div class="product-card">
+          
+          <div class="product-image-wrapper">
+            <img src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>" alt="<%= product.name || product.nome %>">
+            <button class="btn-favorite">
+              <i class="material-icons">favorite</i>
+            </button>
+          </div>
+
+          <div class="product-details">
+            <span class="product-category"><%= product.categoria || 'Geral' %></span>
+            <h3 class="product-title"><%= product.name || product.nome %></h3>
+            <p class="product-price">R$ <%= product.preco %></p>
+            
+            <% const pCores = Array.isArray(product.cores) ? product.cores : (product.cores ? String(product.cores).split(',') : []); %>
+            <% const pTamanhos = Array.isArray(product.tamanhos) ? product.tamanhos : (product.tamanhos ? String(product.tamanhos).split(',') : []); %>
+            <% if (pCores.length > 0 || pTamanhos.length > 0) { %>
+              <div class="product-quick-variants" style="margin: 10px 0; text-align: left; padding: 0 10px;">
+                <% if (pCores.length > 0) { %>
+                  <div style="margin-bottom: 8px;">
+                    <span style="font-size: 0.8rem; font-weight: bold; color: #555; display: block; margin-bottom: 4px;">Cor:</span>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                      <% pCores.forEach((cor, idx) => { cor = cor.trim(); if(!cor) return; %>
+                        <label style="cursor: pointer;">
+                          <input type="radio" name="color_<%= product._id %>" value="<%= cor %>" <%= idx === 0 ? 'checked' : '' %> style="display: none;">
+                          <span class="quick-variant-btn" style="display: inline-block; padding: 2px 8px; font-size: 0.75rem; border: 1px solid #ccc; border-radius: 3px;"><%= cor %></span>
+                        </label>
+                      <% }) %>
+                    </div>
+                  </div>
+                <% } %>
+                
+                <% if (pTamanhos.length > 0) { %>
+                  <div>
+                    <span style="font-size: 0.8rem; font-weight: bold; color: #555; display: block; margin-bottom: 4px;">Tamanho:</span>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                      <% pTamanhos.forEach((tamanho, idx) => { tamanho = tamanho.trim(); if(!tamanho) return; %>
+                        <label style="cursor: pointer;">
+                          <input type="radio" name="size_<%= product._id %>" value="<%= tamanho %>" <%= idx === 0 ? 'checked' : '' %> style="display: none;">
+                          <span class="quick-variant-btn" style="display: inline-block; padding: 2px 8px; font-size: 0.75rem; border: 1px solid #ccc; border-radius: 3px;"><%= tamanho %></span>
+                        </label>
+                      <% }) %>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+            <% } %>
+
+            <button class="btn-add-cart" onclick="quickAddToCart('<%= product._id %>')">
+              Adicionar ao Carrinho
+            </button>
+            <a href="/product/<%= product._id %>" class="btn-view-details">
+              Ver Detalhes
+            </a>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="empty-state">
+        <i class="material-icons">favorite_border</i>
+        <p>Você ainda não tem favoritos.</p>
+        <a href="/products" class="btn-view-details" style="width: auto; padding: 10px 20px;">Explorar Produtos</a>
+      </div>
+    <% } %>
+
+  </div>
+
+</div>

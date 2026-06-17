@@ -1,0 +1,73 @@
+/* Product Not Found */
+.product-not-found {
+  padding: 60px 20px;
+  text-align: center;
+  color: #777;
+}
+
+.btn-back-products {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 30px;
+  background: #D2042D;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+/* Variations */
+.variation-section {
+  margin-bottom: 20px;
+}
+
+.variation-section > label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.variation-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.variation-option {
+  cursor: pointer;
+  display: inline-block;
+}
+
+.variation-option input[type="radio"] {
+  display: none;
+}
+
+.variation-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  color: #555;
+  background-color: #fff;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.variation-option input[type="radio"]:checked + .variation-btn {
+  border-color: #D2042D !important;
+  background-color: #fff0f2 !important;
+  color: #D2042D !important;
+  font-weight: 600 !important;
+}
+
+.variation-option:hover .variation-btn {
+  border-color: #aaa;
+}
+
+/* Related Products */
+.related-subtitle {
+  color: #666;
+  margin-bottom: 20px;
+}

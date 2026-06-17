@@ -20,11 +20,10 @@ router.get("/", async (req, res) => {
 
 router.post("/", upload.array("imagens", 5), async (req, res, next) => {
   try {
-    handleResponse(res ,productController.uploadProductAndImage(req) ,201);
+    handleResponse(res ,productController.uploadProductAndImage(req,res) ,201);
   } catch (error) {
     next(error);
   }
-
-})
+});
 
 export default router;

@@ -1,40 +1,205 @@
+<style>
+  /* Base Sections */
+  .hero {
+    background-image: url('https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    text-align: center;
+    padding: 100px 20px;
+  }
+  .categories, 
+  .featured-products {
+    padding: 40px 20px;
+  }
+  .categories {
+    text-align: center;
+  }
+  .featured-products {
+    background-color: #f9f9f9;
+  }
+
+  /* Typography */
+  .hero h1 {
+    font-size: 3rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  }
+  .hero p {
+    font-size: 1.2rem;
+    margin-top: 10px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  }
+  .featured-products h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  /* Wrappers */
+  .categories-wrapper, 
+  .featured-products-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .categories-wrapper {
+    margin-top: 20px;
+  }
+
+  /* Cards */
+  .category-card, 
+  .product-card {
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .category-card {
+    width: 250px;
+    border: 1px solid #ddd;
+    overflow: hidden;
+  }
+  .product-card {
+    width: 260px;
+    padding: 0px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* Card Images */
+  .category-card img, 
+  .product-card img {
+    width: 100%;
+    object-fit: cover;
+  }
+  .category-card img {
+    height: 200px;
+  }
+  .product-card img {
+    height: 180px;
+    border-radius: 4px;
+  }
+
+  /* Card Content */
+  .category-card-content {
+    padding: 15px;
+  }
+  .category-card-content h3 {
+    margin: 0 0 10px 0;
+  }
+  .category-card-content a {
+    color: #D2042D;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  .category-card-content a:hover {
+    text-decoration: underline;
+  }
+
+  .product-card h3 {
+    font-size: 1.1rem;
+    color: #333;
+    padding: 10px 0;
+    margin: 0;
+  }
+  .product-card-price {
+    color: #555;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  /* Buttons */
+  .hero .btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #D2042D;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+  }
+  .hero .btn:hover {
+    background-color: #b00326;
+  }
+
+  .add-to-cart-btn {
+    font-size: 0.9rem;
+    margin: 10px;
+    width: 80%;
+    padding: 8px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .add-to-cart-btn:hover {
+    background-color: #555;
+  }
+
+  .view-details-btn {
+    display: inline-block;
+    margin-bottom: 20px;
+    width: 65%;
+    padding: 10px;
+    background-color: transparent;
+    color: #D2042D;
+    border: 1px solid #D2042D;
+    border-radius: 4px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .view-details-btn:hover {
+    background-color: #D2042D;
+    color: #fff;
+  }
+
+  /* Utils */
+  .no-products-msg {
+    text-align: center;
+    color: #777;
+  }
+</style>
+
 <div class="home-container">
   <!-- Hero Section -->
-  <section class="hero" style="background-image: url('https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80'); background-size: cover; background-position: center; color: white; text-align: center; padding: 100px 20px;">
-    <h1 style="font-size: 3rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);"><%= message %></h1>
-    <p style="font-size: 1.2rem; margin-top: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Descubra as últimas tendências em roupas e calçados para todos os estilos.</p>
-    <a href="/products" class="btn" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #D2042D; color: white; text-decoration: none; font-weight: bold; border-radius: 5px;">Ver Coleção</a>
+  <section class="hero">
+    <h1><%= message %></h1>
+    <a href="/products" class="btn">Ver Coleção</a>
   </section>
 
   <!-- Categorias em Destaque -->
-  <section class="categories" style="padding: 40px 20px; text-align: center;">
+  <section class="categories">
     <h2>Compre por Categoria</h2>
-    <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
-      
+  
+    <div class="categories-wrapper">
       <!-- Categoria 1 -->
-      <div class="category-card" style="width: 250px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Roupas Femininas" style="width: 100%; height: 200px; object-fit: cover;">
-        <div style="padding: 15px;">
+      <div class="category-card">
+        <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Roupas Femininas">
+        <div class="category-card-content">
           <h3>Moda Feminina</h3>
-          <a href="/products?category=feminino" style="color: #D2042D; text-decoration: none; font-weight: bold;">Explorar</a>
+          <a href="/products?category=feminino">Explorar</a>
         </div>
       </div>
 
       <!-- Categoria 2 -->
-      <div class="category-card" style="width: 250px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <img src="https://images.unsplash.com/photo-1516826957135-7331811a5ebf?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Roupas Masculinas" style="width: 100%; height: 200px; object-fit: cover;">
-        <div style="padding: 15px;">
+      <div class="category-card">
+        <img src="https://images.unsplash.com/photo-1516826957135-7331811a5ebf?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Roupas Masculinas">
+        <div class="category-card-content">
           <h3>Moda Masculina</h3>
-          <a href="/products?category=masculino" style="color: #D2042D; text-decoration: none; font-weight: bold;">Explorar</a>
+          <a href="/products?category=masculino">Explorar</a>
         </div>
       </div>
 
       <!-- Categoria 3 -->
-      <div class="category-card" style="width: 250px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Calçados" style="width: 100%; height: 200px; object-fit: cover;">
-        <div style="padding: 15px;">
+      <div class="category-card">
+        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Calçados">
+        <div class="category-card-content">
           <h3>Calçados</h3>
-          <a href="/products?category=calcados" style="color: #D2042D; text-decoration: none; font-weight: bold;">Explorar</a>
+          <a href="/products?category=calcados">Explorar</a>
         </div>
       </div>
 
@@ -42,25 +207,33 @@
   </section>
 
   <!-- Produtos em Destaque -->
-  <section class="featured-products" style="padding: 40px 20px; background-color: #f9f9f9;">
-    <h2 style="text-align: center; margin-bottom: 20px;">Produtos em Destaque</h2>
+  <section class="featured-products">
+    <h2>Produtos em Destaque</h2>
     
     <% if (products && products.length > 0) { %>
-      <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+      <div class="featured-products-wrapper">
         <% products.forEach(product => { %>
-          <div class="product-card" style="width: 260px; background: white; padding: 0px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
-            <img src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>" alt="<%= product.name %>" style="width: 100%; height: 180px; object-fit: cover; border-radius: 4px;">
-            <h3 style="font-size: 1.1rem; color: #333; padding: 10px 0;"><%= product.nome %></h3>
-            <p style="color: #555; font-weight: bold;">R$ <%= product.preco %></p>
-            <button style="font-size: 1rem; margin: 10px; width: 90%; padding: 8px; background-color: #333; color: white; border: none; border-radius: 4px; cursor: pointer;">Adicionar ao Carrinho</button>
-            <a href="/product/<%= product._id %>" style="display: inline-block; margin-top: 12px; width: 80%; padding: 10px; background-color: transparent; color: #D2042D; border: 1px solid #D2042D; border-radius: 4px; font-weight: bold; text-decoration: none; transition: background 0.2s, color 0.2s;" onmouseover="this.style.backgroundColor='#D2042D'; this.style.color='#fff'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#D2042D'">
-              Ver Detalhes
-            </a>
+          <div class="product-card">
+            <% 
+              let imgSrc = 'https://via.placeholder.com/400x400';
+              if (Array.isArray(product.imagens) && product.imagens.length > 0) {
+                imgSrc = '/image/' + product.imagens[0];
+              } else if (product.imageUrl) {
+                imgSrc = product.imageUrl;
+              }
+            %>
+            <img src="<%= imgSrc %>" alt="<%= product.nome %>">
+            <h3><%= product.nome %></h3>
+            <p class="product-card-price">R$ <%= product.preco %></p>
+            <button class="add-to-cart-btn">Adicionar ao Carrinho</button>
+            <a href="/product/<%= product._id %>" class="view-details-btn">Ver Detalhes</a>
           </div>
         <% }) %>
       </div>
     <% } else { %>
-      <p style="text-align: center; color: #777;">Novidades chegando em breve!</p>
+      <p class="no-products-msg">Novidades chegando em breve!</p>
     <% } %>
   </section>
+
+
 </div>

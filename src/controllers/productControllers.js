@@ -49,7 +49,7 @@ export default class ProductController {
     }
   }
 
-  async uploadProductAndImage(req) {
+  async uploadProductAndImage(req,res) {
     const files = req.files;
 
     if (!files || files.length === 0) {
@@ -69,23 +69,18 @@ export default class ProductController {
       nome: req.body.name,
       preco: parseFloat(req.body.preco),
       imagens: successfulUploads,
-      // --- Organização e Estilo ---
-      estilo: req.body.estilo,
-      colecao: req.body.colecao,
-      // --- Logística e Garantia ---
-      estoque: req.body.estoque,
-      garantia: req.body.garantia,
-      ativo: req.body.ativo,
+      // --- Variações ---
+      cores: req.body.cores ? req.body.cores.split(',').map(c => c.trim()).filter(c => c) : [],
+      tamanhos: req.body.tamanhos ? req.body.tamanhos.split(',').map(t => t.trim()).filter(t => t) : [],
+      // --- Logística e Classificação ---
+      estoque: parseInt(req.body.estoque) || 0,
       categoria: req.body.categoria,
       descricao: req.body.descricao
     };
 
-    const result = await this.getCollection().insertOne(productData);
+    await this.getCollection().insertOne(productData);
 
-    return {
-      _id: result.insertedId,
-      ...productData,
-    };
+    res.redirect("/admin/inventory");
   }
 
   async getProductsByIds(ids, projection = {}) {
@@ -148,16 +143,16 @@ export default class ProductController {
     const finalImages = [...keptImages, ...newImages];
 
     const productData = {
-      nome: body.nome,
-      slug: body.slug,
+      nome: body.name || body.nome, // Support both 'name' (from add form) and 'nome'
       preco: parseFloat(body.preco),
       imagens: finalImages,
+      // --- Variações ---
+      cores: body.cores ? body.cores.split(',').map(c => c.trim()).filter(c => c) : [],
+      tamanhos: body.tamanhos ? body.tamanhos.split(',').map(t => t.trim()).filter(t => t) : [],
+      // --- Logística e Classificação ---
+      estoque: parseInt(body.estoque) || 0,
       categoria: body.categoria,
       descricao: body.descricao,
-      estilo: body.estilo,
-      colecao: body.colecao,
-      estoque: body.estoque,
-      ativo: body.ativo,
     };
 
     await this.getCollection().updateOne(
@@ -165,7 +160,7 @@ export default class ProductController {
       { $set: productData }
     );
 
-    return await this.getProductById(id);
+    res.redirect("/admin/inventory")
   }
 
   async deleteProduct(id) {

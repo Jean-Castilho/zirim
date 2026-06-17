@@ -115,12 +115,18 @@ export const getVerifyOtp = async (req, res) => {
 };
 
 
-export const getFavorites = (req, res) => {
+export const getFavorites = async (req, res, next) => {
+  try {
+    const products = await productController.getCollection().find().limit(8).toArray(); // Mocking favorites for now
 
-  renderPage(req, res, "../pages/public/favorites", {
-    titulo: "Meus Favoritos",
-    message: "Seus itens favoritos!",
-  });
+    renderPage(req, res, "../pages/public/favorites", {
+      titulo: "Meus Favoritos",
+      message: "Seus itens favoritos!",
+      products: products
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getCart = (req, res) => {

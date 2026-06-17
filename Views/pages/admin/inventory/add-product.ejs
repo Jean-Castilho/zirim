@@ -1,25 +1,28 @@
-<div class="admin-container" style="padding: 40px 20px; max-width: 800px; margin: 0 auto;">
+
+<link rel="stylesheet" href="/css/pages/add-product.css">
+
+<div class="admin-container">
   
-  <header style="margin-bottom: 30px; border-bottom: 2px solid var(--cor-borda); padding-bottom: 20px;">
-    <h1 style="font-size: 2rem; color: var(--cor-primaria); margin-bottom: 5px;"><%= titulo %></h1>
-    <p style="color: var(--cor-texto-escuro);"><%= message %></p>
+  <header class="admin-header">
+    <h1><%= titulo %></h1>
+    <p><%= message %></p>
   </header>
 
-  <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+  <div class="admin-form-wrapper">
     <form action="/products/" method="POST" enctype="multipart/form-data">
       
       <!-- Informações Básicas -->
-      <h3 style="margin-bottom: 20px; color: var(--cor-primaria); border-bottom: 1px solid #eee; padding-bottom: 10px;">Informações Básicas</h3>
+      <h3 class="form-section-title">Informações Básicas</h3>
       
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div>
-          <label for="name" style="display: block; font-weight: bold; margin-bottom: 5px; color: var(--cor-texto-escuro);">Nome do Produto *</label>
-          <input type="text" id="name" name="name" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      <div class="form-grid">
+        <div class="form-group grid-group">
+          <label for="name" class="form-label">Nome do Produto *</label>
+          <input type="text" id="name" name="name" required class="form-control">
         </div>
         
-        <div>
-          <label for="category" style="display: block; font-weight: bold; margin-bottom: 5px; color: var(--cor-texto-escuro);">Categoria *</label>
-          <select id="category" name="categoria" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        <div class="form-group grid-group">
+          <label for="category" class="form-label">Categoria *</label>
+          <select id="category" name="categoria" required class="form-control">
             <option value="">Selecione uma categoria</option>
             <option value="feminino">Moda Feminina</option>
             <option value="masculino">Moda Masculina</option>
@@ -30,45 +33,67 @@
         </div>
       </div>
 
-      <div style="margin-bottom: 30px;">
-        <label for="description" style="display: block; font-weight: bold; margin-bottom: 5px; color: var(--cor-texto-escuro);">Descrição do Produto</label>
-        <textarea id="description" name="descricao" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical;"></textarea>
+      <div class="form-group">
+        <label for="description" class="form-label">Descrição do Produto</label>
+        <textarea id="description" name="descricao" rows="4" class="form-control"></textarea>
+      </div>
+
+      <!-- Variações -->
+      <h3 class="form-section-title">Variações</h3>
+
+      <div class="form-grid">
+        <div class="form-group grid-group">
+          <label for="colors" class="form-label">Cores Disponíveis</label>
+          <input type="text" id="colors" name="cores" class="form-control" placeholder="Ex: Preto, Branco, Vermelho">
+          <small class="form-text-muted">Separe as cores por vírgula.</small>
+        </div>
+        
+        <div class="form-group grid-group">
+          <label for="sizes" class="form-label">Tamanhos Disponíveis</label>
+          <input type="text" id="sizes" name="tamanhos" class="form-control" placeholder="Ex: P, M, G, GG ou 38, 40, 42">
+          <small class="form-text-muted">Separe os tamanhos por vírgula.</small>
+        </div>
       </div>
 
       <!-- Preço e Estoque -->
-      <h3 style="margin-bottom: 20px; color: var(--cor-primaria); border-bottom: 1px solid #eee; padding-bottom: 10px;">Preço e Estoque</h3>
+      <h3 class="form-section-title">Preço e Estoque</h3>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-        <div>
-          <label for="price" style="display: block; font-weight: bold; margin-bottom: 5px; color: var(--cor-texto-escuro);">Preço (R$) *</label>
-          <input type="number" id="price" name="preco" step="0.01" min="0" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" placeholder="0.00">
+      <div class="form-grid" style="margin-bottom: 30px;">
+        <div class="form-group grid-group">
+          <label for="price" class="form-label">Preço (R$) *</label>
+          <input type="number" id="price" name="preco" step="0.01" min="0" required class="form-control" placeholder="0.00">
         </div>
         
-        <div>
-          <label for="stock" style="display: block; font-weight: bold; margin-bottom: 5px; color: var(--cor-texto-escuro);">Estoque Inicial *</label>
-          <input type="number" id="stock" name="estoque" min="0" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" placeholder="0">
+        <div class="form-group grid-group">
+          <label for="stock" class="form-label">Estoque Inicial *</label>
+          <input type="number" id="stock" name="estoque" min="0" required class="form-control" placeholder="0">
         </div>
+
+        
+
       </div>
 
       <!-- Imagem -->
-      <h3 style="margin-bottom: 20px; color: var(--cor-primaria); border-bottom: 1px solid #eee; padding-bottom: 10px;">Imagens</h3>
+      <h3 class="form-section-title">Imagens</h3>
 
-      <div style="margin-bottom: 30px;">
-        <label style="display: block; font-weight: bold; margin-bottom: 10px; color: var(--cor-texto-escuro);">Imagens do Produto</label>
+      <div class="form-group">
+        <label class="form-label">Imagens do Produto</label>
         
-        <input type="text" id="imageUrl" name="imageUrl" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 15px;" placeholder="URL da imagem (ex: https://...)">
+        <input type="text" id="imageUrl" name="imageUrl" class="form-control" style="margin-bottom: 15px;" placeholder="URL da imagem (ex: https://...)">
         
         <div style="text-align: center; color: #888; margin-bottom: 15px;">OU ENVIE ARQUIVOS</div>
         
-        <div style="border: 2px dashed #ccc; border-radius: 8px; padding: 40px 20px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.3s ease;" onclick="document.getElementById('imageFile').click()" onmouseover="this.style.borderColor='var(--cor-secundaria)'; this.style.backgroundColor='#f0f8ff'" onmouseout="this.style.borderColor='#ccc'; this.style.backgroundColor='#fafafa'">
-          <div style="font-size: 3rem; margin-bottom: 15px;">📸</div>
-          <p style="margin: 0; font-size: 1.1rem; font-weight: bold; color: var(--cor-texto-escuro);">Clique aqui para selecionar as imagens</p>
-          <p style="margin: 5px 0 0; font-size: 0.9rem; color: #888;">Você pode selecionar várias imagens (JPG, PNG, WEBP)</p>
+        <div class="image-upload-zone" onclick="document.getElementById('imageFile').click()">
+          <div class="image-upload-icon">📸</div>
+          <p class="image-upload-title">Clique aqui para selecionar as imagens</p>
+          <p class="image-upload-subtitle">Você pode selecionar várias imagens (JPG, PNG, WEBP)</p>
           <input type="file" id="imageFile" name="imagens" accept="image/*" multiple style="display: none;" onchange="previewImages()">
         </div>
         
-        <div id="image-preview" style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;"></div>
+        <div id="image-preview" class="image-preview-container"></div>
       </div>
+
+
 
       <script>
         function previewImages() {
@@ -81,19 +106,11 @@
               const reader = new FileReader();
               reader.onload = function(e) {
                 const imgContainer = document.createElement('div');
-                imgContainer.style.position = 'relative';
-                imgContainer.style.width = '120px';
-                imgContainer.style.height = '120px';
-                imgContainer.style.borderRadius = '8px';
-                imgContainer.style.overflow = 'hidden';
-                imgContainer.style.boxShadow = '0 3px 6px rgba(0,0,0,0.1)';
-                imgContainer.style.border = '2px solid #fff';
+                imgContainer.className = 'preview-image-wrapper';
                 
                 const img = document.createElement('img');
                 img.src = e.target.result;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'cover';
+                img.className = 'preview-image';
                 
                 imgContainer.appendChild(img);
                 preview.appendChild(imgContainer);
@@ -105,9 +122,9 @@
       </script>
 
       <!-- Ações -->
-      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 40px;">
-        <a href="/admin/inventory" class="btn" style="padding: 12px 25px; background-color: var(--cor-fundo-neutro); color: var(--cor-texto-escuro); text-decoration: none; border-radius: 4px; font-weight: bold; transition: background 0.2s;">Cancelar</a>
-        <button type="submit" class="btn" style="padding: 12px 25px; background-color: var(--cor-secundaria); color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s;">Salvar Produto</button>
+      <div class="form-actions">
+        <a href="/admin/inventory" class="btn btn-cancel">Cancelar</a>
+        <button type="submit" class="btn btn-save">Salvar Produto</button>
       </div>
 
     </form>

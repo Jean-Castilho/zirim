@@ -1,22 +1,232 @@
-<div class="products-container" style="padding: 40px 20px; max-width: 1200px; margin: 0 auto;">
-  
-  <header style="text-align: center; margin-bottom: 40px;">
-    <h1 style="font-size: 2.5rem; color: #333;"><%= titulo %></h1>
-    <p style="font-size: 1.1rem; color: #666;"><%= message %></p>
+<style>
+  .products-container {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .products-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .products-header h1 {
+    font-size: 2.5rem;
+    color: #333;
+  }
+
+  .products-header p {
+    font-size: 1.1rem;
+    color: #666;
+  }
+
+  /* Filtros */
+  .filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .filter-links span {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+
+  .filter-links a {
+    margin-right: 15px;
+    text-decoration: none;
+    color: #555;
+  }
+
+  .filter-links a:last-child {
+    margin-right: 0;
+  }
+
+  .filter-sort label {
+    font-weight: bold;
+    margin-right: 5px;
+  }
+
+  .filter-sort select {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  /* Grid de Produtos */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 30px;
+  }
+
+  .product-card {
+    background: #fff;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+
+  .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+  }
+
+  .product-image-wrapper {
+    position: relative;
+  }
+
+  .product-image-wrapper img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+  }
+
+  .btn-favorite {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .btn-favorite i {
+    color: #ccc;
+    font-size: 20px;
+  }
+
+  .product-details {
+    padding: 15px;
+    text-align: center;
+  }
+
+  .product-category {
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .product-title {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    color: #333;
+  }
+
+  .product-price {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #D2042D;
+  }
+
+  .btn-add-cart {
+    margin-top: 15px;
+    width: 100%;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .btn-add-cart:hover {
+    background-color: #555;
+  }
+
+  .btn-view-details {
+    display: inline-block;
+    margin-top: 12px;
+    width: 80%;
+    padding: 10px;
+    background-color: transparent;
+    color: #D2042D;
+    border: 1px solid #D2042D;
+    border-radius: 4px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .btn-view-details:hover {
+    background-color: #D2042D;
+    color: #fff;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px 0;
+  }
+
+  .empty-state i {
+    font-size: 48px;
+    color: #ccc;
+  }
+
+  .empty-state p {
+    font-size: 1.2rem;
+    color: #777;
+    margin-top: 10px;
+  }
+
+  /* Paginação */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+    gap: 5px;
+  }
+
+  .pagination button {
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .pagination button.active {
+    border-color: #D2042D;
+    background-color: #D2042D;
+    color: white;
+  }
+</style>
+
+<div class="products-container">
+  <header class="products-header">
+    <h1><%= titulo %></h1>
   </header>
 
   <!-- Filtros -->
-  <div class="filters" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-    <div>
-      <span style="font-weight: bold; margin-right: 10px;">Filtrar por:</span>
-      <a href="/products" style="margin-right: 15px; text-decoration: none; color: #555;">Todos</a>
-      <a href="/products?category=feminino" style="margin-right: 15px; text-decoration: none; color: #555;">Feminino</a>
-      <a href="/products?category=masculino" style="margin-right: 15px; text-decoration: none; color: #555;">Masculino</a>
-      <a href="/products?category=calcados" style="text-decoration: none; color: #555;">Calçados</a>
+  <div class="filters">
+    <div class="filter-links">
+      <span>Filtrar por:</span>
+      <a href="/products">Todos</a>
+      <a href="/products?category=feminino">Feminino</a>
+      <a href="/products?category=masculino">Masculino</a>
+      <a href="/products?category=calcados">Calçados</a>
     </div>
-    <div>
-      <label for="sort" style="font-weight: bold; margin-right: 5px;">Ordenar:</label>
-      <select id="sort" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+    <div class="filter-sort">
+      <label for="sort">Ordenar:</label>
+      <select id="sort">
         <option value="relevance">Relevância</option>
         <option value="lowest_price">Menor Preço</option>
         <option value="highest_price">Maior Preço</option>
@@ -25,50 +235,48 @@
   </div>
 
   <!-- Grid de Produtos -->
-  <div class="products-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 30px;">
-    
+  <div class="products-grid">
     <% if (products && products.length > 0) { %>
       <% products.forEach(product => { %>
-        <div class="product-card" style="background: #fff; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+        <div class="product-card">
           
-          <div style="position: relative;">
-            <img src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>" alt="<%= product.name %>" style="width: 100%; height: 250px; object-fit: cover;">
-            <button style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-              <i class="material-icons" style="color: #ccc; font-size: 20px;">favorite_border</i>
+          <div class="product-image-wrapper">
+            <img src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>" alt="<%= product.name %>">
+            <button class="btn-favorite">
+              <i class="material-icons">favorite_border</i>
             </button>
           </div>
 
-          <div style="padding: 15px; text-align: center;">
-            <span style="font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px;"><%= product.categoria || 'Geral' %></span>
-            <h3 style="font-size: 1.2rem; margin: 10px 0; color: #333;"><%= product.name %></h3>
-            <p style="font-size: 1.3rem; font-weight: bold; color: #D2042D;">R$ <%= product.preco %></p>
-            
-            <button style="margin-top: 15px; width: 100%; padding: 10px; background-color: #333; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#555'" onmouseout="this.style.backgroundColor='#333'">
+          <div class="product-details">
+            <span class="product-category"><%= product.categoria || 'Geral' %></span>
+            <h3 class="product-title"><%= product.name || product.nome %></h3>
+            <p class="product-price">R$ <%= product.preco %></p>
+
+            <button class="btn-add-cart" onclick="quickAddToCart('<%= product._id %>')">
               Adicionar ao Carrinho
             </button>
-            <a href="/product/<%= product._id %>" style="display: inline-block; margin-top: 12px; width: 80%; padding: 10px; background-color: transparent; color: #D2042D; border: 1px solid #D2042D; border-radius: 4px; font-weight: bold; text-decoration: none; transition: background 0.2s, color 0.2s;" onmouseover="this.style.backgroundColor='#D2042D'; this.style.color='#fff'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#D2042D'">
+            <a href="/product/<%= product._id %>" class="btn-view-details">
               Ver Detalhes
             </a>
           </div>
         </div>
       <% }) %>
     <% } else { %>
-      <div style="grid-column: 1 / -1; text-align: center; padding: 50px 0;">
-        <i class="material-icons" style="font-size: 48px; color: #ccc;">sentiment_dissatisfied</i>
-        <p style="font-size: 1.2rem; color: #777; margin-top: 10px;">Nenhum produto encontrado.</p>
+      <div class="empty-state">
+        <i class="material-icons">sentiment_dissatisfied</i>
+        <p>Nenhum produto encontrado.</p>
       </div>
     <% } %>
-
   </div>
 
   <!-- Paginação -->
   <% if (products && products.length > 0) { %>
-    <div class="pagination" style="display: flex; justify-content: center; margin-top: 50px; gap: 5px;">
-      <button style="padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;">&laquo; Anterior</button>
-      <button style="padding: 8px 15px; border: 1px solid #D2042D; background: #D2042D; color: white; cursor: pointer; border-radius: 4px;">1</button>
-      <button style="padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;">2</button>
-      <button style="padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;">3</button>
-      <button style="padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;">Próxima &raquo;</button>
+    <div class="pagination">
+      <button>&laquo; Anterior</button>
+      <button class="active">1</button>
+      <button>2</button>
+      <button>3</button>
+      <button>Próxima &raquo;</button>
     </div>
   <% } %>
 
