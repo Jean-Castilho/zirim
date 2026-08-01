@@ -2,7 +2,6 @@ import express from "express";
 import { generateCsrfToken } from "../middleware/csrfMiddleware.js";
 import { getGridFSBucket, getDataBase } from '../config/db.js';
 
-
 import {
   getHome, 
   getProducts,
@@ -62,38 +61,27 @@ router.get('/image/:filename', async (req, res) => {
     }
 });
 
-
 router.get("/", getHome);
 
 router.get("/products", getProducts);
-
 router.get("/product/:id", getProductDetails);
-
+-
 router.get("/about", getAbout);
-
 router.get("/contact", getContact);
 
 router.get("/register", getRegister);
-
 router.get("/login", generateCsrfToken, getLogin);
 
 router.get("/verify-otp", getVerifyOtp);
 
-
 router.get("/cart", getCart);
-
 router.get("/favorites", getFavorites);
-
 
 router.get("/profile", getProfile);
 
-
 router.get("/admin/dashboard", getdasboardAdmin);
-
 router.get("/admin/delivery", getdelivery);
-
 router.get("/admin/inventory", getinventory);
-
 router.get("/admin/inventory/add", getAddProduct);
 
 router.get("/logout", (req, res) => {

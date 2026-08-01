@@ -9,6 +9,8 @@ from '../controllers/orderController.js';
 const paymentController = new PaymentController();
 const orderController = new OrdertController();
 
+router.post("/solict-payment", orderController.SolictPayment);
+
 router.post('/creat-Order', orderController.creatOrder);
 
 router.get('/status', orderController.Status);

@@ -53,7 +53,6 @@ button,
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 60px;
-    margin-bottom: 80px;
     align-items: start;
 }
 
@@ -396,7 +395,6 @@ button,
     background: #f9f9f9;
     padding: 60px 40px;
     border-radius: 16px;
-    margin-bottom: 80px;
     max-width: 1400px;
 }
 
@@ -524,10 +522,6 @@ button,
 
 @media (max-width: 768px) {
 
-    .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
     .product-details-page {
         padding: 20px 16px;
     }
@@ -557,12 +551,8 @@ button,
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 380px) {
 
-    
-    .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
     
     .product-title {
         font-size: 1.5rem;

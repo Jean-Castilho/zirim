@@ -54,8 +54,8 @@ import { connectDataBase, closeDataBase } from './src/config/db.js';
 const start = async () => {
     try {
         await connectDataBase();
-        app.listen(3000, () => {
-            console.log(`Servidor rodando: http://localhost:${3000}`);
+        app.listen(port, () => {
+            console.log(`Servidor rodando: http://localhost:${port}`);
         });
     } catch (error) {
         console.error(

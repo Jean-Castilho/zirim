@@ -58,13 +58,28 @@
     border-radius: 4px;
   }
 
+  
+
   /* Grid de Produtos */
   .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 30px;
   }
 
+  @media (max-width: 2080px) {
+
+    .products-grid {
+      grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    }
+
+  }
+  @media (max-width: 480px) {
+
+    .products-grid {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+  }
   .product-card {
     background: #fff;
     border: 1px solid #eaeaea;
@@ -76,7 +91,7 @@
 
   .product-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
   }
 
   .product-image-wrapper {
@@ -102,7 +117,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .btn-favorite i {
@@ -192,18 +207,13 @@
     color: white;
   }
 
-  @media (max-width: 480px) {
-    
-    .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-  
-  }
 </style>
 
 <div class="products-container">
   <header class="products-header">
-    <h1><%= titulo %></h1>
+    <h1>
+      <%= titulo %>
+    </h1>
   </header>
 
   <!-- Filtros -->
@@ -227,42 +237,47 @@
 
   <!-- Grid de Produtos -->
   <div class="products-grid">
-    <% if (products && products.length > 0) { %>
-      <% products.forEach(product => { %>
+    <% if (products && products.length> 0) { %>
+      <% products.forEach(product=> { %>
         <div class="product-card">
-          
+
           <div class="product-image-wrapper">
-            
-            <img src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>" alt="<%= product.name %>">
-           
+
+            <img
+              src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>"
+              alt="<%= product.name %>">
+
             <button class="btn-favorite">
               <i class="material-icons">favorite_border</i>
             </button>
-          
+
 
 
           </div>
 
           <div class="product-details">
-            <h3 class="product-title"><%= product.name || product.nome %></h3>
-            <p class="product-price">R$ <%= product.preco %></p>
+            <h3 class="product-title">
+              <%= product.name || product.nome %>
+            </h3>
+            <p class="product-price">R$ <%= product.preco %>
+            </p>
 
             <a href="/product/<%= product._id %>" class="btn-view-details">
               Ver Detalhes
             </a>
           </div>
         </div>
-      <% }) %>
-    <% } else { %>
-      <div class="empty-state">
-        <i class="material-icons">sentiment_dissatisfied</i>
-        <p>Nenhum produto encontrado.</p>
-      </div>
-    <% } %>
+        <% }) %>
+          <% } else { %>
+            <div class="empty-state">
+              <i class="material-icons">sentiment_dissatisfied</i>
+              <p>Nenhum produto encontrado.</p>
+            </div>
+            <% } %>
   </div>
 
   <!-- Paginação -->
-  <% if (products && products.length > 0) { %>
+  <% if (products && products.length> 0) { %>
     <div class="pagination">
       <button>&laquo; Anterior</button>
       <button class="active">1</button>
@@ -270,6 +285,6 @@
       <button>3</button>
       <button>Próxima &raquo;</button>
     </div>
-  <% } %>
+    <% } %>
 
 </div>

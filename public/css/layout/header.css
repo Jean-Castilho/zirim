@@ -119,7 +119,7 @@
 }
 
 /* Mobile Responsiveness */
-@media (max-width: 768px) {
+@media (max-width: 968px) {
 
     .nav-link {
         color: var(--cor-texto-escuro);

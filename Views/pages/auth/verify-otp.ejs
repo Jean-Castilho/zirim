@@ -40,7 +40,7 @@
           }
           
           if (response.ok) {
-            console.log('Verificação OTP com sucesso:', result);
+           
             if (typeof showNotification === 'function') {
                 showNotification(result.message || 'Email verificado com sucesso!', 'success');
             } else {

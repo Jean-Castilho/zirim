@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 

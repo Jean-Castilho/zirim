@@ -493,6 +493,7 @@
     }
   }
 
+  
   function updateAddToCartButtonState() {
     const addToCartButton = document.getElementById('addToCartButton');
     if (!addToCartButton) return;
@@ -559,6 +560,8 @@
     } // Fallback, should be covered by above conditions
   }
 
+
+
   function addToCart(productId) {
     const qty = parseInt(document.getElementById('quantity').value);
     const selectedColor = document.getElementById('selectedColor')?.value || 'N/A';
@@ -588,6 +591,8 @@
   function addToFavorites(productId) {
     alert('Adicionado aos favoritos!');
   }
+
+
 
   document.addEventListener('DOMContentLoaded', () => {
     // Set global product stock as a data attribute for easy access
