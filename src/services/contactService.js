@@ -106,8 +106,8 @@ export const sendOtpEmail = async (email) => {
 
   const otp = generateOTP();
 
-  if (!email || !otp) {
-    return { mensagem: "Email e OTP são obrigatórios." };
+  if (!email) {
+    throw new Error("O endereço de e-mail é obrigatório para enviar o OTP.");
   };
 
   await armazenCodeOtp(email, otp);
@@ -119,14 +119,13 @@ export const sendOtpEmail = async (email) => {
     text: `Seu código OTP é: ${otp}`,
   };
 
-  // Enviar o email;
   try {
-    const emailsend = await transporter.sendMail(mailOptions);
-
-    return { mensagem: "OTP enviado com sucesso!", emailsend };
+    await transporter.sendMail(mailOptions);
+    console.log(`OTP enviado com sucesso para ${email}`);
   } catch (error) {
-    console.error("Erro ao enviar OTP:", error);
-    return { mensagem: "Erro ao enviar OTP." };
+    console.error("Erro ao enviar OTP por e-mail:", error);
+    // Re-lança o erro para que o chamador (com .catch()) possa lidar com ele.
+    throw error;
   }
 
 };

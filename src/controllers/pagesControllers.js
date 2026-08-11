@@ -101,17 +101,31 @@ export const getRegister = (req, res) => {
   });
 };
 
-export const getVerifyOtp = async (req, res) => {
-  const normalized = String(req.session.user.email.endereco).trim().toLowerCase();
-  console.log(normalized);
-  
-  const result = await sendOtpEmail(normalized);
+export const getVerifyOtp = async (req, res, next) => {
+  try {
+    const userEmail = req.session?.user?.email?.endereco;
 
-  renderPage(req, res, "../pages/auth/verify-otp", {
-    titulo: "Verificar",
-    message: "verifique aqui seu codigo",
-    email: normalized
-  });
+    if (!userEmail) {
+      // Se não houver usuário na sessão, ele não deveria estar aqui.
+      return res.redirect('/login');
+    }
+
+    const normalized = String(userEmail).trim().toLowerCase();
+
+    // Renderiza a página para o usuário imediatamente.
+    renderPage(req, res, "../pages/auth/verify-otp", {
+      titulo: "Verificar E-mail",
+      message: `Enviamos um código de verificação para ${normalized}.`,
+      email: normalized
+    });
+
+    // Envia o e-mail em segundo plano sem bloquear a resposta.
+    sendOtpEmail(normalized).catch(err => {
+      console.error("Falha ao enviar e-mail de OTP em segundo plano:", err);
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 

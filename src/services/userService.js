@@ -81,7 +81,6 @@ export default class UserService {
       throw new UnauthorizedError("Email ou senha incorretos.");
     }
 
-    // Mantém o campo aninhado como "email.endereço"
     const token = criarToken({
       id: user._id,
       email: user.email.endereco,
@@ -198,6 +197,10 @@ export default class UserService {
     if (updateData.email) {
       // Atualiza apenas o endereço de e-mail, mantendo o status de verificação
       updateFields['email.endereco'] = updateData.email;
+    }
+    // Permite a atualização do status de verificação do e-mail
+    if (typeof updateData.emailVerified === 'boolean') {
+      updateFields['email.verified'] = updateData.emailVerified;
     }
     
     if (updateData.phone) {

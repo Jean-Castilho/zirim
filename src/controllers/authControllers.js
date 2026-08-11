@@ -74,18 +74,22 @@ export const PostVerifyOtp = async (req, res, next) => {
     try {
         const user = await userService.getUserById(req.session.user._id);
         if (!user) {
-            throw new GeneralError("Usuário não encontrado.", 404);
+            throw new GeneralError("Usuário da sessão não encontrado.", 404);
         }
         const otpEntry = await verifyCode(email, otp);
         if (!otpEntry) {
             throw new GeneralError("Código OTP inválido ou expirado.", 400);
         }
-        // Atualizar o status de e-mail verificado na sessão do usuário
-        if (req.session.user && req.session.user._id === user._id.toString()) {
-            req.session.user = user;
-            req.session.user.email.verified = true;
-            await req.session.save();
-        }
+        // Persiste a verificação no banco de dados
+        const updatedUser = await userService.updateUser(user._id, { emailVerified: true });
+
+        // Atualiza a sessão com os dados mais recentes do usuário
+        req.session.user = {
+            ...updatedUser,
+            _id: updatedUser._id.toString()
+        };
+        await req.session.save();
+
         return res.status(200).json({ message: "Email verificado com sucesso!", redirect: "/" });
     } catch (error) {
         next(error);

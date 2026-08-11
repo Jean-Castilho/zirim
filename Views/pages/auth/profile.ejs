@@ -1,71 +1,3 @@
-<section class="profile-page">
-  <div class="profile-container">
-    
-    <h1 class="profile-title"><%= titulo %></h1>
-
-    <div class="profile-content">
-      <div class="user-info-card">
-        <h2>Informações do Usuário</h2>
-        <div class="info-group">
-          <label>Nome:</label>
-          <p><%= user?.name || 'Não informado' %></p>
-        </div>
-        <div class="info-group">
-          <label>Email:</label>
-          <p>
-            <%= user?.email?.endereco || 'Não informado' %> 
-            <% if (user?.email?.endereco) { %>
-              <span class="badge <%= user?.email?.verified ? 'verified' : 'unverified' %>">
-                <%= user?.email?.verified ? 'Verificado' : 'Não verificado' %>
-              </span>
-            <% } %>
-          </p>
-        </div>
-        <div class="info-group">
-          <label>Telefone:</label>
-          <p>
-            <%= user?.phone?.number || 'Não informado' %> 
-            <% if (user?.phone?.number) { %>
-              <span class="badge <%= user?.phone?.verified ? 'verified' : 'unverified' %>">
-                <%= user?.phone?.verified ? 'Verificado' : 'Não verificado' %>
-              </span>
-            <% } %>
-          </p>
-        </div>
-        <div class="info-group">
-          <label>Cargo:</label>
-          <p><%= user?.role === 'admin' ? 'Administrador' : 'Usuário' %></p>
-        </div>
-        <div class="profile-actions" style="margin-top: 1rem;">
-          <a href="/logout" class="btn-logout">Sair da Conta</a>
-        </div>
-      </div>
-
-      <div class="user-orders-card">
-        <h2>Meus Pedidos</h2>
-        <% if (user?.orderns && user.orderns.length > 0) { %>
-          <ul class="orders-list">
-            <% user.orderns.forEach(order => { %>
-              <li class="order-item">
-                <div class="order-header">
-                  <strong>Pedido #<%= order._id || order.id || 'N/A' %></strong>
-                  <span class="order-date"><%= new Date(order.createdAt || order.date || Date.now()).toLocaleDateString('pt-BR') %></span>
-                </div>
-                <div class="order-details">
-                  <div class="order-status">Status: <%= order.status || 'Processando' %></div>
-                  <div class="order-total">Total: R$ <%= (order.total || 0).toFixed(2) %></div>
-                </div>
-              </li>
-            <% }) %>
-          </ul>
-        <% } else { %>
-          <p class="no-orders">Você ainda não realizou nenhum pedido.</p>
-        <% } %>
-      </div>
-    </div>
-  </div>
-</section>
-
 <style>
   .profile-page {
     display: flex;
@@ -102,14 +34,16 @@
     gap: var(--espacamento-grande);
   }
 
-  .user-info-card, .user-orders-card {
+  .user-info-card,
+  .user-orders-card {
     background-color: var(--cor-fundo-claro);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
     padding: var(--espacamento-grande);
   }
 
-  .user-info-card h2, .user-orders-card h2 {
+  .user-info-card h2,
+  .user-orders-card h2 {
     color: var(--cor-primaria);
     margin-bottom: var(--espacamento-medio);
     border-bottom: 2px solid var(--cor-secundaria);
@@ -154,11 +88,13 @@
   }
 
   .badge.verified {
-    background-color: #2ecc71; /* Verde */
+    background-color: #2ecc71;
+    /* Verde */
   }
 
   .badge.unverified {
-    background-color: var(--cor-destaque); /* Vermelho */
+    background-color: var(--cor-destaque);
+    /* Vermelho */
   }
 
   .btn-logout {
@@ -198,7 +134,7 @@
   }
 
   .order-item:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .order-header {
@@ -256,13 +192,111 @@
       flex-direction: row;
       align-items: flex-start;
     }
+
     .user-info-card {
       flex: 1;
       position: sticky;
       top: 20px;
     }
+
     .user-orders-card {
       flex: 2;
     }
   }
+
+  @media (max-width: 600px) {
+
+    .user-info-card,
+    .user-orders-card {
+      padding: var(--espacamento-medio);
+    }
+
+    .profile-title {
+      margin: var(--espacamento-medio);
+    }
+
+    .profile-container {
+      padding: 0px;
+      border: none;
+      box-shadow: none;
+    }
+  }
 </style>
+
+<section class="profile-page">
+  <div class="profile-container">
+
+    <h1 class="profile-title">
+      <%= titulo %>
+    </h1>
+
+    <div class="profile-content">
+      <div class="user-info-card">
+        <h2>Informações do Usuário</h2>
+        <div class="info-group">
+          <label>Nome:</label>
+          <p>
+            <%= user?.name || 'Não informado' %>
+          </p>
+        </div>
+        <div class="info-group">
+          <label>Email:</label>
+          <p>
+            <%= user?.email?.endereco || 'Não informado' %>
+              <% if (user?.email?.endereco) { %>
+                <span class="badge <%= user?.email?.verified ? 'verified' : 'unverified' %>">
+                  <%= user?.email?.verified ? 'Verificado' : 'Não verificado' %>
+                </span>
+                <% } %>
+          </p>
+        </div>
+        <div class="info-group">
+          <label>Telefone:</label>
+          <p>
+            <%= user?.phone?.number || 'Não informado' %>
+              <% if (user?.phone?.number) { %>
+                <span class="badge <%= user?.phone?.verified ? 'verified' : 'unverified' %>">
+                  <%= user?.phone?.verified ? 'Verificado' : 'Não verificado' %>
+                </span>
+                <% } %>
+          </p>
+        </div>
+        <div class="info-group">
+          <label>Cargo:</label>
+          <p>
+            <%= user?.role==='admin' ? 'Administrador' : 'Usuário' %>
+          </p>
+        </div>
+        <div class="profile-actions" style="margin-top: 1rem;">
+          <a href="/logout" class="btn-logout">Sair da Conta</a>
+        </div>
+      </div>
+
+      <div class="user-orders-card">
+        <h2>Meus Pedidos</h2>
+        <% if (user?.orderns && user.orderns.length> 0) { %>
+          <ul class="orders-list">
+            <% user.orderns.forEach(order=> { %>
+              <li class="order-item">
+                <div class="order-header">
+                  <strong>Pedido #<%= order._id || order.id || 'N/A' %></strong>
+                  <span class="order-date">
+                    <%= new Date(order.createdAt || order.date || Date.now()).toLocaleDateString('pt-BR') %>
+                  </span>
+                </div>
+                <div class="order-details">
+                  <div class="order-status">Status: <%= order.status || 'Processando' %>
+                  </div>
+                  <div class="order-total">Total: R$ <%= (order.total || 0).toFixed(2) %>
+                  </div>
+                </div>
+              </li>
+              <% }) %>
+          </ul>
+          <% } else { %>
+            <p class="no-orders">Você ainda não realizou nenhum pedido.</p>
+            <% } %>
+      </div>
+    </div>
+  </div>
+</section>
