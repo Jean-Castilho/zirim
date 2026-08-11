@@ -89,7 +89,7 @@ export const getContact = (req, res) => {
 
 export const getLogin = (req, res) => {
   renderPage(req, res, "../pages/auth/login", {
-    titulo: "Realizar Login",
+    titulo: "Login",
     message: "seja Bem vindo de volta...",
   });
 };
@@ -120,7 +120,7 @@ export const getFavorites = async (req, res, next) => {
     const products = await productController.getCollection().find().limit(8).toArray(); // Mocking favorites for now
 
     renderPage(req, res, "../pages/public/favorites", {
-      titulo: "Meus Favoritos",
+      titulo: "Favoritos",
       message: "Seus itens favoritos!",
       products: products
     });
@@ -143,7 +143,6 @@ export const getProfile = (req, res) => {
     return res.redirect("/login");
   }
 
-  
 
   renderPage(req, res, "../pages/auth/profile", {
     titulo: "Meu Perfil",

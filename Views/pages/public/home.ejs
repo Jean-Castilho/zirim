@@ -8,13 +8,16 @@
     text-align: center;
     padding: 100px 20px;
   }
-  .categories, 
+
+  .categories,
   .featured-products {
-    padding: 40px 20px;
+    padding: 1.2rem 0.8rem;
   }
+
   .categories {
     text-align: center;
   }
+
   .featured-products {
     background-color: #f9f9f9;
   }
@@ -22,58 +25,65 @@
   /* Typography */
   .hero h1 {
     font-size: 3rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
+
   .hero p {
     font-size: 1.2rem;
     margin-top: 10px;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
   }
+
   .featured-products h2 {
     text-align: center;
-    margin-bottom: 20px;
+    margin: 0.4rem 1rem;
   }
 
   /* Wrappers */
-  .categories-wrapper, 
+  .categories-wrapper,
   .featured-products-wrapper {
     display: flex;
     justify-content: center;
     gap: 20px;
     flex-wrap: wrap;
   }
+
   .categories-wrapper {
     margin-top: 20px;
   }
 
   /* Cards */
-  .category-card, 
+  .category-card,
   .product-card {
     border-radius: 8px;
     background: white;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
+
   .category-card {
     width: 250px;
     border: 1px solid #ddd;
     overflow: hidden;
   }
+
   .product-card {
     width: 260px;
     padding: 0px;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   /* Card Images */
-  .category-card img, 
+  .category-card img,
   .product-card img {
     width: 100%;
     object-fit: cover;
   }
+
   .category-card img {
     height: 200px;
   }
+
   .product-card img {
     height: 180px;
     border-radius: 4px;
@@ -83,14 +93,17 @@
   .category-card-content {
     padding: 15px;
   }
+
   .category-card-content h3 {
     margin: 0 0 10px 0;
   }
+
   .category-card-content a {
     color: #D2042D;
     text-decoration: none;
     font-weight: bold;
   }
+
   .category-card-content a:hover {
     text-decoration: underline;
   }
@@ -101,6 +114,7 @@
     padding: 10px 0;
     margin: 0;
   }
+
   .product-card-price {
     color: #555;
     font-weight: bold;
@@ -119,6 +133,7 @@
     border-radius: 5px;
     transition: background-color 0.2s;
   }
+
   .hero .btn:hover {
     background-color: #b00326;
   }
@@ -136,6 +151,7 @@
     text-decoration: none;
     transition: background-color 0.2s, color 0.2s;
   }
+
   .view-details-btn:hover {
     background-color: #D2042D;
     color: #fff;
@@ -146,22 +162,45 @@
     text-align: center;
     color: #777;
   }
+
+  @media (max-width: 600px) {
+
+    .featured-products-wrapper {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      justify-items: stretch;
+    }
+
+    .product-card {
+      width: 100%;
+    }
+
+    .featured-products {
+      padding: 0.8rem;
+    }
+
+    .view-details-btn {
+      padding: 5px;
+    }
+  }
 </style>
 
 <div class="home-container">
-  <!-- Hero Section -->
+
   <section class="hero">
     <a href="/products" class="btn">Ver Coleção</a>
   </section>
 
-  <!-- Categorias -->
   <section class="categories">
     <h2>Compre por Categoria</h2>
-  
+
     <div class="categories-wrapper">
 
       <div class="category-card">
-        <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Roupas Femininas">
+        <img
+          src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+          alt="Roupas Femininas">
         <div class="category-card-content">
           <h3>Moda</h3>
           <a href="/products?category=todos">Explorar</a>
@@ -169,7 +208,9 @@
       </div>
 
       <div class="category-card">
-        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Calçados">
+        <img
+          src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+          alt="Calçados">
         <div class="category-card-content">
           <h3>Calçados</h3>
           <a href="/products?category=calcados">Explorar</a>
@@ -181,31 +222,30 @@
 
   <section class="featured-products">
     <h2>Destaque</h2>
-    
-    <% if (products && products.length > 0) { %>
-      <div class="featured-products-wrapper">
-        <% products.forEach(product => { %>
-          <div class="product-card">
-            <% 
-              let imgSrc = 'https://via.placeholder.com/400x400';
 
-              if (Array.isArray(product.imagens) && product.imagens.length > 0) {
-                imgSrc = '/image/' + product.imagens[0];
+    <% if (products && products.length> 0) { %>
+      <div class="featured-products-wrapper">
+        <% products.forEach(product=> { %>
+          <div class="product-card">
+            <% let imgSrc='https://via.placeholder.com/400x400' ; if (Array.isArray(product.imagens) &&
+              product.imagens.length> 0) {
+              imgSrc = '/image/' + product.imagens[0];
               } else if (product.imageUrl) {
-                imgSrc = product.imageUrl;
+              imgSrc = product.imageUrl;
               }
-            %>
-            <img src="<%= imgSrc %>" alt="<%= product.nome %>">
-            <h3><%= product.nome %></h3>
-            <a href="/product/<%= product._id %>" class="view-details-btn">Ver Detalhes</a>
+              %>
+              <img src="<%= imgSrc %>" alt="<%= product.nome %>">
+              <h3>
+                <%= product.nome %>
+              </h3>
+              <a href="/product/<%= product._id %>" class="view-details-btn">Detalhes</a>
           </div>
-        <% }) %>
+          <% }) %>
       </div>
-    <% } else { %>
-      <p class="no-products-msg">Novidades chegando em breve!</p>
-    <% } %>
+      <% } else { %>
+        <p class="no-products-msg">Novidades chegando em breve!</p>
+        <% } %>
 
   </section>
-
 
 </div>

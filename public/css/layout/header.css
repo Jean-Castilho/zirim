@@ -87,8 +87,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--cor-texto-claro);
-    /* Usando variável */
 }
 
 .header-icons .nav-link:hover {
@@ -142,39 +140,26 @@
         width: 55%;
         height: 100vh;
         background-color: var(--cor-fundo-claro);
-        /* Usando variável */
         flex-direction: column;
-        /* Itens do menu empilhados verticalmente */
         align-items: flex-start;
-        /* Alinha os itens à esquerda */
         padding: 2rem 1.5rem;
-        /* Preenchimento interno para o menu mobile */
         transition: left 0.3s ease-in-out;
-        /* Transição suave para o slide do menu */
         z-index: 1001;
-        /* Garante que o menu esteja acima de outros conteúdos */
         box-shadow: var(--sombra-padrao);
-        /* Manter valor fixo */
         overflow-y: auto;
-        /* Habilita rolagem se o conteúdo do menu for muito longo */
         scroll-behavior: smooth;
-        /* Rolagem suave dentro do menu */
         gap: 1.5rem;
-        /* Espaçamento entre os itens do menu */
     }
 
     .nav-menu.active {
         left: 0;
-        /* Move o menu para dentro da tela */
     }
 
     .nav-menu .nav-link {
         width: 100%;
-        /* Links ocupam a largura total do menu */
-        padding: 0.75rem 0;
-        /* Ajusta o preenchimento dos links mobile */
+        padding: 0.7rem;
+        border-radius: 0.2rem;
         border-bottom: none;
-        /* Remove a borda inferior dos links mobile */
         text-align: left;
     }
 
@@ -182,20 +167,14 @@
     .nav-menu .nav-link.active {
         color: var(--cor-destaque);
         background-color: rgba(0, 0, 0, 0.05);
-        /* Manter valor fixo */
-        /* Destaca o link ativo/hover */
         border-bottom-color: transparent;
-        /* Garante que não haja borda */
     }
 
-    /* Mostra o hambúrguer em telas menores */
     .hamburger {
         display: block;
         z-index: 1002;
-        /* Garante que o hambúrguer esteja acima do menu e do overlay */
     }
 
-    /* Animação do hambúrguer para 'X' */
     .hamburger.active .bar:nth-child(2) {
         opacity: 0;
         /* Esconde a barra do meio */
@@ -203,17 +182,12 @@
 
     .hamburger.active .bar:nth-child(1) {
         transform: translateY(var(--espacamento-pequeno)) rotate(45deg);
-        /* Usando variável */
-        /* Gira a primeira barra */
     }
 
     .hamburger.active .bar:nth-child(3) {
         transform: translateY(calc(-1 * var(--espacamento-pequeno))) rotate(-45deg);
-        /* Usando variável */
-        /* Gira a terceira barra */
     }
 
-    /* Estilos do overlay */
     .nav-overlay {
         position: fixed;
         top: 0;
@@ -221,13 +195,9 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
-        /* Manter valor fixo */
-        /* Fundo semi-transparente */
         z-index: 998;
-        /* Abaixo do nav-menu */
         opacity: 0;
         visibility: hidden;
-        /* Oculto por padrão */
         transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
     }
 
@@ -258,7 +228,7 @@
     .header-icons {
         flex-direction: column;
         /* Ícones empilhados verticalmente */
-        align-items: flex-start;
+        align-items: center;
         /* Alinha os ícones à esquerda */
         gap: 0.5rem;
         /* Espaçamento menor entre os ícones */
@@ -267,9 +237,9 @@
     .header-icons .nav-link {
         width: auto;
         /* Permite que os ícones se ajustem ao conteúdo */
-        padding: 0.5rem 0;
+        padding: 0.5rem;
         /* Ajusta o preenchimento */
-        border-radius: 0;
+        border-radius: 5px;
         /* Remove o border-radius */
         justify-content: flex-start;
         /* Alinha o conteúdo do ícone ao início */

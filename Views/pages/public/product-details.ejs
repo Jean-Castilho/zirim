@@ -324,26 +324,30 @@
   // New functions for pill selection
   // Simulated product variations with stock. In a real application, this data
   // would come from your backend API, likely as part of the product details.
-  const simulatedProductVariations = [
-    <% productCores.forEach((cor) => { %>
-      <% productTamanhos.forEach((tamanho) => { %>
-    // Example: You'd replace this with actual stock data from your product object
-    // For demonstration, let's make some combinations out of stock
-    { color: '<%= cor %>', size: '<%= tamanho %>', stock: Math.floor(Math.random() * 10) },
-      <% }) %>
-    <% }) %>
-    // Add variations for products with only colors or only sizes if applicable
-    <% if (productCores && productCores.length > 0 && (!productTamanhos || productTamanhos.length === 0)) { %>
-      <% productCores.forEach((cor) => { %>
-      { color: '<%= cor %>', size: 'N/A', stock: Math.floor(Math.random() * 10) },
-      <% }) %>
-    <% } %>
-    <% if (productTamanhos && productTamanhos.length > 0 && (!productCores || productCores.length === 0)) { %>
-      <% productTamanhos.forEach((tamanho) => { %>
-        { color: 'N/A', size: '<%= tamanho %>', stock: Math.floor(Math.random() * 10) },
-      <% }) %>
-    <% } %>
-  ];
+  const productData = <%- JSON.stringify({ productCores: productCores, productTamanhos: productTamanhos }) %>;
+  const simulatedProductVariations = [];
+
+  // Client-side JavaScript logic to build the array
+  if (productData.productCores && productData.productCores.length > 0 && productData.productTamanhos && productData.productTamanhos.length > 0) {
+    productData.productCores.forEach(cor => {
+      productData.productTamanhos.forEach(tamanho => {
+        simulatedProductVariations.push({ color: cor, size: tamanho, stock: Math.floor(Math.random() * 10) });
+      });
+    });
+  }
+
+  // Add variations for products with only colors or only sizes if applicable
+  if (productData.productCores && productData.productCores.length > 0 && (!productData.productTamanhos || productData.productTamanhos.length === 0)) {
+    productData.productCores.forEach(cor => {
+      simulatedProductVariations.push({ color: cor, size: 'N/A', stock: Math.floor(Math.random() * 10) });
+    });
+  }
+
+  if (productData.productTamanhos && productData.productTamanhos.length > 0 && (!productData.productCores || productData.productCores.length === 0)) {
+    productData.productTamanhos.forEach(tamanho => {
+      simulatedProductVariations.push({ color: 'N/A', size: tamanho, stock: Math.floor(Math.random() * 10) });
+    });
+  }
 
   // Helper to get stock for a specific color and size
   function getStockForVariation(color, size) {
