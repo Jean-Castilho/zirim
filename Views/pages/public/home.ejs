@@ -227,13 +227,21 @@
       <div class="featured-products-wrapper">
         <% products.forEach(product=> { %>
           <div class="product-card">
-            <% let imgSrc='https://via.placeholder.com/400x400' ; if (Array.isArray(product.imagens) &&
-              product.imagens.length> 0) {
+            <% 
+            
+            let imgSrc='https://via.placeholder.com/400x400';
+            
+            if (Array.isArray(product.imagens) && product.imagens.length> 0) {
+              
               imgSrc = '/image/' + product.imagens[0];
-              } else if (product.imageUrl) {
+
+            } else if (product.imageUrl) {
+              
               imgSrc = product.imageUrl;
-              }
-              %>
+            
+            }
+            
+            %>
               <img src="<%= imgSrc %>" alt="<%= product.nome %>">
               <h3>
                 <%= product.nome %>

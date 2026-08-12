@@ -26,26 +26,22 @@ router.get('/image/:filename', async (req, res) => {
     try {
         const bucket = getGridFSBucket();
         const db = getDataBase();
-        const filesCollection = db.collection('uploads.files'); // default naming for GridFS files
+        const filesCollection = db.collection('uploads.files');
 
         const filename = req.params.filename;
 
-        // Check if file exists
         const file = await filesCollection.findOne({ filename: filename });
 
         if (!file) {
             return res.status(404).send('Imagem não encontrada');
         }
 
-        // Set the proper content type
         if (file.contentType) {
             res.set('Content-Type', file.contentType);
         } else {
-             // Fallback if not set
-             res.set('Content-Type', 'image/webp'); 
+          res.set('Content-Type', 'image/webp'); 
         }
 
-        // Stream the file directly to the response
         const downloadStream = bucket.openDownloadStreamByName(filename);
 
         downloadStream.on('error', (err) => {

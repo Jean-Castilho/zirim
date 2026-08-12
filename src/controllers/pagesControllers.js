@@ -16,7 +16,8 @@ const renderPage = (req, res, page, options = {}) => {
 
 export const getHome = async (req, res, next) => {
   try {
-    const products = await productController.getCollection().find().limit(4).toArray();
+    const products = await productController.getCollection().find({},
+      { projection: { nome: 1, imagens: { $slice: 1 } } }).limit(4).toArray();
 
     renderPage(req, res, "../pages/public/home", {
       titulo: "Zirim - Moda e Calçados",
@@ -30,18 +31,23 @@ export const getHome = async (req, res, next) => {
 
 export const getProducts = async (req, res, next) => {
   try {
-    const products = await productController.getCollection().find().toArray();
+    const products = await productController.getCollection().find({},
+      { projection: { nome: 1, imagens: { $slice: 1 } } }).toArray();
+
     renderPage(req, res, "../pages/public/products", {
       titulo: "Produtos",
       message: "Confira nossos produtos!",
       products: products,
     });
+    
   } catch (error) {
     next(error);
   }
 };
 
+
 export const getProductDetails = async (req, res, next) => {
+
   try {
     const { id } = req.params;
     if (!id) {
@@ -66,10 +72,14 @@ export const getProductDetails = async (req, res, next) => {
       titulo: product.nome || product.name || "Detalhes do Produto",
       product,
     });
+
   } catch (error) {
+
     next(error);
+
   }
 };
+
 
 export const getAbout = (req, res) => {
   renderPage(req, res, "../pages/public/about", {
@@ -84,7 +94,6 @@ export const getContact = (req, res) => {
     message: "Entre em contato conosco!",
   });
 };
-
 
 
 export const getLogin = (req, res) => {
