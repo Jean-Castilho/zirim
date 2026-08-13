@@ -26,4 +26,19 @@ router.post("/", upload.array("imagens", 5), async (req, res, next) => {
   }
 });
 
+router.post("/projectionByIds", async (req, res, next) => {
+  try {
+    const { ids, projection } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "IDs sao requeridos para obetr dados" });
+    }
+    const products = await productController.getProductsByIds(ids, projection || {});
+    handleResponse(res, products);
+
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

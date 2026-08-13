@@ -173,42 +173,7 @@
           <div class="product-details">
             <span class="product-category"><%= product.categoria || 'Geral' %></span>
             <h3 class="product-title"><%= product.name || product.nome %></h3>
-            <p class="product-price">R$ <%= product.preco %></p>
             
-            <% const pCores = Array.isArray(product.cores) ? product.cores : (product.cores ? String(product.cores).split(',') : []); %>
-            <% const pTamanhos = Array.isArray(product.tamanhos) ? product.tamanhos : (product.tamanhos ? String(product.tamanhos).split(',') : []); %>
-            <% if (pCores.length > 0 || pTamanhos.length > 0) { %>
-              <div class="product-quick-variants" style="margin: 10px 0; text-align: left; padding: 0 10px;">
-                <% if (pCores.length > 0) { %>
-                  <div style="margin-bottom: 8px;">
-                    <span style="font-size: 0.8rem; font-weight: bold; color: #555; display: block; margin-bottom: 4px;">Cor:</span>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                      <% pCores.forEach((cor, idx) => { cor = cor.trim(); if(!cor) return; %>
-                        <label style="cursor: pointer;">
-                          <input type="radio" name="color_<%= product._id %>" value="<%= cor %>" <%= idx === 0 ? 'checked' : '' %> style="display: none;">
-                          <span class="quick-variant-btn" style="display: inline-block; padding: 2px 8px; font-size: 0.75rem; border: 1px solid #ccc; border-radius: 3px;"><%= cor %></span>
-                        </label>
-                      <% }) %>
-                    </div>
-                  </div>
-                <% } %>
-                
-                <% if (pTamanhos.length > 0) { %>
-                  <div>
-                    <span style="font-size: 0.8rem; font-weight: bold; color: #555; display: block; margin-bottom: 4px;">Tamanho:</span>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                      <% pTamanhos.forEach((tamanho, idx) => { tamanho = tamanho.trim(); if(!tamanho) return; %>
-                        <label style="cursor: pointer;">
-                          <input type="radio" name="size_<%= product._id %>" value="<%= tamanho %>" <%= idx === 0 ? 'checked' : '' %> style="display: none;">
-                          <span class="quick-variant-btn" style="display: inline-block; padding: 2px 8px; font-size: 0.75rem; border: 1px solid #ccc; border-radius: 3px;"><%= tamanho %></span>
-                        </label>
-                      <% }) %>
-                    </div>
-                  </div>
-                <% } %>
-              </div>
-            <% } %>
-
             <button class="btn-add-cart" onclick="quickAddToCart('<%= product._id %>')">
               Adicionar ao Carrinho
             </button>

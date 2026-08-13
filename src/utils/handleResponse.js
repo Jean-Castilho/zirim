@@ -6,13 +6,13 @@
 
 export const sendResponse = (res, statusCode, data) => {
   res.status(statusCode).json(data);
- };
+};
 
- /** Lida com o fluxo de uma operação assíncrona e envia a resposta.
- * @param {object} res - O objeto de resposta do Express.
- * @param {Promise<any>} servicePromise - A promise retornada pela função do serviço/controller.
- * @param {number} [successStatusCode=200] - O código de status para respostas de sucesso.
-  */
+/** Lida com o fluxo de uma operação assíncrona e envia a resposta.
+* @param {object} res - O objeto de resposta do Express.
+* @param {Promise<any>} servicePromise - A promise retornada pela função do serviço/controller.
+* @param {number} [successStatusCode=200] - O código de status para respostas de sucesso.
+ */
 
 export const handleResponse = async (res, servicePromise, successStatusCode = 200) => {
   try {
@@ -22,6 +22,6 @@ export const handleResponse = async (res, servicePromise, successStatusCode = 20
     const statusCode = error.statusCode || 500;
     const errorMessage = error.message || 'Ocorreu um erro interno no servidor.';
     sendResponse(res, statusCode, { error: errorMessage });
-   }
+  }
 
 };
