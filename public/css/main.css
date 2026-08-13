@@ -2,6 +2,14 @@
 @import url('./layout/header.css');
 @import url('./layout/footer.css');
 
+* {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    padding: 0px;
+    margin: 0px;
+}
+
 /* Tipografia global para o site */
 body {
     font-family: var(--fonte-principal);
@@ -17,38 +25,26 @@ h6 {
     font-family: var(--fonte-titulo);
 }
 
-/* Tipografia global e legível para botões */
 button,
 .btn {
     font-family: var(--fonte-botoes, var(--fonte-principal));
     font-weight: 800;
-    /* Letras mais grossas para legibilidade */
     letter-spacing: 0.5px;
     text-transform: uppercase;
     font-size: 0.95rem;
 }
 
-/* Ocultar barra de rolagem mas manter a funcionalidade (cross-browser) */
 ::-webkit-scrollbar {
     width: 0px;
     height: 0px;
     display: none;
 }
 
-* {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
-}
-
-/* ===== PRODUCT DETAILS PAGE ===== */
 .product-details-page {
     padding: 40px 20px;
     max-width: 1400px;
     margin: 0 auto;
 }
-
 .product-details-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -56,7 +52,6 @@ button,
     align-items: start;
 }
 
-/* Galeria de Imagens */
 .product-gallery {
     display: flex;
     flex-direction: column;
@@ -68,9 +63,7 @@ button,
     width: 100%;
     overflow: hidden;
     max-width: 80%;
-    /* Diminui a largura máxima da imagem */
     margin: 0 auto;
-    /* Centraliza a imagem */
     border-radius: 16px;
     background: #f5f5f5;
     aspect-ratio: 1 / 1;
@@ -127,7 +120,6 @@ button,
     opacity: 1;
 }
 
-/* Seção de Informações */
 .product-info {
     display: flex;
     flex-direction: column;
@@ -216,7 +208,6 @@ button,
     margin: 0;
 }
 
-/* Especificações */
 .specifications {
     padding: 20px;
     background: #f9f9f9;
@@ -249,7 +240,6 @@ button,
     color: #333;
 }
 
-/* Seletor de Quantidade */
 .quantity-section {
     display: flex;
     flex-direction: column;
@@ -300,7 +290,6 @@ button,
     margin: 0;
 }
 
-/* Botões de Ação */
 .action-buttons {
     display: flex;
     gap: 12px;
@@ -356,7 +345,6 @@ button,
     font-size: 20px;
 }
 
-/* Garantia */
 .guarantee-section {
     display: grid;
     grid-auto-flow: column;
@@ -390,7 +378,6 @@ button,
     color: #666;
 }
 
-/* Descrição Expandida */
 .expanded-description {
     background: #f9f9f9;
     padding: 60px 40px;
@@ -411,7 +398,6 @@ button,
     margin-bottom: 16px;
 }
 
-/* Produtos Relacionados */
 .related-products {
     max-width: 1400px;
     margin: 0 auto;
@@ -466,19 +452,15 @@ button,
     font-size: 1.1rem;
 }
 
-/* Responsivo */
 @media (max-width: 1024px) {
     .product-details-container {
         grid-template-columns: 1fr;
         gap: 40px;
     }
 }
-
 .product-details-page .pill-selector.required-missing {
     border: 1px solid var(--cor-secundaria);
-    /* Borda vermelha para indicar seleção obrigatória */
     border-radius: 12px;
-    /* Ajuste para a borda envolver o grupo de pílulas */
 }
 
 .product-details-page .pill-option.disabled {
@@ -492,32 +474,21 @@ button,
     grid-template-columns: 1fr;
 }
 
-/* Estilos para as pílulas de cor */
 .product-details-page .pill-option-color {
     display: flex;
     align-items: center;
     gap: 8px;
-    /* Espaço entre o swatch e o texto */
     padding: 8px 12px;
-    /* Ajusta o padding para acomodar o swatch */
 }
-
-/* Estilo para o indicador de cor (swatch) */
 .product-details-page .pill-option-color .color-swatch {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    /* Torna-o um círculo */
     border: 1px solid rgba(0, 0, 0, 0.2);
-    /* Borda sutil para definição */
     flex-shrink: 0;
-    /* Evita que o swatch encolha */
 }
-
-/* Garante que o texto da pílula de cor selecionada seja legível */
 .product-details-page .pill-option-color.selected {
     color: var(--cor-texto-claro);
-    /* Texto branco para pílulas selecionadas */
 }
 
 @media (max-width: 768px) {
@@ -552,8 +523,6 @@ button,
 }
 
 @media (max-width: 380px) {
-
-    
     .product-title {
         font-size: 1.5rem;
     }

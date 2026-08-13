@@ -1,9 +1,7 @@
 .header {
     width: 100%;
     background-color: var(--cor-primaria);
-    /* Usando variável */
     color: var(--cor-texto-escuro);
-    /* Usando variável para texto em fundo escuro */
     box-shadow: var(--sombra-padrao);
 
     position: sticky;
@@ -17,7 +15,6 @@
     align-items: center;
     width: 90%;
     max-width: 1200px;
-    /* Manter valor fixo para largura máxima */
     padding: 15px;
     margin: 0 auto;
 }
@@ -26,9 +23,7 @@
     font-family: var(--fonte-titulo);
     font-size: 1.5rem;
     font-weight: 700;
-    /* Manter valor fixo */
     color: var(--cor-secundaria);
-    /* Usando variável */
     text-decoration: none;
 }
 
@@ -36,32 +31,25 @@
     list-style: none;
     display: flex;
     gap: var(--espacamento-grande);
-    /* Usando variável */
     align-items: center;
 }
 
-/* Estilos para links de navegação */
 .nav-link {
     color: var(--cor-texto-claro);
-    /* Usando variável para links no header */
     font-weight: 900;
-    /* Manter valor fixo - mais grosso */
     padding-bottom: 8px;
     border-bottom: 3px solid transparent;
 
     transition: all 0.3s ease;
     text-transform: uppercase;
     font-size: 0.875rem;
-    /* Manter valor fixo */
     text-decoration: none;
 }
 
 .nav-link:hover,
 .nav-link.active {
     color: var(--cor-destaque);
-    /* Usando variável */
     border-bottom-color: var(--cor-destaque);
-    /* Usando variável */
     text-decoration: none;
 }
 
@@ -76,12 +64,9 @@
     align-items: center;
 }
 
-/* Estilos para ícones no cabeçalho */
 .header-icons .nav-link {
     padding: var(--espacamento-pequeno);
-    /* Usando variável */
     font-size: 24px;
-    /* Manter valor fixo para ícones */
     border-bottom: none;
     border-radius: 50%;
     display: flex;
@@ -96,7 +81,6 @@
 
 .header-icons .nav-link.active {
     color: var(--cor-destaque);
-    /* Usando variável */
     background-color: rgba(0, 0, 0, 0.05);
 }
 
@@ -111,23 +95,17 @@
     height: 3px;
     margin: 5px auto;
     background-color: var(--cor-destaque);
-    /* Usando variável */
     -webkit-transition: all 0.3s ease-in-out;
     transition: all 0.3s ease-in-out;
 }
 
-/* Mobile Responsiveness */
 @media (max-width: 968px) {
 
     .nav-link {
         color: var(--cor-texto-escuro);
-        /* Usando variável para texto em fundo escuro */
     }
-
-    /* Ponto de interrupção para telas menores */
     .navbar {
         width: 85%;
-        /* Ajusta a largura da barra de navegação em telas pequenas */
     }
 
     .nav-menu {
@@ -177,7 +155,6 @@
 
     .hamburger.active .bar:nth-child(2) {
         opacity: 0;
-        /* Esconde a barra do meio */
     }
 
     .hamburger.active .bar:nth-child(1) {
@@ -204,10 +181,7 @@
     .nav-overlay.active {
         opacity: 1;
         visibility: visible;
-        /* Visível quando o menu está ativo */
     }
-
-    /* Impede a rolagem do corpo da página quando o menu está aberto */
     body.no-scroll {
         overflow: hidden;
     }
@@ -215,33 +189,21 @@
     /* Ajusta os ícones do cabeçalho para o menu mobile */
     .header-icons-container {
         margin-left: 0;
-        /* Remove a margem automática */
         width: 100%;
-        /* Ocupa a largura total */
-        /* Manter valor fixo */
         padding-top: 1rem;
-        /* Adiciona espaço acima dos ícones */
         border-top: 1px solid rgba(255, 255, 255, 0.1);
-        /* Separador visual */
     }
 
     .header-icons {
         flex-direction: column;
-        /* Ícones empilhados verticalmente */
         align-items: center;
-        /* Alinha os ícones à esquerda */
         gap: 0.5rem;
-        /* Espaçamento menor entre os ícones */
     }
 
     .header-icons .nav-link {
         width: auto;
-        /* Permite que os ícones se ajustem ao conteúdo */
         padding: 0.5rem;
-        /* Ajusta o preenchimento */
         border-radius: 5px;
-        /* Remove o border-radius */
         justify-content: flex-start;
-        /* Alinha o conteúdo do ícone ao início */
     }
 }

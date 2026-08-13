@@ -1,13 +1,13 @@
 <style>
   .products-container {
-    padding: 10px 20px 50px 20px;
+    padding: 1.2rem 20px 50px 20px;
     max-width: 1200px;
     margin: 0 auto;
   }
 
   .products-header {
     text-align: center;
-    margin-bottom: 40px;
+    margin: 1rem;
   }
 
   .products-header h1 {
@@ -23,63 +23,259 @@
   /* Filtros */
   .filters {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 30px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 15px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .filter-search {
+    display: flex;
+    align-items: center;
+    width: 48vw;
+    gap: 5px;
+    position: relative;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    padding: 5px;
+  }
+
+  .filter-search label {
+    display: none;
+  }
+
+  .filter-search input[type="search"] {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    flex-grow: 1;
+    padding: 10px 15px;
+    border-radius: 25px;
+  }
+
+  .filter-search input[type="search"]:focus {
+    outline: none;
+  }
+
+  .search-button {
+    background-color: #D2042D;
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .search-button:hover {
+    background-color: #a00322;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .search-button i {
+    font-size: 1.2rem;
+  }
+
+  .filter-dropdown-button {
+    background-color: var(--cor-secundaria);
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .filter-dropdown-button:hover {
+    background-color: var(--cor-destaque);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .filter-search {
+    position: relative;
+  }
+
+  .filter-dropdown-content {
+    left: auto;
+    right: 0;
+    min-width: 200px;
+  }
+
+  .filter-dropdown-content a {
+    padding: 10px 16px;
+  }
+
+  .filter-dropdown-content a:hover {
+    background-color: #f1f1f1;
+    color: #D2042D;
+  }
+
+  .filter-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 180px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    border-radius: 8px;
+    padding: 10px 0;
+    top: 100%;
+    left: 0;
+    margin-top: 10px;
+    border: 1px solid #eee;
+  }
+
+  .filter-dropdown-content.show {
+    display: block;
+  }
+
+  .filter-dropdown-content a {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 0.95rem;
+    transition: background-color 0.2s, color 0.2s;
+    border-radius: 0;
+    background-color: transparent;
+    font-weight: 400;
+  }
+
+  .filter-dropdown-content a:hover {
+    background-color: #f1f1f1;
+    color: #D2042D;
+  }
+
+  .filter-dropdown-content a.active {
+    background-color: #D2042D;
+    color: #fff;
+  }
+
+  .filter-links {
+    display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: 10px;
   }
 
   .filter-links span {
-    font-weight: bold;
-    margin-right: 10px;
-  }
-
-  .filter-links a {
-    margin-right: 15px;
-    text-decoration: none;
+    font-weight: 600;
     color: #555;
-  }
-
-  .filter-links a:last-child {
-    margin-right: 0;
-  }
-
-  .filter-sort label {
-    font-weight: bold;
     margin-right: 5px;
   }
 
-  .filter-sort select {
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+  .filter-links a {
+    padding: 8px 15px;
+    border-radius: 20px;
+    background-color: #e0e0e0;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 
-  
+  .filter-links a:hover {
+    background-color: #D2042D;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(210, 4, 45, 0.2);
+  }
 
-  /* Grid de Produtos */
+  .filter-links a.active {
+    background-color: #D2042D;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .filter-sort {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .filter-sort label {
+    font-weight: 600;
+    color: #555;
+  }
+
+  .filter-sort select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #fff;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13.2-5.4H18.6c-5%200-9.3%201.8-13.2%205.4A17.6%2017.6%200%200%200%200%2082.6c0%204.8%201.8%209.3%205.4%2013.2l128%20128c3.9%203.9%208.4%205.8%2013.2%205.8s9.3-1.9%2013.2-5.8l128-128c3.9-3.9%205.8-8.4%205.8-13.2%200-4.8-1.9-9.3-5.8-13.2z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 30px;
+    transition: all 0.3s ease;
+  }
+
+  .filter-sort select:focus {
+    border-color: #D2042D;
+    box-shadow: 0 0 0 3px rgba(210, 4, 45, 0.2);
+    outline: none;
+  }
+
+  @media (max-width: 768px) {
+    .filters {
+      padding: 15px;
+    }
+
+    .filter-search {
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .filter-search input[type="search"] {
+      width: 100%;
+    }
+
+    .filter-links,
+    .filter-sort {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+
   .products-grid {
     display: grid;
     gap: 30px;
   }
 
   @media (max-width: 2080px) {
-
     .products-grid {
       grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
     }
-
   }
+
   @media (max-width: 480px) {
+    .products-container {
+      padding: 1.2rem 10px 50px 10px;
+    }
 
     .products-grid {
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
 
   }
+
   .product-card {
     background: #fff;
     border: 1px solid #eaeaea;
@@ -206,7 +402,6 @@
     background-color: #D2042D;
     color: white;
   }
-
 </style>
 
 <div class="products-container">
@@ -217,26 +412,38 @@
   </header>
 
   <div class="filters">
-    <div class="filter-links">
-      <span>Filtrar por:</span>
-      <a href="/products">Todos</a>
-      <a href="/products?category=feminino">Feminino</a>
-      <a href="/products?category=masculino">Masculino</a>
-      <a href="/products?category=calcados">Calçados</a>
+
+    <div class="filter-search">
+
+      <label for="search-input">Buscar</label>
+
+      <input type="search" id="search-input" placeholder="Digite um produto..." autocomplete="off" />
+
+      <button id="filter-dropdown-button" class="filter-dropdown-button search-button" type="button">
+        <i class="material-icons">filter_list</i>
+      </button>
+
+      <button id="search-button" class="search-button">
+        <i class="material-icons">search</i>
+      </button>
+
+
+      <div id="filter-dropdown-content" class="filter-dropdown-content">
+        <a href="/products" class="active">Todos</a>
+        <a href="/products?category=feminino">Feminino</a>
+        <a href="/products?category=masculino">Masculino</a>
+        <a href="/products?category=calcados">Calçados</a>
+        <a href="/products?category=acessorios">Acessórios</a>
+        <a href="/products?category=eletronicos">Eletrônicos</a>
+      </div>
+
     </div>
-    <div class="filter-sort">
-      <label for="sort">Ordenar:</label>
-      <select id="sort">
-        <option value="relevance">Relevância</option>
-        <option value="lowest_price">Menor Preço</option>
-        <option value="highest_price">Maior Preço</option>
-      </select>
-    </div>
+
   </div>
 
   <!-- Grid de Produtos -->
   <div class="products-grid">
-    <% if (products && products.length > 0) { %>
+    <% if (products && products.length> 0) { %>
       <% products.forEach(product=> { %>
         <div class="product-card">
 
@@ -279,3 +486,35 @@
     <% } %>
 
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const filterDropdownButton = document.getElementById('filter-dropdown-button');
+    const filterDropdownContent = document.getElementById('filter-dropdown-content');
+
+    const performSearch = () => {
+      const searchQuery = searchInput.value.trim();
+      if (searchQuery) {
+        window.location.href = `/search/${encodeURIComponent(searchQuery)}`;
+      }
+    };
+
+    // Toggle do dropdown de filtro
+    filterDropdownButton.addEventListener('click', (event) => {
+      event.stopPropagation(); // Impede que o clique se propague para o document
+      filterDropdownContent.classList.toggle('show');
+    });
+
+    // Fechar o dropdown se clicar fora dele
+    document.addEventListener('click', (event) => {
+      if (!filterDropdownContent.contains(event.target) && !filterDropdownButton.contains(event.target)) {
+        filterDropdownContent.classList.remove('show');
+      }
+    });
+
+    searchInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { event.preventDefault(); performSearch(); } });
+    searchButton.addEventListener('click', performSearch); // Adiciona evento de clique ao botão
+  });
+</script>
