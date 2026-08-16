@@ -41,8 +41,9 @@ export default class UserService {
     return await this.getCollection().findOne({ "email.endereco": normalized },{
         projection: {
             email: 1,
-            password: 1, // ou 'senha', dependendo do seu Schema;
+            password: 1,
             numero: 1,
+            role: 1
         }
     });
   }
@@ -88,7 +89,7 @@ export default class UserService {
 
     req.session.user = {
       ...user,
-      _id: user._id.toString() // Converte ObjectId para string
+      _id: user._id.toString() 
     };
 
     return { message: "Login realizado", user, token };

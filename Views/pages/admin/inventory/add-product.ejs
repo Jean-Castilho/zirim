@@ -38,40 +38,155 @@
         <textarea id="description" name="descricao" rows="4" class="form-control"></textarea>
       </div>
 
+
+
+
       <!-- Variações -->
       <h3 class="form-section-title">Variações</h3>
-
-      <div class="form-grid">
-        <div class="form-group grid-group">
-          <label for="colors" class="form-label">Cores Disponíveis</label>
-          <input type="text" id="colors" name="cores" class="form-control" placeholder="Ex: Preto, Branco, Vermelho">
-          <small class="form-text-muted">Separe as cores por vírgula.</small>
-        </div>
-        
-        <div class="form-group grid-group">
-          <label for="sizes" class="form-label">Tamanhos Disponíveis</label>
-          <input type="text" id="sizes" name="tamanhos" class="form-control" placeholder="Ex: P, M, G, GG ou 38, 40, 42">
-          <small class="form-text-muted">Separe os tamanhos por vírgula.</small>
-        </div>
+      <div id="variations-container">
+        <!-- Variações serão adicionadas aqui pelo JavaScript -->
       </div>
+      <button type="button" id="add-variation-btn" class="btn btn-secondary" style="margin-bottom: 20px;">Adicionar Variação</button>
 
-      <!-- Preço e Estoque -->
-      <h3 class="form-section-title">Preço e Estoque</h3>
+      <script>
+        let variationIndex = 0;
 
-      <div class="form-grid" style="margin-bottom: 30px;">
-        <div class="form-group grid-group">
-          <label for="price" class="form-label">Preço (R$) *</label>
-          <input type="number" id="price" name="preco" step="0.01" min="0" required class="form-control" placeholder="0.00">
-        </div>
-        
-        <div class="form-group grid-group">
-          <label for="stock" class="form-label">Estoque Inicial *</label>
-          <input type="number" id="stock" name="estoque" min="0" required class="form-control" placeholder="0">
-        </div>
+        function addVariationBlock(sku = '',cores = '', tamanhos = '', preco = '', estoque = '', ativo = false) {
+          const container = document.getElementById('variations-container');
+          const variationBlock = document.createElement('div');
+          variationBlock.classList.add('variation-block');
+          variationBlock.dataset.index = variationIndex;
 
-        
+          variationBlock.innerHTML = `
+            <div class="variation-header">
+              <h4>Variação #${variationIndex + 1}</h4>
+              <button type="button" class="btn btn-danger btn-remove-variation" onclick="removeVariationBlock(this)">Remover</button>
+            </div>
+            <div class="form-grid">
+              <div class="form-group grid-group">
+                <label for="variations[${variationIndex}][cores]" class="form-label">Cores Disponíveis</label>
+                <input type="text" id="variations[${variationIndex}][cores]" name="variations[${variationIndex}][cores]" class="form-control" placeholder="Ex: Preto, Branco" value="${cores}">
+                <small class="form-text-muted"></small>
+              </div>
 
-      </div>
+              <div class="form-group grid-group">
+                <label for="variations[${variationIndex}][sku]" class="form-label">SKU</label>
+                <input type="text" id="variations[${variationIndex}][sku]" name="variations[${variationIndex}][sku]" class="form-control" value="${sku}">
+              </div>
+              
+              <div class="form-group grid-group">
+                <label for="variations[${variationIndex}][tamanhos]" class="form-label">Tamanhos Disponíveis</label>
+                <input type="text" id="variations[${variationIndex}][tamanhos]" name="variations[${variationIndex}][tamanhos]" class="form-control" placeholder="Ex: P, M, G" value="${tamanhos}">
+                <small class="form-text-muted"></small>
+              </div>
+            </div>
+            <div class="form-grid" style="margin-bottom: 20px;">
+              <div class="form-group grid-group">
+                <label for="variations[${variationIndex}][preco]" class="form-label">Preço (R$) *</label>
+                <input type="number" id="variations[${variationIndex}][preco]" name="variations[${variationIndex}][preco]" step="0.01" min="0" required class="form-control" placeholder="0.00" value="${preco}">
+              </div>
+              
+              <div class="form-group grid-group">
+                <label for="variations[${variationIndex}][estoque]" class="form-label">Estoque Inicial *</label>
+                <input type="number" id="variations[${variationIndex}][estoque]" name="variations[${variationIndex}][estoque]" min="0" required class="form-control" placeholder="0" value="${estoque}">
+              </div>
+              <div class="form-group grid-group checkbox-group">
+                <input type="checkbox" id="variations[${variationIndex}][ativo]" name="variations[${variationIndex}][ativo]" value="true" ${ativo ? 'checked' : ''}>
+                <label for="variations[${variationIndex}][ativo]" class="form-label">Ativo</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Imagens da Variação (até 5)</label>
+              <div class="image-upload-zone" onclick="document.getElementById('variationImageFile_${variationIndex}').click()">
+                <div class="image-upload-icon">📸</div>
+                <p class="image-upload-title">Clique para selecionar imagens</p>
+                <p class="image-upload-subtitle">Até 5 imagens (JPG, PNG, WEBP)</p>
+                <input type="file" id="variationImageFile_${variationIndex}" name="variations[${variationIndex}][imagens]" accept="image/*" multiple data-variation-index="${variationIndex}" onchange="previewVariationImages(this)">
+              </div>
+              <div id="variation-image-preview-${variationIndex}" class="image-preview-container"></div>
+            </div>
+            <div class="form-group grid-group checkbox-group">
+                <input type="checkbox" id="variations[${variationIndex}][ativo]" name="variations[${variationIndex}][ativo]" value="true" ${ativo ? 'checked' : ''}>
+                <label for="variations[${variationIndex}][ativo]" class="form-label">Ativo</label>
+              </div>
+            </div>
+            <hr>
+          `;
+          container.appendChild(variationBlock);
+          variationIndex++;
+          updateRemoveButtons();
+        }
+
+        function removeVariationBlock(button) {
+          const blockToRemove = button.closest('.variation-block');
+          blockToRemove.remove();
+          updateVariationIndexes();
+          updateRemoveButtons();
+        }
+
+        function updateVariationIndexes() {
+          const variationBlocks = document.querySelectorAll('.variation-block');
+          variationBlocks.forEach((block, newIndex) => {
+            block.dataset.index = newIndex;
+            block.querySelector('h4').textContent = `Variação #${newIndex + 1}`;
+            block.querySelectorAll('[name^="variations["]').forEach(input => {
+              const oldName = input.name;
+              const propertyName = oldName.match(/\[(\w+)\]$/)[1];
+              input.name = `variations[${newIndex}][${propertyName}]`;
+              input.id = `variations[${newIndex}][${propertyName}]`;
+            });
+          });
+          variationIndex = variationBlocks.length;
+        }
+
+        function updateRemoveButtons() {
+          const removeButtons = document.querySelectorAll('.btn-remove-variation');
+          if (removeButtons.length === 1) {
+            removeButtons[0].style.display = 'none'; // Esconde o botão se houver apenas uma variação
+          } else {
+            removeButtons.forEach(btn => btn.style.display = 'inline-block'); // Mostra os botões se houver mais de uma
+          }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+          document.getElementById('add-variation-btn').addEventListener('click', () => addVariationBlock());
+          addVariationBlock(); // Adiciona um bloco de variação inicial ao carregar a página
+        });
+      </script>
+
+      <style>
+        .variation-block {
+          border: 1px solid var(--cor-borda);
+          border-radius: 8px;
+          padding: var(--espacamento-medio);
+          margin-bottom: var(--espacamento-grande);
+          background-color: var(--cor-fundo-claro);
+        }
+        .variation-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: var(--espacamento-pequeno);
+          padding-bottom: var(--espacamento-pequeno);
+          border-bottom: 1px dashed var(--cor-borda);
+        }
+        .variation-header h4 {
+          margin: 0;
+          color: var(--cor-primaria);
+        }
+        .btn-remove-variation {
+          background-color: var(--cor-destaque);
+          color: white;
+          border: none;
+          padding: 5px 10px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.9em;
+        }
+        .btn-remove-variation:hover {
+          filter: brightness(90%);
+        }
+      </style>
 
       <!-- Imagem -->
       <h3 class="form-section-title">Imagens</h3>
@@ -94,12 +209,11 @@
       </div>
 
 
-
       <script>
         function previewImages() {
           const preview = document.getElementById('image-preview');
           const fileInput = document.getElementById('imageFile');
-          preview.innerHTML = ''; // Clear previous previews
+          preview.innerHTML = '';
           
           if (fileInput.files) {
             Array.from(fileInput.files).forEach((file) => {

@@ -1,5 +1,4 @@
 import express from "express";
-
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -18,9 +17,10 @@ router.get("/", async (req, res) => {
   handleResponse(res, productController.allProducts());
 });
 
-router.post("/", upload.array("imagens", 5), async (req, res, next) => {
+router.post("/", upload.any(), async (req, res, next) => {
   try {
-    handleResponse(res ,productController.uploadProductAndImage(req,res) ,201);
+    const productNew = await productController.uploadProductAndImage(req,res);
+    handleResponse(res ,productNew);
   } catch (error) {
     next(error);
   }

@@ -11,6 +11,18 @@ export default class ProductController {
     return db.collection("products");
   }
 
+  #processVariationObject(variationSource) {
+    return {
+      sku: variationSource.sku || '',
+      cores: variationSource.cores ? String(variationSource.cores).split(',').map(c => c.trim()).filter(c => c) : [],
+      tamanhos: variationSource.tamanhos ? String(variationSource.tamanhos).split(',').map(t => t.trim()).filter(t => t) : [],
+      preco: parseFloat(variationSource.preco) || 0,
+      estoque: parseInt(variationSource.estoque) || 0,
+      ativo: variationSource.ativo === 'true' || variationSource.ativo === true,
+      imagens: variationSource.imagens || [],
+    };
+  }
+
   /**
    * Tries to upload a file to GridFS with a retry mechanism.
    * @param {object} file - The file object from multer (with buffer).
@@ -18,7 +30,6 @@ export default class ProductController {
    * @param {number} retries - The number of times to retry on failure.
    * @returns {Promise<string>} A promise that resolves with the unique filename.
    */
-
   async #uploadFileWithRetry(file, bucket, retries = 3) {
     for (let i = 0; i < retries; i++) {
       try {
@@ -50,37 +61,82 @@ export default class ProductController {
   }
 
   async uploadProductAndImage(req,res) {
-    const files = req.files;
-
-    if (!files || files.length === 0) {
-      throw new GeneralError("Nenhum arquivo enviado.", 400);
-    }
-
+    // Note: 'res' é passado para uso potencial futuro, mas esta função deve principalmente retornar dados para handleResponse.
+    const allFiles = req.files;
     const bucket = getGridFSBucket();
 
-    // Com o Promise.all, se qualquer upload falhar, ele irá rejeitar e cair no bloco catch da rota.
-    // Isso simplifica o código pois não precisamos verificar os resultados um a um.
-    const successfulUploads = await Promise.all(
-      files.map(file => this.#uploadFileWithRetry(file, bucket))
+    const mainProductImages = [];
+    const variationFilesMap = new Map(); // Map<variationIndex, Array<file>>
+
+    if (!allFiles || allFiles.length === 0) {
+      // Se nenhum arquivo for enviado, o produto pode ser criado sem imagens.
+      // Dependendo da lógica de negócio, isso pode ser um erro ou permitido.
+      // Por enquanto, permite-se continuar sem arquivos.
+    } else {
+      allFiles.forEach(file => {
+        if (file.fieldname === 'imagens') { // Imagens do produto principal (do input geral de imagens)
+          mainProductImages.push(file);
+        } else if (file.fieldname.startsWith('variations[') && file.fieldname.includes('][imagens]')) {
+          const match = file.fieldname.match(/variations\[(\d+)\]\[imagens\]/);
+          if (match && match[1]) {
+            const variationIndex = parseInt(match[1], 10);
+            if (!variationFilesMap.has(variationIndex)) {
+              variationFilesMap.set(variationIndex, []);
+            }
+            variationFilesMap.get(variationIndex).push(file);
+          }
+        }
+      });
+    }
+
+    // Upload das imagens do produto principal
+    const uploadedMainImageNames = await Promise.all(
+      mainProductImages.map(file => this.#uploadFileWithRetry(file, bucket))
     );
 
+    let rawVariations = [];
+    // Normaliza a entrada de variações: se o array 'variations' existe, usa-o.
+    // Caso contrário, se campos de nível superior sugerem uma única variação, cria um array de um elemento.
+    if (req.body.variations && Array.isArray(req.body.variations)) {
+      rawVariations = req.body.variations;
+    } else if (req.body.cores || req.body.tamanhos || req.body.preco || req.body.estoque || variationFilesMap.has(0)) {
+      // Verifica se algum campo relacionado à variação está presente no nível superior
+      rawVariations.push(req.body);
+    }
+
+    const processedVariations = [];
+    for (let i = 0; i < rawVariations.length; i++) {
+      const variationBody = rawVariations[i];
+      const filesForThisVariation = variationFilesMap.get(i) || [];
+
+      // Upload das imagens para esta variação específica
+      const uploadedVariationImageNames = await Promise.all(
+        filesForThisVariation.map(file => this.#uploadFileWithRetry(file, bucket))
+      );
+
+      // Cria um objeto temporário para passar para #processVariationObject, incluindo os nomes das imagens uploaded
+      const variationSourceWithImages = {
+        ...variationBody,
+        imagens: uploadedVariationImageNames,
+      };
+      processedVariations.push(this.#processVariationObject(variationSourceWithImages));
+    }
+
     const productData = {
-      // --- Informações Principais ---
       nome: req.body.name,
-      preco: parseFloat(req.body.preco),
-      imagens: successfulUploads,
-      // --- Variações ---
-      cores: req.body.cores ? req.body.cores.split(',').map(c => c.trim()).filter(c => c) : [],
-      tamanhos: req.body.tamanhos ? req.body.tamanhos.split(',').map(t => t.trim()).filter(t => t) : [],
-      // --- Logística e Classificação ---
-      estoque: parseInt(req.body.estoque) || 0,
+      imagens: uploadedMainImageNames,
+      variacoes: processedVariations,
       categoria: req.body.categoria,
       descricao: req.body.descricao
     };
 
-    await this.getCollection().insertOne(productData);
+    console.log(productData); // Para depuração
 
-    res.redirect("/admin/inventory");
+    const result = await this.getCollection().insertOne(productData);
+
+    // Retorna os dados para handleResponse processar.
+    // handleResponse então enviará a resposta HTTP apropriada e redirecionará se necessário.
+    return { message: "Produto adicionado com sucesso!", productId: result.insertedId };
   }
 
   async getProductsByIds(ids, projection = {}) {
@@ -117,6 +173,7 @@ export default class ProductController {
       throw err;
     }
 
+    // TODO: A lógica de atualização de imagens de variações precisa ser implementada aqui, similar ao uploadProductAndImage.
     const bucket = getGridFSBucket();
     const existingProduct = await this.getProductById(id);
 
@@ -146,14 +203,22 @@ export default class ProductController {
       nome: body.name || body.nome, // Support both 'name' (from add form) and 'nome'
       preco: parseFloat(body.preco),
       imagens: finalImages,
-      // --- Variações ---
-      cores: body.cores ? body.cores.split(',').map(c => c.trim()).filter(c => c) : [],
-      tamanhos: body.tamanhos ? body.tamanhos.split(',').map(t => t.trim()).filter(t => t) : [],
+      variacoes: [], // Initialize as an empty array to store multiple variations
       // --- Logística e Classificação ---
-      estoque: parseInt(body.estoque) || 0,
       categoria: body.categoria,
       descricao: body.descricao,
     };
+
+    // Process variations if provided as an array in the request body
+    if (body.variations && Array.isArray(body.variations)) {
+      productData.variacoes = body.variations.map(variation => this.#processVariationObject(variation));
+    } else {
+      // Fallback: if 'variations' array is not provided, create a single variation from top-level fields
+      const singleVariation = this.#processVariationObject(body);
+      if (singleVariation.cores.length > 0 || singleVariation.tamanhos.length > 0 || singleVariation.preco > 0 || singleVariation.estoque > 0) {
+        productData.variacoes.push(singleVariation);
+      }
+    }
 
     await this.getCollection().updateOne(
       { _id: new ObjectId(id) },

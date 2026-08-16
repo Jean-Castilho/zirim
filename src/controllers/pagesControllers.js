@@ -57,8 +57,9 @@ export const getProductDetails = async (req, res, next) => {
         errorMessage: "ID de produto obrigatório.",
       });
     }
-
     const product = await productController.getProductById(id);
+
+    console.log(product);
 
     if (!product) {
       return res.status(404).render("../pages/public/product-details", {
@@ -67,19 +68,14 @@ export const getProductDetails = async (req, res, next) => {
         errorMessage: "Produto não encontrado.",
       });
     }
-
     renderPage(req, res, "../pages/public/product-details", {
-      titulo: product.nome || product.name || "Detalhes do Produto",
+      titulo: product.nome || "Detalhes do Produto",
       product,
     });
-
   } catch (error) {
-
     next(error);
-
   }
 };
-
 
 export const getAbout = (req, res) => {
   renderPage(req, res, "../pages/public/about", {
@@ -94,7 +90,6 @@ export const getContact = (req, res) => {
     message: "Entre em contato conosco!",
   });
 };
-
 
 export const getLogin = (req, res) => {
   renderPage(req, res, "../pages/auth/login", {
@@ -138,9 +133,10 @@ export const getVerifyOtp = async (req, res, next) => {
 };
 
 
+
 export const getFavorites = async (req, res, next) => {
   try {
-    const products = await productController.getCollection().find().limit(8).toArray(); // Mocking favorites for now
+    const products = await productController.getCollection().find().limit(8).toArray();
 
     renderPage(req, res, "../pages/public/favorites", {
       titulo: "Favoritos",
@@ -165,7 +161,6 @@ export const getProfile = (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
   }
-
 
   renderPage(req, res, "../pages/auth/profile", {
     titulo: "Meu Perfil",
@@ -202,6 +197,7 @@ export const getinventory = async (req, res, next) => {
       return res.redirect("/login");
     }
 
+    
     const products = await productController.getCollection().find().toArray();
 
     renderPage(req, res, "../pages/admin/inventory/dashboard", {
@@ -209,6 +205,8 @@ export const getinventory = async (req, res, next) => {
       message: "Controle de estoque e produtos",
       products: products
     });
+
+
   } catch (error) {
     next(error);
   }
