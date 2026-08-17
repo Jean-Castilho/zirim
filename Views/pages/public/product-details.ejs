@@ -1,5 +1,20 @@
 <link rel="stylesheet" href="/css/pages/product-details.css">
 
+<style>
+  .pill-option.selected {
+    border-radius: 5px; /* Adiciona bordas arredondadas */
+    border-color: #0056b3;
+    background-color: #dce9f9;
+    color: #0056b3;
+    font-weight: 600;
+    box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2);
+  }
+
+  .pill-option-color.selected .color-swatch {
+    outline: 2px solid #0056b3;
+    outline-offset: 2px;
+  }
+</style>
 
 <section class="product-details-page">
   <% 
@@ -271,16 +286,22 @@
       elements: {
         mainImage: document.getElementById('mainImage'),
         galleryThumbnails: document.querySelector('.gallery-thumbnails'),
+        
         priceDisplay: document.getElementById('productPriceDisplay'),
+        
         stockDisplay: document.getElementById('productEstoqueDisplay'),
         stockBadge: document.getElementById('stockBadgeDisplay'),
+
         colorSelector: document.getElementById('colorPillSelector'),
         sizeSelector: document.getElementById('sizePillSelector'),
+        
         colorInput: document.getElementById('selectedColor'),
         sizeInput: document.getElementById('selectedSize'),
+        
         quantityInput: document.getElementById('quantity'),
         decreaseQtyBtn: document.getElementById('decreaseQtyBtn'),
         increaseQtyBtn: document.getElementById('increaseQtyBtn'),
+        
         addToCartBtn: document.getElementById('addToCartButton'),
       },
 
@@ -347,40 +368,67 @@
         const { selectedColor, selectedSize } = this.state;
 
         if (variations.length === 0) {
+          const stock = Number(this.state.product.estoque || 0);
           return {
-            stock: this.state.product.estoque || 0,
-            price: this.state.product.preco || 0,
+            stock,
+            price: Number(this.state.product.preco || 0),
             images: (this.state.product.imagens || []).map(img => `/image/${img}`),
-            active: (this.state.product.estoque || 0) > 0,
+            active: stock > 0,
+            variation: null,
           };
         }
 
-        const found = variations.find(v =>
-          v.ativo &&
-          (selectedColor ? v.cores.includes(selectedColor) : !this.elements.colorSelector) &&
-          (selectedSize ? v.tamanhos.includes(selectedSize) : !this.elements.sizeSelector)
-        );
+        let matchedVariation = null;
 
-        if (found) {
-          const images = (found.imagens?.length > 0 ? found.imagens : this.state.product.imagens || []).map(img => `/image/${img}`);
-          return { stock: found.estoque, price: found.preco, images, active: found.ativo };
+        if (selectedColor && selectedSize) {
+          matchedVariation = variations.find(v =>
+            v.ativo &&
+            v.cores?.includes(selectedColor) &&
+            v.tamanhos?.includes(selectedSize)
+          );
+        } else if (selectedColor) {
+          matchedVariation = variations.find(v =>
+            v.ativo &&
+            v.cores?.includes(selectedColor)
+          );
+        } else if (selectedSize) {
+          matchedVariation = variations.find(v =>
+            v.ativo &&
+            v.tamanhos?.includes(selectedSize)
+          );
         }
 
-        return { stock: 0, price: this.state.product.preco || 0, images: (this.state.product.imagens || []).map(img => `/image/${img}`), active: false };
+        if (!matchedVariation) {
+          matchedVariation = variations.find(v => v.ativo && v.estoque > 0) || variations.find(v => v.ativo) || variations[0];
+        }
+
+        const productImages = (this.state.product.imagens || []).map(img => `/image/${img}`);
+        const images = matchedVariation?.imagens?.length > 0
+          ? matchedVariation.imagens.map(img => `/image/${img}`)
+          : productImages;
+
+        return {
+          stock: Number(matchedVariation?.estoque ?? this.state.product.estoque ?? 0),
+          price: Number(matchedVariation?.preco ?? this.state.product.preco ?? 0),
+          images,
+          active: matchedVariation?.ativo ?? (this.state.product.estoque || 0) > 0,
+          variation: matchedVariation || null,
+        };
       },
 
       updateProductDisplay() {
         const details = this.getVariationDetails();
-        
-        this.elements.priceDisplay.textContent = details.price.toFixed(2);
-        this.elements.stockDisplay.textContent = details.stock > 0 ? `${details.stock} unidades` : 'Indisponível';
-        this.elements.quantityInput.max = details.stock;
-        if (parseInt(this.elements.quantityInput.value) > details.stock) {
-          this.elements.quantityInput.value = details.stock > 0 ? 1 : 0;
+        const stock = Number(details.stock || 0);
+
+        this.elements.priceDisplay.textContent = Number(details.price || 0).toFixed(2);
+        this.elements.stockDisplay.textContent = stock > 0 ? `${stock} unidades` : 'Indisponível';
+        this.elements.quantityInput.max = stock;
+        if (parseInt(this.elements.quantityInput.value, 10) > stock) {
+          this.elements.quantityInput.value = stock > 0 ? 1 : 0;
         }
 
-        this.elements.stockBadge.textContent = details.stock > 0 ? 'Em Estoque' : 'Indisponível';
-        this.elements.stockBadge.classList.toggle('out-of-stock', details.stock <= 0);
+        this.elements.stockBadge.textContent = stock > 0 ? 'Em Estoque' : 'Indisponível';
+        this.elements.stockBadge.classList.toggle('out-of-stock', stock <= 0);
 
         this.updateGallery(details.images);
         this.updateAddToCartButtonState();
@@ -415,11 +463,23 @@
           if (!selector) return;
           Array.from(selector.children).forEach(pill => {
             const value = pill.dataset.value;
-            const isAvailable = variations.some(v =>
-              v.ativo && v.estoque > 0 &&
-              (type === 'color' ? v.cores.includes(value) && (!selectedSize || v.tamanhos.includes(selectedSize)) : false) ||
-              (type === 'size' ? v.tamanhos.includes(value) && (!selectedColor || v.cores.includes(selectedColor)) : false)
-            );
+            const isAvailable = variations.some(v => {
+              if (!v.ativo || v.estoque <= 0) return false;
+
+              if (type === 'color') {
+                const matchesColor = v.cores?.includes(value);
+                const matchesSelectedSize = !selectedSize || v.tamanhos?.includes(selectedSize);
+                return matchesColor && matchesSelectedSize;
+              }
+
+              if (type === 'size') {
+                const matchesSize = v.tamanhos?.includes(value);
+                const matchesSelectedColor = !selectedColor || v.cores?.includes(selectedColor);
+                return matchesSize && matchesSelectedColor;
+              }
+
+              return false;
+            });
             pill.classList.toggle('disabled', !isAvailable);
           });
         };
@@ -468,7 +528,11 @@
         }
 
         const { selectedColor, selectedSize } = this.state;
+
+        console.log(this.state)
+        
         alert(`Adicionado ${qty} unidade(s) ao carrinho!\nCor: ${selectedColor || 'N/A'}\nTamanho: ${selectedSize || 'N/A'}`);
+
         // TODO: Enviar requisição AJAX para o backend
       },
 
