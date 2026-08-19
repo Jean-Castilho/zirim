@@ -20,7 +20,7 @@
   <% 
     const productName = product?.nome; 
     const productCategory = product?.categoria; 
-    const productDescription = product?.descricao || product?.description || 'Sem descrição disponível.';
+    const productDescription = product?.descricao || 'Sem descrição disponível.';
     
     const allVariations = product?.variacoes || [];
     

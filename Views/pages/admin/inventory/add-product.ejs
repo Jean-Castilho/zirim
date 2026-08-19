@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="/css/pages/add-product.css">
 
 <div class="admin-container">
-  
+
   <header class="admin-header">
     <h1><%= titulo %></h1>
     <p><%= message %></p>
@@ -44,7 +44,6 @@
       <!-- Variações -->
       <h3 class="form-section-title">Variações</h3>
       <div id="variations-container">
-        <!-- Variações serão adicionadas aqui pelo JavaScript -->
       </div>
       <button type="button" id="add-variation-btn" class="btn btn-secondary" style="margin-bottom: 20px;">Adicionar Variação</button>
 
@@ -90,11 +89,8 @@
                 <label for="variations[${variationIndex}][estoque]" class="form-label">Estoque Inicial *</label>
                 <input type="number" id="variations[${variationIndex}][estoque]" name="variations[${variationIndex}][estoque]" min="0" required class="form-control" placeholder="0" value="${estoque}">
               </div>
-              <div class="form-group grid-group checkbox-group">
-                <input type="checkbox" id="variations[${variationIndex}][ativo]" name="variations[${variationIndex}][ativo]" value="true" ${ativo ? 'checked' : ''}>
-                <label for="variations[${variationIndex}][ativo]" class="form-label">Ativo</label>
+
               </div>
-            </div>
             <div class="form-group">
               <label class="form-label">Imagens da Variação (até 5)</label>
               <div class="image-upload-zone" onclick="document.getElementById('variationImageFile_${variationIndex}').click()">
@@ -107,9 +103,10 @@
             </div>
             <div class="form-group grid-group checkbox-group">
                 <input type="checkbox" id="variations[${variationIndex}][ativo]" name="variations[${variationIndex}][ativo]" value="true" ${ativo ? 'checked' : ''}>
+
                 <label for="variations[${variationIndex}][ativo]" class="form-label">Ativo</label>
-              </div>
-            </div>
+
+                </div>
             <hr>
           `;
           container.appendChild(variationBlock);

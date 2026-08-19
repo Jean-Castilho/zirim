@@ -20,6 +20,7 @@ router.get("/", async (req, res) => {
 router.post("/", upload.any(), async (req, res, next) => {
   try {
     const productNew = await productController.uploadProductAndImage(req,res);
+
     handleResponse(res ,productNew);
   } catch (error) {
     next(error);

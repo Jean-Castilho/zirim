@@ -12,13 +12,17 @@ export default class ProductController {
   }
 
   #processVariationObject(variationSource) {
+    const activeValue = Array.isArray(variationSource.ativo)
+      ? variationSource.ativo
+      : [variationSource.ativo];
+
     return {
       sku: variationSource.sku || '',
       cores: variationSource.cores ? String(variationSource.cores).split(',').map(c => c.trim()).filter(c => c) : [],
       tamanhos: variationSource.tamanhos ? String(variationSource.tamanhos).split(',').map(t => t.trim()).filter(t => t) : [],
       preco: parseFloat(variationSource.preco) || 0,
       estoque: parseInt(variationSource.estoque) || 0,
-      ativo: variationSource.ativo === 'true' || variationSource.ativo === true,
+      ativo: activeValue.some(value => value === 'true' || value === true),
       imagens: variationSource.imagens || [],
     };
   }
