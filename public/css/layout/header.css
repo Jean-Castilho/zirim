@@ -100,10 +100,10 @@
 }
 
 @media (max-width: 968px) {
-
     .nav-link {
         color: var(--cor-texto-escuro);
     }
+
     .navbar {
         width: 85%;
     }
@@ -113,7 +113,7 @@
         margin-top: 0px;
         top: 0;
         left: -100%;
-        width: 55%;
+        width: 48%;
         height: 100vh;
         background-color: var(--cor-fundo-claro);
         flex-direction: column;
@@ -180,12 +180,14 @@
         opacity: 1;
         visibility: visible;
     }
+
     body.no-scroll {
         overflow: hidden;
     }
 
-    /* Ajusta os ícones do cabeçalho para o menu mobile */
     .header-icons-container {
+        display: flex;
+        justify-content: center;
         margin-left: 0;
         width: 100%;
         padding-top: 1rem;
@@ -193,8 +195,11 @@
     }
 
     .header-icons {
+        width: 100px;
         align-items: center;
-        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1.0rem;
     }
 
     .header-icons .nav-link {

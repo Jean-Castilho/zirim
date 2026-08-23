@@ -136,12 +136,9 @@ export const getVerifyOtp = async (req, res, next) => {
 
 export const getFavorites = async (req, res, next) => {
   try {
-    const products = await productController.getCollection().find().limit(8).toArray();
-
     renderPage(req, res, "../pages/public/favorites", {
       titulo: "Favoritos",
       message: "Seus itens favoritos!",
-      products: products
     });
   } catch (error) {
     next(error);

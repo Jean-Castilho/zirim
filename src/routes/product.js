@@ -21,7 +21,9 @@ router.post("/", upload.any(), async (req, res, next) => {
   try {
     const productNew = await productController.uploadProductAndImage(req,res);
 
-    handleResponse(res ,productNew);
+    console.log(productNew);
+
+    res.redirect("/admin/inventory");
   } catch (error) {
     next(error);
   }
@@ -29,12 +31,14 @@ router.post("/", upload.any(), async (req, res, next) => {
 
 router.post("/projectionByIds", async (req, res, next) => {
   try {
-    const { ids, projection } = req.body;
+    const ids = Array.isArray(req.body) ? req.body : req.body?.ids;
+    const projection = Array.isArray(req.body) ? {} : req.body?.projection;
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: "IDs sao requeridos para obetr dados" });
+      return res.status(400).json({ message: "IDs são requeridos para obter dados" });
     }
     const products = await productController.getProductsByIds(ids, projection || {});
+    console.log(products);
     handleResponse(res, products);
 
   } catch (error) {

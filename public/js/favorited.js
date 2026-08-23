@@ -8,6 +8,8 @@ function addToFavorites(productId, buttonElement) {
     let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
     if (favorites.includes(productId)) {
+
+
         showNotification('Este produto já está nos seus favoritos!', 'info');
         return false;
     }
@@ -61,43 +63,7 @@ function initializeFavoriteButtons(container) {
     });
 }
 
-/**
- * Obtém detalhes de produtos por uma lista de IDs, com projeção opcional.
- * @param {string[]} ids - Um array de IDs de produtos.
- * @param {object} projection - Um objeto de projeção para os campos a serem retornados.
- * @returns {Promise<object[]>} Uma promessa que resolve para um array de objetos de produtos.
- */
-async function getProdutcDetailsByIds(ids, projection = {}) {
-    if (!Array.isArray(ids) || ids.length === 0) {
-        console.warn("Nenhum ID fornecido para buscar detalhes do produto.");
-        return [];
-    }
-
-    try {
-        const response = await fetch('/products/projectionByIds', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ ids, projection }),
-        });
-        const products = await response.json();
-        return products;
-    } catch (error) {
-        console.error('Erro ao buscar detalhes do produto por IDs:', error);
-        return [];
-    }
-
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-
-    // Para "ler" o retorno da Promise, você deve usar .then() ou await.
-    getProdutcDetailsByIds(["6a2efdaf533c3e53c2684ac1", "6a2f3734590825373032b956"])
-        .then(products => {
-            console.log("Detalhes dos produtos favoritos:", products);
-        })
-        .catch(error => console.error("Erro ao buscar detalhes dos produtos favoritos:", error));
 
     initializeFavoriteButtons(document);
 
@@ -109,10 +75,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (button.dataset.isFavorited === 'true') {
                 if (removeFromFavorites(currentProductId, button)) {
-                    updateFavoriteButtonVisualState(button);
-                    const icon = button.querySelector('.favorite-icon');
-                    icon.classList.add('smooth-scale-animation');
-                    setTimeout(() => icon.classList.remove('smooth-scale-animation'), 300);
+                    const favoriteCard = button.closest('.favorites-container .product-card');
+
+                    if (favoriteCard) {
+                        favoriteCard.remove();
+                    } else {
+                        updateFavoriteButtonVisualState(button);
+                        const icon = button.querySelector('.favorite-icon');
+                        icon.classList.add('smooth-scale-animation');
+                        setTimeout(() => icon.classList.remove('smooth-scale-animation'), 300);
+                    }
                 }
             } else {
                 if (addToFavorites(currentProductId, button)) {

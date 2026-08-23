@@ -151,7 +151,7 @@ export default class ProductController {
 
     if (validIds.length === 0) return [];
 
-    if (projection.length > 0) {
+    if (projection && typeof projection === "object" && Object.keys(projection).length > 0) {
       return await this.getCollection()
         .find({ _id: { $in: validIds } })
         .project(projection)

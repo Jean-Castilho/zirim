@@ -26,11 +26,15 @@
     
     // Encontra a primeira variação adequada para a exibição inicial.
     // Prioriza variações ativas e em estoque, depois qualquer ativa, e por fim a primeira da lista.
+
     const initialVariation = 
+      
       // Apenas considera variações ativas e em estoque para a exibição inicial.
+
       allVariations.find(v => v.ativo && v.estoque > 0) || null;
 
     // Define os valores iniciais com base na variação encontrada ou nos dados do produto principal.
+
     const initialPrice = initialVariation?.preco ?? product?.preco ?? 0;
     const initialEstoque = initialVariation?.estoque ?? 0;
     const initialImages = initialVariation?.imagens?.length > 0 
@@ -40,6 +44,7 @@
     const galleryImages = initialImages.map(img => `/image/${img}`).slice(0, 5);
 
     // Coleta cores e tamanhos apenas de variações ativas e com estoque para renderizar os seletores.
+    
     const inStockActiveVariations = allVariations.filter(v => v.ativo && v.estoque > 0);
     const productCores = [
       ...new Set(inStockActiveVariations.flatMap(v => v.cores || []))
@@ -48,6 +53,7 @@
     const productTamanhos = [
       ...new Set(inStockActiveVariations.flatMap(v => v.tamanhos || []))
     ].filter(Boolean);
+
   %>
 
     <% if (!product) { %>
@@ -182,7 +188,6 @@
                         </div>
                       </div>
             </div>
-
 
             <!-- Botões de Ação -->
             <div class="action-buttons">
@@ -555,3 +560,5 @@
     App.init();
   });
 </script>
+
+<script src="/js/favorited.js"></script>
