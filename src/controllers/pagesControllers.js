@@ -1,18 +1,8 @@
 import ProductController from "../controllers/productControllers.js";
-import { sendOtpEmail } from "../services/contactService.js";
-
+import { sendEmailOtp } from "../services/contactService.js";
+import { renderPage } from "../utils/handleResponse.js";
 const productController = new ProductController();
 
-const renderPage = (req, res, page, options = {}) => {
-  if (req.headers["hx-request"]) {
-    res.render(page.replace("../", ""), options);
-  } else {
-    res.render(res.locals.layout || './layout/main', {
-      page,
-      ...options,
-    });
-  }
-};
 
 export const getHome = async (req, res, next) => {
   try {
@@ -47,33 +37,40 @@ export const getProducts = async (req, res, next) => {
 
 
 export const getProductDetails = async (req, res, next) => {
-
+  
   try {
+    
     const { id } = req.params;
+    
     if (!id) {
+    
       return res.status(400).render("../pages/public/product-details", {
         titulo: "Detalhes do Produto",
         product: null,
         errorMessage: "ID de produto obrigatório.",
       });
+    
     }
+    
     const product = await productController.getProductById(id);
-
-    console.log(product);
 
     if (!product) {
       return res.status(404).render("../pages/public/product-details", {
         titulo: "Produto não encontrado",
-        product: null,
+        product,
         errorMessage: "Produto não encontrado.",
       });
     }
+    
     renderPage(req, res, "../pages/public/product-details", {
       titulo: product.nome || "Detalhes do Produto",
       product,
     });
+  
   } catch (error) {
+  
     next(error);
+  
   }
 };
 
@@ -124,7 +121,7 @@ export const getVerifyOtp = async (req, res, next) => {
     });
 
     // Envia o e-mail em segundo plano sem bloquear a resposta.
-    sendOtpEmail(normalized).catch(err => {
+    sendEmailOtp(normalized).catch(err => {
       console.error("Falha ao enviar e-mail de OTP em segundo plano:", err);
     });
   } catch (error) {
@@ -150,72 +147,5 @@ export const getCart = (req, res) => {
   renderPage(req, res, "../pages/public/cart", {
     titulo: "Meu Carrinho",
     message: "Seu carrinho de compras!",
-  });
-};
-
-export const getProfile = (req, res) => {
-
-  if (!req.session.user) {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/auth/profile", {
-    titulo: "Meu Perfil",
-    message: "Gerencie suas informações de perfil!",
-  });
-};
-
-export const getdasboardAdmin = (req, res) => {
-
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/admin/dashboard", {
-    titulo: "Administaçao",
-    message: "Gerencie as informações da loja",
-  });
-};
-
-export const getdelivery = (req, res) => {
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/admin/delivery/dashboard", {
-    titulo: "Entregas",
-    message: "Gerencie as entregas",
-  });
-};
-
-export const getinventory = async (req, res, next) => {
-  try {
-    if (!req.session.user || req.session.user.role !== "admin") {
-      return res.redirect("/login");
-    }
-
-    
-    const products = await productController.getCollection().find().toArray();
-
-    renderPage(req, res, "../pages/admin/inventory/dashboard", {
-      titulo: "Gerenciamento de Inventário",
-      message: "Controle de estoque e produtos",
-      products: products
-    });
-
-
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getAddProduct = (req, res) => {
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/admin/inventory/add-product", {
-    titulo: "Adicionar Produto",
-    message: "Cadastre um novo produto no inventário",
   });
 };

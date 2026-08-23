@@ -3,32 +3,61 @@ import ProductControllers from "../controllers/productControllers.js";
 
 const productControllers = new ProductControllers();
 
-export const validateOrderItems = async (items) => {
-  const productIds = items.map(item => new ObjectId(item.id));
-  const productsSelec = await productControllers.getCollection().find({ _id: { $in: productIds } }).toArray();
+export const validateCartItems = async (items) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("O carrinho está vazio ou os itens não foram enviados corretamente.");
+  }
 
-  if (!productsSelec) {
-    throw new Error('Não foi possível validar os produtos do carrinho via API.');
-  };
+  const normalizedItems = items.map((item) => {
+    if (!item?.id) {
+      throw new Error("Cada item do carrinho precisa ter um identificador válido.");
+    }
 
-  const foundIds = productsSelec.map(p => p._id.toString());
-  const notFound = foundIds.filter(id => !foundIds.includes(id));
+    const quantity = Number(item.quantity ?? 0);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new Error(`A quantidade do produto ${item.id} é inválida.`);
+    }
 
-  if (notFound.length > 0) {
-    throw new Error(`Os seguintes produtos não foram encontrados: ${notFound.join(', ')}`);
-  };
-
-  const itemsResumidos = productsSelec.map(item => {
-    const cartItem = items.find(cartItem => cartItem.id === item._id.toString());
     return {
-      id: item._id,
-      nome: item.nome,
-      preco: item.preco,
-      quantidade: cartItem ? cartItem.quantity : 0,
-      garantia: item.garantia,
-      imagens: item.imagens,
+      ...item,
+      id: String(item.id),
+      quantity,
     };
   });
 
-  return itemsResumidos;
+  const productIds = normalizedItems.map((item) => new ObjectId(item.id));
+  const selectedProducts = await productControllers
+    .getCollection()
+    .find({ _id: { $in: productIds } })
+    .toArray();
+
+  if (!Array.isArray(selectedProducts)) {
+    throw new Error("Não foi possível validar os produtos do carrinho via API.");
+  }
+
+  const foundIds = new Set(selectedProducts.map((product) => product._id.toString()));
+  const notFound = normalizedItems
+    .filter((item) => !foundIds.has(item.id))
+    .map((item) => item.id);
+
+  if (notFound.length > 0) {
+    throw new Error(`Os seguintes produtos não foram encontrados: ${notFound.join(", ")}`);
+  }
+
+  return selectedProducts.map((product) => {
+    const cartItem = normalizedItems.find(
+      (item) => item.id === product._id.toString(),
+    );
+
+    return {
+      id: product._id,
+      nome: product.nome,
+      preco: product.preco,
+      quantidade: cartItem ? cartItem.quantity : 0,
+      garantia: product.garantia,
+      imagens: product.imagens,
+    };
+  });
 };
+
+export const validateOrderItems = validateCartItems;

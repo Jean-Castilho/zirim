@@ -6,17 +6,15 @@ import {
   GeneralError,
   UnauthorizedError,
   ValidationError,
-} from "../errors/customErrors.js";
+} from "../utils/handleResponse.js";
 
 import {
-  criarHashPass,
-  criarToken,
-  compararSenha
+  createHashPassword,
+  createToken,
+  comparePassword,
 } from "./authServices.js";
 
-import {
-  validationUser
-} from "./validationData.js";
+import { validateUser } from "./validationData.js";
 
 export default class UserService {
   
@@ -48,23 +46,35 @@ export default class UserService {
     });
   }
 
-  async getUserbyData(data){
+  async getUserByData(data) {
     if (!data) return null;
     return await this.getCollection().findOne(data);
   }
+
+  async getUserbyData(data) {
+    return this.getUserByData(data);
+  }
   
   async getUserByPhone(phone) {
-   if (!phone) return null;
-    return await this.getCollection().findOne({ "phone.number": phone });
+    if (!phone) return null;
+    const normalizedPhone = String(phone).trim();
+    return await this.getCollection().findOne({ "phone.number": normalizedPhone });
   }
 
-  async verifieldUser({ email, phone } = {}) {
+  async verifyUser({ email, phone } = {}) {
     const query = {};
-    if (email) query["email"] = email;
-    if (phone) query["phone"] = phone;
+    const normalizedEmail = email ? String(email).trim().toLowerCase() : null;
+    const normalizedPhone = phone ? String(phone).trim() : null;
+
+    if (normalizedEmail) query["email.endereco"] = normalizedEmail;
+    if (normalizedPhone) query["phone.number"] = normalizedPhone;
     if (Object.keys(query).length === 0) return null;
 
     return await this.getCollection().findOne(query);
+  }
+
+  async verifieldUser({ email, phone } = {}) {
+    return this.verifyUser({ email, phone });
   }
 
   async login(req, res) {
@@ -76,13 +86,13 @@ export default class UserService {
       throw new UnauthorizedError("Usuario nao encontrado.");
     }
 
-    const ismatch = await compararSenha(password, user.password);
+    const ismatch = await comparePassword(password, user.password);
 
     if (!ismatch) { // 401 Unauthorized
       throw new UnauthorizedError("Email ou senha incorretos.");
     }
 
-    const token = criarToken({
+    const token = createToken({
       id: user._id,
       email: user.email.endereco,
     });
@@ -96,7 +106,7 @@ export default class UserService {
   }
 
 
-  async creatUser(req, res) {
+  async createUser(req, res) {
     const dataUser = {
       name: req.body.name,
       email: req.body.email,
@@ -107,7 +117,7 @@ export default class UserService {
     dataUser.email = String(dataUser.email).trim().toLowerCase();
     dataUser.phone = String(dataUser.phone).trim();
 
-    const validation = validationUser(dataUser);
+    const validation = validateUser(dataUser);
 
     if (!validation.isValid) {
       // Lança um erro de validação com os detalhes dos campos inválidos
@@ -116,7 +126,7 @@ export default class UserService {
         validation.errors,
       );
     }
-    const userExists = await this.verifieldUser({
+    const userExists = await this.verifyUser({
       email: dataUser.email,
       phone: dataUser.phone,
     });
@@ -124,7 +134,7 @@ export default class UserService {
     if (userExists) { // 409 Conflict
       throw new GeneralError("Usuário já existe.", 409);
     }
-    dataUser.password = await criarHashPass(dataUser.password);
+    dataUser.password = await createHashPassword(dataUser.password);
 
     const userCreated = {
       name: dataUser.name,
@@ -145,7 +155,7 @@ export default class UserService {
 
     const newUser = await this.getCollection().insertOne(userCreated);
 
-    const token = criarToken({
+    const token = createToken({
       _id: newUser.insertedId,
       email: userCreated.email.endereco,
     });
@@ -167,20 +177,39 @@ export default class UserService {
       token,
       user: createdUser,
     };
-  };
+  }
 
+  async creatUser(req, res) {
+    return this.createUser(req, res);
+  }
 
   async resetPassword(id, updateData) {
     if (!ObjectId.isValid(id)) {
       throw new Error("ID de usuário inválido");
-    };
+    }
+
     const objectId = new ObjectId(id);
-
     const updateFields = {};
-    if (updateData.password) {
-      updateFields.password = await criarHashPass(updateData.password);
-    };
 
+    if (updateData?.password) {
+      updateFields.password = await createHashPassword(updateData.password);
+      updateFields.updatedAt = new Date();
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      throw new Error("Nenhuma senha para atualizar foi fornecida.");
+    }
+
+    const result = await this.getCollection().updateOne(
+      { _id: objectId },
+      { $set: updateFields }
+    );
+
+    if (result.matchedCount === 0) {
+      throw new NotFoundError("Usuário não encontrado.");
+    }
+
+    return await this.getUserById(id);
   }
 
   async updateUser(id, updateData) {

@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { GeneralError } from "../errors/customErrors.js";
+import { GeneralError } from "../utils/handleResponse.js";
 
 /**
  * Middleware para gerar e expor um token CSRF para os templates.

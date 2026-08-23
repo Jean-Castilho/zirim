@@ -12,11 +12,6 @@ import {
   getAbout, 
   getFavorites, 
   getCart,
-  getProfile,
-  getdasboardAdmin,
-  getdelivery,
-  getinventory,
-  getAddProduct,
   getVerifyOtp,
 } from "../controllers/pagesControllers.js";
 
@@ -61,7 +56,7 @@ router.get("/", getHome);
 
 router.get("/products", getProducts);
 router.get("/product/:id", getProductDetails);
--
+
 router.get("/about", getAbout);
 router.get("/contact", getContact);
 
@@ -72,13 +67,6 @@ router.get("/verify-otp", getVerifyOtp);
 
 router.get("/cart", getCart);
 router.get("/favorites", getFavorites);
-
-router.get("/profile", getProfile);
-
-router.get("/admin/dashboard", getdasboardAdmin);
-router.get("/admin/delivery", getdelivery);
-router.get("/admin/inventory", getinventory);
-router.get("/admin/inventory/add", getAddProduct);
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {

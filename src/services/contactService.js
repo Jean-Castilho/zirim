@@ -1,45 +1,37 @@
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 
+import { ValidationError } from "../utils/handleResponse.js";
+import { storeOtpCode, generateOtpCode } from "./otpService.js";
+
 dotenv.config();
 
-import { armazenCodeOtp, generateOTP } from "./otpService.js"
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+const WHATSAPP_PHONE_NUMBER_ID_ENV = process.env.WHATSAPP_PHONE_NUMBER_ID;
+const WHATSAPP_API_URL = WHATSAPP_PHONE_NUMBER_ID_ENV
+  ? `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_NUMBER_ID_ENV}/messages`
+  : null;
 
-const WHATSAPP_TOKEN = "EAA1BR5qp0TMBP5gN408BxXEDdA2FBhZBeCrARA0PjBggbz8f7rO3WEEpHgq80dhsGZCZBigtCBNbzcPisu64PxXuGSP4xZAoZAE3Du1a6FnJEZAJc6MR8ZCa4EpR2WF12FjZBM0tky54OG0HSoAhZBSKJONXphuTCgx5qIn0Pqb2gvS6HpVJkO7BiTMmc6hr4ApXgMwJ5404OS2ZClFtetKB82nHktobehR25sqNucasjJ2IvLcmSqJZCjdA8SBjywozbGoplKTBAt2EVLBJH7ZAEkMzY20mywZDZD";
-const WHATSAPP_PHONE_NUMBER_ID = "892056613982326";
-const WHATSAPP_API_URL = `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
-
-// Configurar o transporte do Nodemailer
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
+  port: Number(process.env.EMAIL_PORT || 587),
+  secure: Number(process.env.EMAIL_PORT || 587) === 465,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
 
-function getCurrentTime() {
-  const now = new Date();
-  return {
-    hour: now.getHours(),
-    minute: now.getMinutes(),
-    second: now.getSeconds(),
-  };
-};
-
-const createMessagandCode = async (to) => {
-  const otp = generateOTP();
+const createWhatsAppMessageCode = async (to) => {
+  const otp = generateOtpCode();
 
   const payload = {
     messaging_product: "whatsapp",
-    to: to,
+    to,
     type: "template",
     template: {
       name: "verifycode",
-      language: {
-        code: "en_US",
-      },
+      language: { code: "en_US" },
       components: [
         {
           type: "body",
@@ -49,20 +41,15 @@ const createMessagandCode = async (to) => {
           type: "button",
           sub_type: "url",
           index: 0,
-          parameters: [
-            {
-              type: "text",
-              text: otp,
-            },
-          ],
+          parameters: [{ type: "text", text: otp }],
         },
       ],
     },
   };
 
-  await armazenCodeOtp(to, otp);
+  await storeOtpCode(to, otp);
 
-  const fetchOptions = {
+  return {
     method: "POST",
     headers: {
       Authorization: `Bearer ${WHATSAPP_TOKEN}`,
@@ -70,47 +57,40 @@ const createMessagandCode = async (to) => {
     },
     body: JSON.stringify(payload),
   };
-
-  return fetchOptions;
-
 };
 
-export const sendOtpWhatzapp = async (number) => {
-
+export const sendWhatsAppOtp = async (number) => {
   if (!number) {
     throw new ValidationError("Número de telefone não fornecido.");
   }
 
   if (!WHATSAPP_TOKEN || !WHATSAPP_API_URL) {
-    console.error("Variáveis de ambiente do WhatsApp não configuradas.");
     throw new Error(
-      "A configuração do servidor para envio de mensagens está incompleta.",
+      "A configuração do servidor para envio de mensagens está incompleta. Defina WHATSAPP_TOKEN e WHATSAPP_PHONE_NUMBER_ID no .env.",
     );
   }
 
-  const fetchOptions = createMessagandCode(number);
-
   try {
+    const fetchOptions = await createWhatsAppMessageCode(number);
     const response = await fetch(WHATSAPP_API_URL, fetchOptions);
     const data = await response.json();
 
     return data;
-
   } catch (error) {
     console.error("Erro ao enviar mensagem:", error);
-    throw new Error("Erro ao enviar mensagem");
+    throw new Error("Erro ao enviar mensagem.");
   }
 };
 
-export const sendOtpEmail = async (email) => {
+export const sendOtpWhatzapp = sendWhatsAppOtp;
 
-  const otp = generateOTP();
-
+export const sendEmailOtp = async (email) => {
   if (!email) {
     throw new Error("O endereço de e-mail é obrigatório para enviar o OTP.");
-  };
+  }
 
-  await armazenCodeOtp(email, otp);
+  const otp = generateOtpCode();
+  await storeOtpCode(email, otp);
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
@@ -124,29 +104,32 @@ export const sendOtpEmail = async (email) => {
     console.log(`OTP enviado com sucesso para ${email}`);
   } catch (error) {
     console.error("Erro ao enviar OTP por e-mail:", error);
-    // Re-lança o erro para que o chamador (com .catch()) possa lidar com ele.
     throw error;
   }
-
 };
 
-export const postSendFeedBack = async (req, res) => {
+export const sendOtpEmail = sendEmailOtp;
 
+export const sendFeedbackEmail = async (req, res) => {
   const { email, subject, message } = req.body;
+
+  if (!email || !subject || !message) {
+    return res.status(400).json({ mensagem: "Email, assunto e mensagem são obrigatórios." });
+  }
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: subject,
-    text: message
+    subject,
+    text: message,
   };
 
   try {
     const emailSend = await transporter.sendMail(mailOptions);
-
-    return res.status(200).json({ messagem: "feedback enviado com sucesso!", emailSend })
+    return res.status(200).json({ mensagem: "feedback enviado com sucesso!", emailSend });
   } catch (error) {
-    return res.status(500).json({ mensagem: "erro ao enviar email" })
+    return res.status(500).json({ mensagem: "erro ao enviar email" });
   }
-
 };
+
+export const postSendFeedBack = sendFeedbackEmail;
