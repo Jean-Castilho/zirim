@@ -16,9 +16,6 @@
     font-weight: bold;
 }
 
-
-
-
 .product-details-page {
     padding: 40px 20px;
     max-width: 1400px;
@@ -478,6 +475,10 @@
 
 @media (max-width: 768px) {
 
+    .product-gallery {
+        width: 90%;
+    }
+
     .product-details-page {
         padding: 20px 16px;
     }
@@ -505,6 +506,10 @@
     .related-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    .product-details-container {
+        margin: 0px 8px 0px 8px;
+    }
 }
 
 @media (max-width: 580px) {
@@ -512,12 +517,21 @@
         font-size: 1.5rem;
     }
 
+    .product-gallery {
+        width: 98%;
+    }
+
+    .stock-badge {
+        padding: 6px 12px;
+        font-size: 0.80rem;
+    }
+
     .amount {
         font-size: 1.4rem;
     }
 
     .gallery-thumbnails {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
 
     .selectors {
