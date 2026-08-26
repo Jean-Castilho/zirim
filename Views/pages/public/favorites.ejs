@@ -168,70 +168,84 @@
 </div>
 
 <script>
-  
-/**
- * Obtém detalhes de produtos por uma lista de IDs, com projeção opcional.
- * @param {string[]} ids - Um array de IDs de produtos.
- * @param {object} projection - Um objeto de projeção para os campos a serem retornados.
- * @returns {Promise<object[]>} Uma promessa que resolve para um array de objetos de produtos.
- */
-async function getProdutcDetailsByIds(ids, projection = {}) {
+  /**
+   * Obtém detalhes de produtos por uma lista de IDs, com projeção opcional.
+   * @param {string[]} ids - Um array de IDs de produtos.
+   * @param {object} projection - Um objeto de projeção para os campos a serem retornados.
+   * @returns {Promise<object[]>} Uma promessa que resolve para um array de objetos de produtos.
+   */
+  async function getProductDetailsByIds(ids, projection = {}) { // Correção: Produtc -> Product
     if (!Array.isArray(ids) || ids.length === 0) {
-        console.warn("Nenhum ID fornecido para buscar detalhes do produto.");
-        return [];
+      console.warn("Nenhum ID fornecido para buscar detalhes do produto.");
+      return [];
     }
 
     try {
-        const response = await fetch('/products/projectionByIds', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ ids, projection }),
-        });
-        const products = await response.json();
-        return products;
+      const response = await fetch('/products/projectionByIds', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids, projection }),
+      });
+      const products = await response.json();
+      return products;
     } catch (error) {
-        console.error('Erro ao buscar detalhes do produto por IDs:', error);
-        return [];
+      console.error('Erro ao buscar detalhes do produto por IDs:', error);
+      return [];
     }
-
-}
-
+  }
 
   async function loadFavoriteProducts() {
     const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    const products = await getProdutcDetailsByIds(favorites, {
-      nome: 1,
-      categoria: 1,
-      imagens: { $slice: 1 },
-    });
     const productsGrid = document.querySelector('.products-grid');
 
-    if (!productsGrid || products.length === 0) return;
+    if (!productsGrid) return;
 
-    productsGrid.innerHTML = products.map(product => `
-      <div class="product-card">
-        <div class="product-image-wrapper">
-          <img src="${product.imagens?.length ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400'}" alt="${product.nome || 'Produto'}">
-          <button class="btn-favorite" data-product-id="${product._id}">
-            <i class="material-icons favorite-icon">favorite</i>
-          </button>
+    if (favorites.length === 0) {
+      productsGrid.innerHTML = '<div class="empty-state"><i class="material-icons">favorite_border</i><p>Você ainda não possui produtos favoritos.</p></div>';
+      return;
+    }
+
+    const products = await getProductDetailsByIds(favorites, {
+      nome: 1,
+      categoria: 1,
+      'variacoes.imagens': { $slice: 1 },
+    });
+
+    if (!products || products.length === 0) {
+      productsGrid.innerHTML = '<div class="empty-state"><p>Nenhum produto encontrado.</p></div>';
+      return;
+    }
+
+    productsGrid.innerHTML = products.map(product => {
+      // Validação segura do caminho da imagem
+      const hasImage = product.variacoes?.[0]?.imagens?.[0];
+      const imageSrc = hasImage
+        ? `/image/${product.variacoes[0].imagens[0]}`
+        : 'https://via.placeholder.com/400x400';
+
+      return `
+        <div class="product-card">
+          <div class="product-image-wrapper">
+            <img src="${imageSrc}" alt="${product.nome || 'Produto'}">
+            <button class="btn-favorite" data-product-id="${product._id}">
+              <i class="material-icons favorite-icon">favorite</i>
+            </button>
+          </div>
+          <div class="product-details">
+            <span class="product-category">${product.categoria || 'Geral'}</span>
+            <h3 class="product-title">${product.nome || 'Produto'}</h3>
+            <a href="/product/${product._id}" class="btn-view-details">Ver Detalhes</a>
+          </div>
         </div>
-        <div class="product-details">
-          <span class="product-category">${product.categoria || 'Geral'}</span>
-          <h3 class="product-title">${product.nome || 'Produto'}</h3>
-          <a href="/product/${product._id}" class="btn-view-details">Ver Detalhes</a>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
-  
-document.addEventListener('DOMContentLoaded', () => {
-  loadFavoriteProducts();
-});
-
+  document.addEventListener('DOMContentLoaded', () => {
+    loadFavoriteProducts();
+  });
 </script>
 
 <script src="/js/favorited.js"></script>

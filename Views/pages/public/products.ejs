@@ -458,9 +458,7 @@
 
           <div class="product-image-wrapper">
 
-            <img
-              src="<%= product.imagens && product.imagens.length > 0 ? '/image/' + product.imagens[0] : 'https://via.placeholder.com/400x400' %>"
-              alt="<%= product.nome %>">
+            <img src="<%= product.variacoes[0].imagens[0] && product.variacoes[0].imagens.length > 0 ? '/image/' + product.variacoes[0].imagens[0] : 'https://via.placeholder.com/40' %>" alt="<%= product.nome %>">
 
             <button class="btn-favorite event-Favorit" data-product-id="<%= product._id %>" data-is-favorited="false">
               <i class="material-icons favorite-icon">favorite_border</i>

@@ -228,19 +228,15 @@
           <div class="product-card">
             <% 
             
-            let imgSrc='https://via.placeholder.com/400x400';
+            let imgSrc='https://via.placeholder.com/400x400' ; 
             
-            if (Array.isArray(product.imagens) && product.imagens.length> 0) {
-              
-              imgSrc = '/image/' + product.imagens[0];
+            if (Array.isArray(product.variacoes[0].imagens) && product.variacoes[0].imagens.length > 0) {
 
-            } else if (product.imageUrl) {
-              
-              imgSrc = product.imageUrl;
+              imgSrc = '/image/' + product.variacoes[0].imagens[0];
             
             }
-            
-            %>
+
+              %>
               <img src="<%= imgSrc %>" alt="<%= product.nome %>">
               <h3>
                 <%= product.nome %>

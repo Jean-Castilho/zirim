@@ -1,10 +1,11 @@
 import UserService from "../services/userService.js";
-import ProductService from "../services/productService.js";
+
+import ProductController from "../controllers/productControllers.js";
 
 import { verifyOtpCode } from "../services/otpService.js";
 import { GeneralError, renderPage } from "../utils/handleResponse.js";
 
-const productService = new ProductService();
+const productController = new ProductController();
 
 export const getProfile = (req, res) => {
 
@@ -113,7 +114,6 @@ export const PostVerifyOtp = async (req, res, next) => {
 
 
 export const getdasboardAdmin = (req, res) => {
-
   if (!req.session.user || req.session.user.role !== "admin") {
     return res.redirect("/login");
   }
@@ -123,6 +123,7 @@ export const getdasboardAdmin = (req, res) => {
     message: "Gerencie as informações da loja",
   });
 };
+
 
 export const getdelivery = (req, res) => {
   if (!req.session.user || req.session.user.role !== "admin") {
@@ -135,26 +136,28 @@ export const getdelivery = (req, res) => {
   });
 };
 
+
 export const getinventory = async (req, res, next) => {
   try {
     if (!req.session.user || req.session.user.role !== "admin") {
       return res.redirect("/login");
     }
+    const products = await productController.AllProducts();
 
-    
-    const products = await productService.getAllProducts();
-
-    renderPage(req, res, "../pages/admin/inventory/dashboard", {
+    console.log(products);
+    renderPage(req, res, "../pages/admin/inventory/tabela-product", {
       titulo: "Gerenciamento de Inventário",
       message: "Controle de estoque e produtos",
       products: products
     });
 
-
   } catch (error) {
     next(error);
   }
 };
+
+
+
 
 export const getAddProduct = (req, res) => {
   if (!req.session.user || req.session.user.role !== "admin") {

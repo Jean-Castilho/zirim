@@ -7,7 +7,7 @@ const productController = new ProductController();
 export const getHome = async (req, res, next) => {
   try {
     const products = await productController.getCollection().find({},
-      { projection: { nome: 1, imagens: { $slice: 1 } } }).limit(4).toArray();
+      { projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } } }).limit(4).toArray();
 
     renderPage(req, res, "../pages/public/home", {
       titulo: "Zirim - Moda e Calçados",
@@ -22,7 +22,7 @@ export const getHome = async (req, res, next) => {
 export const getProducts = async (req, res, next) => {
   try {
     const products = await productController.getCollection().find({},
-      { projection: { nome: 1, imagens: { $slice: 1 } } }).toArray();
+      { projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } } }).toArray();
 
     renderPage(req, res, "../pages/public/products", {
       titulo: "Produtos",
@@ -35,23 +35,16 @@ export const getProducts = async (req, res, next) => {
   }
 };
 
-
 export const getProductDetails = async (req, res, next) => {
-  
   try {
-    
     const { id } = req.params;
-    
     if (!id) {
-    
       return res.status(400).render("../pages/public/product-details", {
         titulo: "Detalhes do Produto",
         product: null,
         errorMessage: "ID de produto obrigatório.",
       });
-    
     }
-    
     const product = await productController.getProductById(id);
 
     if (!product) {
@@ -66,13 +59,12 @@ export const getProductDetails = async (req, res, next) => {
       titulo: product.nome || "Detalhes do Produto",
       product,
     });
-  
   } catch (error) {
-  
     next(error);
-  
   }
 };
+
+
 
 export const getAbout = (req, res) => {
   renderPage(req, res, "../pages/public/about", {
@@ -105,22 +97,17 @@ export const getRegister = (req, res) => {
 export const getVerifyOtp = async (req, res, next) => {
   try {
     const userEmail = req.session?.user?.email?.endereco;
-
     if (!userEmail) {
-      // Se não houver usuário na sessão, ele não deveria estar aqui.
       return res.redirect('/login');
     }
-
     const normalized = String(userEmail).trim().toLowerCase();
 
-    // Renderiza a página para o usuário imediatamente.
     renderPage(req, res, "../pages/auth/verify-otp", {
       titulo: "Verificar E-mail",
       message: `Enviamos um código de verificação para ${normalized}.`,
       email: normalized
     });
 
-    // Envia o e-mail em segundo plano sem bloquear a resposta.
     sendEmailOtp(normalized).catch(err => {
       console.error("Falha ao enviar e-mail de OTP em segundo plano:", err);
     });
@@ -128,7 +115,6 @@ export const getVerifyOtp = async (req, res, next) => {
     next(error);
   }
 };
-
 
 
 export const getFavorites = async (req, res, next) => {
@@ -143,7 +129,6 @@ export const getFavorites = async (req, res, next) => {
 };
 
 export const getCart = (req, res) => {
-
   renderPage(req, res, "../pages/public/cart", {
     titulo: "Meu Carrinho",
     message: "Seu carrinho de compras!",

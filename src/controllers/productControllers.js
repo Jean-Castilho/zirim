@@ -55,42 +55,39 @@ export default class ProductController {
   async uploadProductAndImage(req, res) {
     const allFiles = req.files;
     const bucket = getGridFSBucket();
-    const mainProductImages = [];
     const variationFilesMap = new Map();
 
     if (allFiles && allFiles.length > 0) {
       allFiles.forEach(file => {
-        if (file.fieldname === 'imagens') {
-          mainProductImages.push(file);
-        } else if (file.fieldname.startsWith('variations[') && file.fieldname.includes('][imagens]')) {
+        if (file.fieldname.startsWith('variations[') && file.fieldname.includes('][imagens]')) {
           const match = file.fieldname.match(/variations\[(\d+)\]\[imagens\]/);
           if (match && match[1]) {
             const variationIndex = parseInt(match[1], 10);
-            if (!variationFilesMap.has(variationIndex)) variationFilesMap.set(variationIndex, []);
+            if (!variationFilesMap.has(variationIndex)) {
+              variationFilesMap.set(variationIndex, []);
+            }
             variationFilesMap.get(variationIndex).push(file);
           }
         }
       });
     }
 
-    const uploadedMainImageNames = await Promise.all(
-      mainProductImages.map(file => this.#uploadFileWithRetry(file, bucket))
-    );
-
     let rawVariations = [];
     if (req.body.variations && Array.isArray(req.body.variations)) {
       rawVariations = req.body.variations;
     } else if (req.body.cores || req.body.tamanhos || req.body.preco || req.body.estoque || variationFilesMap.has(0)) {
-      rawVariations.push(req.body);
+      rawVariations.push(req.body); 
     }
 
     const processedVariations = [];
     for (let i = 0; i < rawVariations.length; i++) {
       const variationBody = rawVariations[i];
       const filesForThisVariation = variationFilesMap.get(i) || [];
+      
       const uploadedVariationImageNames = await Promise.all(
         filesForThisVariation.map(file => this.#uploadFileWithRetry(file, bucket))
       );
+      
       processedVariations.push(this.#processVariationObject({
         ...variationBody,
         imagens: uploadedVariationImageNames,
@@ -99,17 +96,17 @@ export default class ProductController {
 
     const productData = {
       nome: req.body.name,
-      imagens: uploadedMainImageNames,
       variacoes: processedVariations,
       categoria: req.body.categoria,
-      descricao: req.body.descricao
+      descricao: req.body.descricao,
+      comentarios: [],
     };
 
     const result = await this.getCollection().insertOne(productData);
     return { message: "Produto adicionado com sucesso!", productId: result.insertedId };
   }
 
-  async allProducts() {
+  async AllProducts() {
     return this.getCollection().find().toArray();
   }
 

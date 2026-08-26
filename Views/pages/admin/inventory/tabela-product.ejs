@@ -1,0 +1,261 @@
+<style>
+  
+  .admin-container {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--cor-borda);
+    padding-bottom: 20px;
+  }
+
+  .admin-title {
+    font-size: 2rem;
+    color: var(--cor-primaria);
+    margin-bottom: 5px;
+  }
+
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .admin-table thead {
+    background-color: var(--cor-primaria);
+    color: var(--cor-texto-claro);
+  }
+
+  .admin-table th {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .admin-table th.text-center {
+    text-align: center;
+  }
+
+  .admin-table tbody tr {
+    border-bottom: 1px solid var(--cor-fundo-neutro);
+    transition: background-color 0.2s;
+  }
+
+  .admin-table tbody tr:hover {
+    background-color: #f9f9f9;
+  }
+
+  .admin-table td {
+    padding: 15px;
+  }
+
+  .admin-table td.text-center {
+    text-align: center;
+  }
+
+  .col-categoria {
+    text-transform: capitalize;
+  }
+
+  .col-preco {
+    font-weight: bold;
+    color: var(--cor-secundaria);
+  }
+
+  .table-image {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--cor-borda);
+  }
+
+  /* =========================================
+     4. BUTTONS & ACTIONS
+     ========================================= */
+  .btn-add {
+    background-color: var(--cor-secundaria);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .actions-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .btn-icon i {
+    font-size: 20px;
+  }
+
+  .btn-edit {
+    color: #1976d2;
+  }
+  .btn-edit:hover {
+    background-color: #e3f2fd;
+  }
+
+  .btn-delete {
+    color: var(--cor-secundaria);
+  }
+  .btn-delete:hover {
+    background-color: #ffebee;
+  }
+
+  .back-link-wrapper {
+    margin-top: 20px;
+    text-align: right;
+  }
+
+  .back-link {
+    color: var(--cor-texto-escuro);
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .stock-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+
+  .stock-high {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .stock-low {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  .empty-state-cell {
+    padding: 30px;
+    text-align: center;
+    color: #777;
+  }
+
+  .empty-state-cell i {
+    font-size: 40px;
+    color: #ccc;
+    margin-bottom: 10px;
+    display: block;
+  }
+</style>
+
+<div class="admin-container">
+  
+  <header class="admin-header">
+    <div>
+      <h1 class="admin-title"><%= titulo %></h1>
+    </div>
+    <div>
+      <a href="/admin/inventory/add" class="btn-add">
+        <i class="material-icons">add</i> Adicionar Produto
+      </a>
+    </div>
+  </header>
+
+  <div class="table-responsive">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Imagem</th>
+          <th>Nome do Produto</th>
+          <th>Categoria</th>
+          <th>Preço (R$)</th>
+          <th>Estoque</th>
+          <th class="text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (products && products.length > 0) { %>
+          <% products.forEach(product => { %>
+            <tr>
+              
+              <td class="text-center">
+                <img class="table-image" 
+                     src="<%= product.variacoes?.[0]?.imagens?.[0] ? '/image/' + product.variacoes[0].imagens[0] : 'https://via.placeholder.com/40' %>" 
+                     alt="<%= product.nome %>">
+              </td>
+
+              <td><%= product.nome %></td>
+              
+              <td class="col-categoria"><%= product.categoria %></td>
+              
+              <td class="col-preco"><%= product.variacoes?.[0]?.preco || '0.00' %></td>
+              
+              <td>
+                <!-- Lógica de EJS injetando a classe CSS correta baseada na quantidade de estoque da variação principal -->
+                <span class="stock-badge <%= product.variacoes?.[0]?.estoque > 6 ? 'stock-high' : 'stock-low' %>">
+                  <%= product.variacoes?.[0]?.estoque || 0 %>
+                </span>
+              </td>
+              
+              <td class="text-center">
+                <div class="actions-wrapper">
+                  <button title="Editar" class="btn-icon btn-edit">
+                    <i class="material-icons">edit</i>
+                  </button>
+                  <button title="Excluir" class="btn-icon btn-delete">
+                    <i class="material-icons">delete</i>
+                  </button>
+                </div>
+              </td>
+
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="6" class="empty-state-cell">
+              <i class="material-icons">inventory_2</i>
+              Nenhum produto cadastrado no inventário.
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="back-link-wrapper">
+    <a href="/admin/dashboard" class="back-link">
+      <i class="material-icons" style="font-size: 18px;">arrow_back</i> Voltar ao Painel
+    </a>
+  </div>
+</div>
