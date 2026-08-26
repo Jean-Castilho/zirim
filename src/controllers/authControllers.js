@@ -1,28 +1,13 @@
 import UserService from "../services/userService.js";
-
 import { verifyOtpCode } from "../services/otpService.js";
 import { GeneralError, renderPage } from "../utils/handleResponse.js";
 
 import ProductController from "../controllers/productControllers.js";
-
-
 const productController = new ProductController();
 
-export const getProfile = (req, res) => {
+const userService = new UserService();
 
-  if (!req.session.user) {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/auth/profile", {
-    titulo: "Meu Perfil",
-    message: "Gerencie suas informações de perfil!",
-  });
-};
-
-export const PostLogin = async (req, res, next) => {
-
-    const userService = new UserService();
+export const Login = async (req, res, next) => {
     const cookieSecure = process.env.NODE_ENV === 'production';
     const cookieSameSite = process.env.NODE_ENV === 'production' ? 'Lax' : 'Lax';
 
@@ -50,8 +35,8 @@ export const PostLogin = async (req, res, next) => {
     }
 };
 
-export const PostRegister = async (req, res, next) => {
-    const userService = new UserService();
+export const Register = async (req, res, next) => {
+    
     const cookieSecure = process.env.NODE_ENV === 'production';
     const cookieSameSite = process.env.NODE_ENV === 'production' ? 'Lax' : 'Lax';
 
@@ -59,7 +44,6 @@ export const PostRegister = async (req, res, next) => {
         const dataRegister = await userService.createUser(req, res);
 
         console.log('Registration successful, session ID:', req.sessionID);
-        console.log('Session user:', req.session.user);
 
         req.session.save((err) => {
             if (err) {
@@ -82,12 +66,9 @@ export const PostRegister = async (req, res, next) => {
     }
 };
 
-export const PostVerifyOtp = async (req, res, next) => {
+export const VerifyOtp = async (req, res, next) => {
     const { email, otp } = req.body;
-    console.log(req.body);
-    
-    const userService = new UserService();
-    
+
     try {
         const user = await userService.getUserById(req.session.user._id);
         if (!user) {
@@ -114,38 +95,32 @@ export const PostVerifyOtp = async (req, res, next) => {
 };
 
 
-export const getdasboardAdmin = (req, res) => {
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
+export const getProfile = (req, res) => {
+  renderPage(req, res, "../pages/auth/profile", {
+    titulo: "Meu Perfil",
+    message: "Gerencie suas informações de perfil!",
+  });
+};
 
+export const getdasboard = (req, res) => {
   renderPage(req, res, "../pages/admin/dashboard", {
     titulo: "Administaçao",
     message: "Gerencie as informações da loja",
   });
 };
 
-
 export const getdelivery = (req, res) => {
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
-
   renderPage(req, res, "../pages/admin/delivery/dashboard", {
     titulo: "Entregas",
     message: "Gerencie as entregas",
   });
 };
 
-
 export const getinventory = async (req, res, next) => {
   try {
-    if (!req.session.user || req.session.user.role !== "admin") {
-      return res.redirect("/login");
-    }
+    
     const products = await productController.AllProducts();
-
-    console.log(products);
+    
     renderPage(req, res, "../pages/admin/inventory/tabela-product", {
       titulo: "Gerenciamento de Inventário",
       message: "Controle de estoque e produtos",
@@ -157,14 +132,7 @@ export const getinventory = async (req, res, next) => {
   }
 };
 
-
-
-
 export const getAddProduct = (req, res) => {
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
-
   renderPage(req, res, "../pages/admin/inventory/add-product", {
     titulo: "Adicionar Produto",
     message: "Cadastre um novo produto no inventário",
