@@ -43,13 +43,13 @@ export const connectDataBase = async () => {
   }
 };
 
-export const getDataBase = () => {
+export const DataBase = () => {
   if (!db)
     throw new Error("A conexão com o banco de dados não foi inicializada.");
   return db;
 };
 
-export const getGridFSBucket = () => {
+export const GridFSBucket = () => {
   if (!bucket) throw new Error("O GridFSBucket não foi inicializado.");
   return bucket;
 };

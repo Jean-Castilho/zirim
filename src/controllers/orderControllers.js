@@ -2,7 +2,7 @@
 import dotenv from "dotenv";
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
-import { getDataBase } from "../config/db.js";
+import { DataBase } from "../config/db.js";
 import { validateCartItems } from "../services/orderService.js"
 
 dotenv.config();

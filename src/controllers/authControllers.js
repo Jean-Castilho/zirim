@@ -1,10 +1,7 @@
-import UserService from "../services/userService.js";
 import { verifyOtpCode } from "../services/otpService.js";
 import { GeneralError, renderPage } from "../utils/handleResponse.js";
 
-import ProductController from "../controllers/productControllers.js";
-const productController = new ProductController();
-
+import UserService from "../services/userService.js";
 const userService = new UserService();
 
 export const Login = async (req, res, next) => {
@@ -92,49 +89,4 @@ export const VerifyOtp = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
-
-
-export const getProfile = (req, res) => {
-  renderPage(req, res, "../pages/auth/profile", {
-    titulo: "Meu Perfil",
-    message: "Gerencie suas informações de perfil!",
-  });
-};
-
-export const getdasboard = (req, res) => {
-  renderPage(req, res, "../pages/admin/dashboard", {
-    titulo: "Administaçao",
-    message: "Gerencie as informações da loja",
-  });
-};
-
-export const getdelivery = (req, res) => {
-  renderPage(req, res, "../pages/admin/delivery/dashboard", {
-    titulo: "Entregas",
-    message: "Gerencie as entregas",
-  });
-};
-
-export const getinventory = async (req, res, next) => {
-  try {
-    
-    const products = await productController.AllProducts();
-    
-    renderPage(req, res, "../pages/admin/inventory/tabela-product", {
-      titulo: "Gerenciamento de Inventário",
-      message: "Controle de estoque e produtos",
-      products: products
-    });
-
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getAddProduct = (req, res) => {
-  renderPage(req, res, "../pages/admin/inventory/add-product", {
-    titulo: "Adicionar Produto",
-    message: "Cadastre um novo produto no inventário",
-  });
 };

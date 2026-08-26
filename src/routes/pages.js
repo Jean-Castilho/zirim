@@ -1,26 +1,31 @@
 import express from "express";
-import { generateCsrfToken } from "../middleware/csrfMiddleware.js";
-import { getGridFSBucket, getDataBase } from '../config/db.js';
+import { GenerateCsrfToken } from "../middleware/csrfMiddleware.js";
+import { GridFSBucket, DataBase } from '../config/db.js';
 
 import {
-  getHome, 
-  getProducts,
-  getProductDetails, 
-  getRegister, 
-  getLogin, 
-  getContact, 
-  getAbout, 
-  getFavorites, 
-  getCart,
-  getVerifyOtp,
+  Home, 
+  Products,
+  ProductDetails, 
+  Register, 
+  Login, 
+  Contact, 
+  About, 
+  Favorites, 
+  Cart,
+  VerifyOtp,
+  Profile,
+  Dashboard,
+  Delivery,
+  Inventory,
+  AddProduct,
 } from "../controllers/pagesControllers.js";
 
 const router = express.Router();
 
 router.get('/image/:filename', async (req, res) => {
     try {
-        const bucket = getGridFSBucket();
-        const db = getDataBase();
+        const bucket = GridFSBucket();
+        const db = DataBase();
         const filesCollection = db.collection('uploads.files');
 
         const filename = req.params.filename;
@@ -52,21 +57,27 @@ router.get('/image/:filename', async (req, res) => {
     }
 });
 
-router.get("/", getHome);
+router.get("/", Home);
 
-router.get("/products", getProducts);
-router.get("/product/:id", getProductDetails);
+router.get("/products", Products);
+router.get("/product/:id", ProductDetails);
 
-router.get("/about", getAbout);
-router.get("/contact", getContact);
+router.get("/about", About);
+router.get("/contact", Contact);
 
-router.get("/register", getRegister);
-router.get("/login", generateCsrfToken, getLogin);
+router.get("/register", Register);
+router.get("/login", GenerateCsrfToken, Login);
 
-router.get("/verify-otp", getVerifyOtp);
+router.get("/verify-otp", VerifyOtp);
 
-router.get("/cart", getCart);
-router.get("/favorites", getFavorites);
+router.get("/cart", Cart);
+router.get("/favorites", Favorites);
+
+router.get("/profile", Profile);
+router.get("/dashboard", Dashboard);
+router.get("/delivery", Delivery);
+router.get("/inventory", Inventory);
+router.get("/inventory/add", AddProduct);
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {

@@ -1,14 +1,17 @@
-import ProductController from "../controllers/productControllers.js";
 import { sendEmailOtp } from "../services/contactService.js";
 import { renderPage } from "../utils/handleResponse.js";
-const productController = new ProductController();
+import ProductRepository from "../repository/ProductRepository.js";
 
+// Instanciação direta da camada de dados
+const productRepository = new ProductRepository();
 
-export const getHome = async (req, res, next) => {
+export const Home = async (req, res, next) => {
   try {
-    const products = await productController.getCollection().find({},
-      { projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } } }).limit(4).toArray();
-
+    const products = await productRepository.findAll({}, {
+      projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } },
+      limit: 4
+    });
+    
     renderPage(req, res, "../pages/public/home", {
       titulo: "Zirim - Moda e Calçados",
       message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
@@ -19,23 +22,23 @@ export const getHome = async (req, res, next) => {
   }
 };
 
-export const getProducts = async (req, res, next) => {
+export const Products = async (req, res, next) => {
   try {
-    const products = await productController.getCollection().find({},
-      { projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } } }).toArray();
-
+    const products = await productRepository.findAll({}, {
+      projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } }
+    });
+    
     renderPage(req, res, "../pages/public/products", {
       titulo: "Produtos",
       message: "Confira nossos produtos!",
       products: products,
-    });
-    
+    });       
   } catch (error) {
     next(error);
   }
 };
 
-export const getProductDetails = async (req, res, next) => {
+export const ProductDetails = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!id) {
@@ -45,16 +48,16 @@ export const getProductDetails = async (req, res, next) => {
         errorMessage: "ID de produto obrigatório.",
       });
     }
-    const product = await productController.getProductById(id);
 
+    const product = await productRepository.findById(id);
     if (!product) {
       return res.status(404).render("../pages/public/product-details", {
         titulo: "Produto não encontrado",
-        product,
+        product: null,
         errorMessage: "Produto não encontrado.",
       });
     }
-    
+         
     renderPage(req, res, "../pages/public/product-details", {
       titulo: product.nome || "Detalhes do Produto",
       product,
@@ -64,50 +67,48 @@ export const getProductDetails = async (req, res, next) => {
   }
 };
 
-
-
-export const getAbout = (req, res) => {
+export const About = (req, res) => {
   renderPage(req, res, "../pages/public/about", {
     titulo: "Sobre Nós",
     message: "Saiba mais sobre nossa loja!",
   });
 };
 
-export const getContact = (req, res) => {
+export const Contact = (req, res) => {
   renderPage(req, res, "../pages/public/contact", {
     titulo: "Contato",
     message: "Entre em contato conosco!",
   });
 };
 
-export const getLogin = (req, res) => {
+export const Login = (req, res) => {
   renderPage(req, res, "../pages/auth/login", {
     titulo: "Login",
     message: "seja Bem vindo de volta...",
   });
 };
 
-export const getRegister = (req, res) => {
+export const Register = (req, res) => {
   renderPage(req, res, "../pages/auth/register", {
     titulo: "Registrar Conta",
     message: "Crie sua conta para começar a comprar!",
   });
 };
 
-export const getVerifyOtp = async (req, res, next) => {
+export const VerifyOtp = async (req, res, next) => {
   try {
     const userEmail = req.session?.user?.email?.endereco;
     if (!userEmail) {
       return res.redirect('/login');
     }
     const normalized = String(userEmail).trim().toLowerCase();
-
+    
     renderPage(req, res, "../pages/auth/verify-otp", {
       titulo: "Verificar E-mail",
       message: `Enviamos um código de verificação para ${normalized}.`,
       email: normalized
     });
-
+    
     sendEmailOtp(normalized).catch(err => {
       console.error("Falha ao enviar e-mail de OTP em segundo plano:", err);
     });
@@ -116,8 +117,7 @@ export const getVerifyOtp = async (req, res, next) => {
   }
 };
 
-
-export const getFavorites = async (req, res, next) => {
+export const Favorites = async (req, res, next) => {
   try {
     renderPage(req, res, "../pages/public/favorites", {
       titulo: "Favoritos",
@@ -128,9 +128,51 @@ export const getFavorites = async (req, res, next) => {
   }
 };
 
-export const getCart = (req, res) => {
+export const Cart = (req, res) => {
   renderPage(req, res, "../pages/public/cart", {
     titulo: "Meu Carrinho",
     message: "Seu carrinho de compras!",
+  });
+};
+
+export const Profile = (req, res) => {
+  renderPage(req, res, "../pages/auth/profile", {
+    titulo: "Meu Perfil",
+    message: "Gerencie suas informações de perfil!",
+  });
+};
+
+export const Dasboard = (req, res) => {
+  renderPage(req, res, "../pages/admin/dashboard", {
+    titulo: "Administração",
+    message: "Gerencie as informações da loja",
+  });
+};
+
+export const Delivery = (req, res) => {
+  renderPage(req, res, "../pages/admin/delivery/dashboard", {
+    titulo: "Entregas",
+    message: "Gerencie as entregas",
+  });
+};
+
+export const Inventory = async (req, res, next) => {
+  try {
+    const products = await productRepository.findAll();
+         
+    renderPage(req, res, "../pages/admin/inventory/tabela-product", {
+      titulo: "Gerenciamento de Inventário",
+      message: "Controle de estoque e produtos",
+      products: products
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const AddProduct = (req, res) => {
+  renderPage(req, res, "../pages/admin/inventory/add-product", {
+    titulo: "Adicionar Produto",
+    message: "Cadastre um novo produto no inventário",
   });
 };
