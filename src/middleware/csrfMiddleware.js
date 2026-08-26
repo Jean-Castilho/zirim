@@ -1,10 +1,6 @@
 import { randomBytes } from "crypto";
 import { GeneralError } from "../utils/handleResponse.js";
 
-/**
- * Middleware para gerar e expor um token CSRF para os templates.
- * Este middleware deve ser usado em TODAS as rotas GET que renderizam formulários.
- */
 export const generateCsrfToken = (req, res, next) => {
   // Gera um novo token se não houver um na sessão
   if (!req.session.csrfToken) {
