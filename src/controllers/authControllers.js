@@ -1,9 +1,10 @@
 import UserService from "../services/userService.js";
 
-import ProductController from "../controllers/productControllers.js";
-
 import { verifyOtpCode } from "../services/otpService.js";
 import { GeneralError, renderPage } from "../utils/handleResponse.js";
+
+import ProductController from "../controllers/productControllers.js";
+
 
 const productController = new ProductController();
 
