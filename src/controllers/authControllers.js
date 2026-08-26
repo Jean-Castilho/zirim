@@ -1,28 +1,10 @@
-import UserService from "../services/userService.js";
-
 import { verifyOtpCode } from "../services/otpService.js";
 import { GeneralError, renderPage } from "../utils/handleResponse.js";
 
-import ProductController from "../controllers/productControllers.js";
+import UserService from "../services/userService.js";
+const userService = new UserService();
 
-
-const productController = new ProductController();
-
-export const getProfile = (req, res) => {
-
-  if (!req.session.user) {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/auth/profile", {
-    titulo: "Meu Perfil",
-    message: "Gerencie suas informações de perfil!",
-  });
-};
-
-export const PostLogin = async (req, res, next) => {
-
-    const userService = new UserService();
+export const Login = async (req, res, next) => {
     const cookieSecure = process.env.NODE_ENV === 'production';
     const cookieSameSite = process.env.NODE_ENV === 'production' ? 'Lax' : 'Lax';
 
@@ -111,62 +93,4 @@ export const PostVerifyOtp = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
-
-
-export const getdasboardAdmin = (req, res) => {
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/admin/dashboard", {
-    titulo: "Administaçao",
-    message: "Gerencie as informações da loja",
-  });
-};
-
-
-export const getdelivery = (req, res) => {
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/admin/delivery/dashboard", {
-    titulo: "Entregas",
-    message: "Gerencie as entregas",
-  });
-};
-
-
-export const getinventory = async (req, res, next) => {
-  try {
-    if (!req.session.user || req.session.user.role !== "admin") {
-      return res.redirect("/login");
-    }
-    const products = await productController.AllProducts();
-
-    console.log(products);
-    renderPage(req, res, "../pages/admin/inventory/tabela-product", {
-      titulo: "Gerenciamento de Inventário",
-      message: "Controle de estoque e produtos",
-      products: products
-    });
-
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-
-
-export const getAddProduct = (req, res) => {
-  if (!req.session.user || req.session.user.role !== "admin") {
-    return res.redirect("/login");
-  }
-
-  renderPage(req, res, "../pages/admin/inventory/add-product", {
-    titulo: "Adicionar Produto",
-    message: "Cadastre um novo produto no inventário",
-  });
 };

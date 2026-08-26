@@ -1,29 +1,28 @@
-import express from 'express'
+import express from 'express';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import Server from "./src/server.js"
+import Server from "./src/server.js";
+import { connectDataBase, closeDataBase } from './src/config/db.js';
 
 const app = express();
-
 const port = process.env.PORT || 3080;
+const isProd = process.env.NODE_ENV === 'production';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const isProduction = process.env.NODE_ENV === 'production';
-const clientUrl = process.env.CLIENT_URL || `http://localhost:${port}`;
-const isLocalhost = /localhost|127\.0\.0\.1/.test(clientUrl);
-const cookieSecure = isProduction && !isLocalhost;
-const cookieSameSite = cookieSecure ? 'none' : 'lax';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// 1. Configurações de Template e Assetsconst app = express();
+app.set('trust proxy', 1); 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'Views'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 2. Middlewares de Parseamento
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 3. Configuração de Sessão e Cookies
 app.use(session({
   secret: process.env.SESSION_SECRET,
   store: MongoStore.create({
@@ -33,42 +32,39 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: cookieSecure,
+    secure: isProd,
     httpOnly: true,
-    sameSite: cookieSameSite,
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 1000 * 60 * 60 * 24,
   }
 }));
 
+// 4. Injeção de Variáveis de View (Locals)
 app.use((req, res, next) => {
-    res.locals.currentPath = req.path;
-    res.locals.user = req.session?.user || null;
-    res.locals.isActive = (pathPrefix) => req.path.startsWith(pathPrefix);
-
+    Object.assign(res.locals, {
+        currentPath: req.path,
+        user: req.session?.user || null,
+        isActive: (pathPrefix) => req.path.startsWith(pathPrefix)
+    });
     next();
 });
 
+// 5. Inicialização de Rotas
 Server(app);
 
-import { connectDataBase, closeDataBase } from './src/config/db.js';
-
+// 6. Gerenciamento de Ciclo de Vida do Servidor
 const start = async () => {
     try {
         await connectDataBase();
-        app.listen(port, () => {
-            console.log(`Servidor rodando: http://localhost:${port}`);
-        });
+        app.listen(port, () => console.log(`Servidor rodando na porta: ${port}`));
     } catch (error) {
-        console.error(
-            "Falha ao iniciar a aplicação. O servidor não será iniciado.",
-            error,
-        );
+        console.error("Falha ao iniciar a aplicação.", error);
         process.exit(1);
     }
 };
 
 process.on("SIGINT", async () => {
-    console.log("Recebido sinal de encerramento. Fechando conexões...");
+    console.log("Encerrando aplicação. Fechando conexões...");
     await closeDataBase();
     process.exit(0);
 });

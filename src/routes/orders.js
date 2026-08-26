@@ -3,13 +3,13 @@ import express from "express";
 import PaymentController
 from '../controllers/paymentController.js';
 
-import OrdertController
+import OrderController
 from '../controllers/orderControllers.js';
 
 const paymentController = new PaymentController();
 const orderController = new OrdertController();
-const router = express.Router();
 
+const router = express.Router();
 
 router.post('/', async (req, res) => {
   const { valor } = req.body;
