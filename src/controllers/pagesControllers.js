@@ -142,7 +142,7 @@ export const Profile = (req, res) => {
   });
 };
 
-export const Dasboard = (req, res) => {
+export const Dashboard = (req, res) => {
   renderPage(req, res, "../pages/admin/dashboard", {
     titulo: "Administração",
     message: "Gerencie as informações da loja",
@@ -150,7 +150,7 @@ export const Dasboard = (req, res) => {
 };
 
 export const Delivery = (req, res) => {
-  renderPage(req, res, "../pages/admin/delivery/dashboard", {
+  renderPage(req, res, "../pages/admin/delivery/delivery", {
     titulo: "Entregas",
     message: "Gerencie as entregas",
   });

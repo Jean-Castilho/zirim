@@ -1,13 +1,19 @@
 import { ObjectId } from "mongodb";
 import sharp from 'sharp';
 import BaseRepository from "./BaseRepository.js";
-import { DataBase, GridFSBucket } from "../config/db.js";
+import { DataBase, getGridFSBucket } from "../config/db.js";
 
 export default class ProductRepository extends BaseRepository {
   constructor() {
     super("products");
-    this.db = DataBase();
-    this.bucket = GridFSBucket();
+  }
+
+  get db() {
+    return DataBase();
+  }
+
+  get bucket() {
+    return getGridFSBucket();
   }
 
   #processVariationObject(variationSource) {

@@ -1,6 +1,6 @@
 import express from "express";
-import { GenerateCsrfToken } from "../middleware/csrfMiddleware.js";
-import { GridFSBucket, DataBase } from '../config/db.js';
+import { generateCsrfToken } from "../middleware/authMiddleware.js";
+import { getGridFSBucket, DataBase } from '../config/db.js';
 
 import {
   Home, 
@@ -24,7 +24,7 @@ const router = express.Router();
 
 router.get('/image/:filename', async (req, res) => {
     try {
-        const bucket = GridFSBucket();
+        const bucket = getGridFSBucket();
         const db = DataBase();
         const filesCollection = db.collection('uploads.files');
 
@@ -66,7 +66,7 @@ router.get("/about", About);
 router.get("/contact", Contact);
 
 router.get("/register", Register);
-router.get("/login", GenerateCsrfToken, Login);
+router.get("/login", generateCsrfToken, Login);
 
 router.get("/verify-otp", VerifyOtp);
 

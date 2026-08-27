@@ -49,7 +49,7 @@ export const DataBase = () => {
   return db;
 };
 
-export const GridFSBucket = () => {
+export const getGridFSBucket = () => {
   if (!bucket) throw new Error("O GridFSBucket não foi inicializado.");
   return bucket;
 };

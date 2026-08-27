@@ -1,20 +1,13 @@
 import express from "express";
+import OrderController from '../controllers/orderControllers.js';
 
-import PaymentController
-from '../controllers/paymentController.js';
-
-import OrderController
-from '../controllers/orderControllers.js';
-
-const paymentController = new PaymentController();
-const orderController = new OrdertController();
-
+const orderController = new OrderController();
 const router = express.Router();
 
 router.post('/', async (req, res) => {
   const { valor } = req.body;
 
-  const pagamento = await gerarPix(valor);
+  const pagamento = await orderController.gerarPix(valor);
 
   console.log(pagamento);
 
@@ -50,7 +43,7 @@ router.get('/status/:id', async (req, res) => {
     return res.status(400).json({ error: 'ID de pagamento obrigatório.' });
   }
 
-  const pagamento = await consultarPix(id);
+  const pagamento = await orderController.consultarPix(id);
 
   if (pagamento.error) {
     return res.status(500).json({ error: pagamento.error || 'Erro ao consultar pagamento.' });
@@ -64,7 +57,7 @@ router.get('/status/:id', async (req, res) => {
   });
 });
 
-router.post('/creat-Order', orderController.creatOrder);
+router.post('/creat-Order', (req, res) => orderController.creatOrder(req, res));
 
 
 export default router;

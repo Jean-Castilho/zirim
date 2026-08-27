@@ -1,9 +1,9 @@
-import { getDataBase } from "../config/db.js";
+import { DataBase } from "../config/db.js";
 
 const OTP_LIFETIME_MINUTES = 5;
 
 const getOtpCollection = () => {
-  const db = getDataBase();
+  const db = DataBase();
   return db.collection("otps");
 };
 

@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 
-import { getDataBase } from "../config/db.js";
+import { DataBase } from "../config/db.js";
 import {
   NotFoundError,
   GeneralError,
@@ -19,7 +19,7 @@ import { validateUser } from "./validationData.js";
 export default class UserService {
   
   getCollection() {
-    const db = getDataBase();
+    const db = DataBase();
     return db.collection("users");
   }
 
