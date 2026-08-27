@@ -5,12 +5,15 @@ import {
     ValidationError, 
     NotFoundError 
 } from "../utils/handleResponse.js";
+
 import { 
     createHashPassword, 
     createToken, 
     comparePassword 
 } from "../services/authServices.js";
+
 import { validateUser } from "../services/validationData.js";
+
 import { verifyOtpCode } from "../services/otpService.js";
 
 export default class UserController extends UserRepository {
