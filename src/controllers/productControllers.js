@@ -56,7 +56,6 @@ export default class ProductController {
   }
 
   async uploadProductAndImage(req) {
-    // Repassa os dados validados pelo Multer e o corpo da requisição
     return await this.repository.createProductWithImages(req.body, req.files || []);
   }
 

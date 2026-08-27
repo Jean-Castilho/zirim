@@ -176,7 +176,6 @@ export default class ProductRepository extends BaseRepository {
     
     return { success: true };
   }
-    // Adicione estes métodos dentro da classe ProductRepository
 
   async getImageMetadata(filename) {
     const filesCollection = this.db.collection('uploads.files');
@@ -186,5 +185,4 @@ export default class ProductRepository extends BaseRepository {
   getImageStream(filename) {
     return this.bucket.openDownloadStreamByName(filename);
   }
-
 }

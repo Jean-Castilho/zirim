@@ -59,5 +59,3 @@ export const validateCartItems = async (items) => {
     };
   });
 };
-
-export const validateOrderItems = validateCartItems;
