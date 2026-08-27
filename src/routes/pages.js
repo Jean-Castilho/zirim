@@ -18,6 +18,7 @@ import {
   Delivery,
   Inventory,
   AddProduct,
+  Checkout,
 } from "../controllers/pagesControllers.js";
 
 const router = express.Router();
@@ -78,6 +79,7 @@ router.get("/dashboard", Dashboard);
 router.get("/delivery", Delivery);
 router.get("/inventory", Inventory);
 router.get("/inventory/add", AddProduct);
+router.get("/checkout/:id", Checkout);
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {

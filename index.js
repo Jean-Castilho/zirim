@@ -56,7 +56,7 @@ Server(app);
 const start = async () => {
     try {
         await connectDataBase();
-        app.listen(port, () => console.log(`Servidor rodando na porta: ${port}`));
+        app.listen(port, () => console.log(`Servidor rodando na porta: http://localhost:${port}`));
     } catch (error) {
         console.error("Falha ao iniciar a aplicação.", error);
         process.exit(1);

@@ -9,7 +9,7 @@ export const Home = async (req, res, next) => {
   try {
     const products = await productRepository.findAll({}, {
       projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } },
-      limit: 4
+      limit: 6
     });
     
     renderPage(req, res, "../pages/public/home", {
@@ -164,6 +164,25 @@ export const Inventory = async (req, res, next) => {
       titulo: "Gerenciamento de Inventário",
       message: "Controle de estoque e produtos",
       products: products
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const Checkout = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const db = DataBase();
+    const order = await db.collection("orders").findOne({ _id: new ObjectId(id) });
+
+    if (!order) {
+      return next(new NotFoundError("Pedido não encontrado."));
+    }
+
+    renderPage(req, res, "../pages/public/checkout", {
+      titulo: "Finalizar Pagamento",
+      order
     });
   } catch (error) {
     next(error);

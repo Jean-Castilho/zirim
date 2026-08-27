@@ -25,11 +25,8 @@ export const validateCartItems = async (items) => {
     };
   });
 
-  const productIds = normalizedItems.map((item) => new ObjectId(item.id));
-  const selectedProducts = await productControllers
-    .getCollection()
-    .find({ _id: { $in: productIds } })
-    .toArray();
+  const productIds = normalizedItems.map((item) => item.id);
+  const selectedProducts = await productControllers.getProductsByIds(productIds);
 
   if (!Array.isArray(selectedProducts)) {
     throw new Error("Não foi possível validar os produtos do carrinho via API.");

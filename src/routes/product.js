@@ -10,14 +10,12 @@ const router = express.Router();
 
 const uploadDir = path.resolve(process.cwd(), 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
-const upload = multer({ storage: multer.memoryStorage() });
-
-
+const upload = multer({ storage: multer.memoryStorage()});
 
 router.get("/", async (req, res, next) => {
   try {
     // handleResponse espera uma promise
-    await handleResponse(res, productController.allProducts());
+    await handleResponse(res, productController.findAll());
   } catch (error) {
     next(error);
   }
@@ -44,8 +42,7 @@ router.post("/projectionByIds", async (req, res, next) => {
     }
 
     const products = await productController.getProductsByIds(ids, projection || {});
-    console.log(products);
-    // Repassa os dados resolvidos envelopados em promise para o utilitário
+    
     await handleResponse(res, Promise.resolve(products));
   } catch (error) {
     next(error);

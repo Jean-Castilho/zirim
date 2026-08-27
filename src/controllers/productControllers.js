@@ -34,10 +34,6 @@ export default class ProductController {
     }
   }
 
-  async allProducts() {
-    return await this.repository.findAll();
-  }
-
   async getProductById(req) {
     const { id } = req.params;
     if (!id) throw new ValidationError("ID do produto é obrigatório.");

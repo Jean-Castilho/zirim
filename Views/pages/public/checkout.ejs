@@ -1,0 +1,33 @@
+<style>
+    .checkout-container { max-width: 800px; margin: 2rem auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .payment-info { text-align: center; margin-top: 2rem; }
+    .qr-code-container { margin: 20px 0; }
+    .qr-code-container img { max-width: 300px; }
+    .pix-code { background: #f4f4f4; padding: 15px; word-break: break-all; border: 1px dashed #ccc; border-radius: 4px; margin-top: 10px; }
+    .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; background-color: #ffeeba; color: #856404; }
+</style>
+
+<div class="checkout-container">
+    <h1>Finalizar Pagamento</h1>
+    <% if (typeof order !== 'undefined' && order.payment) { %>
+        <div class="payment-info">
+            <div class="status-badge">Status: <%= order.payment.status %></div>
+            <p>Escaneie o QR Code abaixo para pagar via PIX:</p>
+            <div class="qr-code-container">
+                <img src="data:image/png;base64, <%= order.payment.qr_code_base64 %>" alt="QR Code PIX">
+            </div>
+            <p>Ou copie o código PIX:</p>
+            <div class="pix-code" id="pix-code"><%= order.payment.qr_code %></div>
+            <button onclick="copyPix()" style="margin-top: 10px; padding: 10px 20px; background-color: #D2042D; color: white; border: none; border-radius: 4px; cursor: pointer;">Copiar Código</button>
+        </div>
+    <% } else { %>
+        <p>Informações de pagamento não encontradas.</p>
+    <% } %>
+</div>
+
+<script>
+    function copyPix() {
+        const pixCode = document.getElementById('pix-code').innerText;
+        navigator.clipboard.writeText(pixCode).then(() => alert('Código PIX copiado!'));
+    }
+</script>

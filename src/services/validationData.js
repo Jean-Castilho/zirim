@@ -9,22 +9,28 @@ dotenv.config();
 
 export const validateUser = (data) => {
   const errors = [];
+  const normalizedData = {
+    ...data,
+    name: data.name ? String(data.name).trim() : data.name,
+    email: data.email ? String(data.email).trim().toLowerCase() : data.email,
+    phone: data.phone ? String(data.phone).trim() : data.phone,
+  };
 
-  if (!data.name || !nameRegex.test(data.name) || data.name.length < 3) {
+  if (!normalizedData.name || !nameRegex.test(normalizedData.name) || normalizedData.name.length < 3) {
     errors.push({
       field: "name",
       message: "O nome é obrigatório e precisa ter no mínimo 3 caracteres.",
     });
   }
 
-  if (!data.email || !emailRegex.test(data.email)) {
+  if (!normalizedData.email || !emailRegex.test(normalizedData.email)) {
     errors.push({
       field: "email",
       message: "O email é obrigatório e precisa ser um endereço válido.",
     });
   }
 
-  if (!data.phone || !phoneRegex.test(data.phone)) {
+  if (!normalizedData.phone || !phoneRegex.test(normalizedData.phone)) {
     errors.push({
       field: "phone",
       message:
@@ -32,7 +38,7 @@ export const validateUser = (data) => {
     });
   }
 
-  if (!data.password || !passwordRegex.test(data.password)) {
+  if (!normalizedData.password || !passwordRegex.test(normalizedData.password)) {
     errors.push({
       field: "password",
       message: "A senha é obrigatória e precisa ter no mínimo 8 caracteres, com letra maiúscula, minúscula e número.",
@@ -42,7 +48,6 @@ export const validateUser = (data) => {
   return {
     isValid: errors.length === 0,
     errors,
+    data: normalizedData,
   };
 };
-
-export const validationUser = validateUser;
