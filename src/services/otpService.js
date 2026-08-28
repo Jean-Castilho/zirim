@@ -15,8 +15,6 @@ export const generateOtpCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-export const generateOTP = generateOtpCode;
-
 /**
  * Armazena um código OTP no banco de dados com um tempo de expiração.
  * Substitui qualquer OTP existente para o mesmo identificador (email/telefone).

@@ -82,8 +82,6 @@ export const sendWhatsAppOtp = async (number) => {
   }
 };
 
-export const sendOtpWhatzapp = sendWhatsAppOtp;
-
 export const sendEmailOtp = async (email) => {
   if (!email) {
     throw new Error("O endereço de e-mail é obrigatório para enviar o OTP.");
@@ -108,8 +106,6 @@ export const sendEmailOtp = async (email) => {
   }
 };
 
-export const sendOtpEmail = sendEmailOtp;
-
 export const sendFeedbackEmail = async (req, res) => {
   const { email, subject, message } = req.body;
 
@@ -131,5 +127,3 @@ export const sendFeedbackEmail = async (req, res) => {
     return res.status(500).json({ mensagem: "erro ao enviar email" });
   }
 };
-
-export const postSendFeedBack = sendFeedbackEmail;

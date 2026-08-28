@@ -20,7 +20,6 @@ export default class ProductRepository extends BaseRepository {
     const activeValue = Array.isArray(variationSource.ativo)
       ? variationSource.ativo
       : [variationSource.ativo];
-
     return {
       sku: variationSource.sku || '',
       cores: variationSource.cores ? String(variationSource.cores).split(',').map(c => c.trim()).filter(Boolean) : [],
@@ -41,7 +40,6 @@ export default class ProductRepository extends BaseRepository {
             contentType: 'image/webp',
             metadata: { originalname: file.originalname },
           });
-
           sharp(file.buffer)
             .resize({ width: 1200, fit: 'inside', withoutEnlargement: true })
             .toFormat('webp', { quality: 80 })
@@ -60,7 +58,6 @@ export default class ProductRepository extends BaseRepository {
 
   async createProductWithImages(body, files = []) {
     const variationFilesMap = new Map();
-
     files.forEach(file => {
       const match = file.fieldname.match(/variations\[(\d+)\]\[imagens\]/);
       if (match && match[1]) {
@@ -76,7 +73,7 @@ export default class ProductRepository extends BaseRepository {
     if (Array.isArray(body.variations)) {
       rawVariations = body.variations;
     } else if (body.cores || body.tamanhos || body.preco || body.estoque || variationFilesMap.has(0)) {
-      rawVariations.push(body); 
+      rawVariations.push(body);
     }
 
     const processedVariations = [];
@@ -84,11 +81,8 @@ export default class ProductRepository extends BaseRepository {
       const variationBody = rawVariations[i];
       const filesForThisVariation = variationFilesMap.get(i) || [];
       
-      const uploadedVariationImageNames = [];
-      for (const file of filesForThisVariation) {
-        const uploadedName = await this.#uploadFileWithRetry(file);
-        uploadedVariationImageNames.push(uploadedName);
-      }
+      const uploadPromises = filesForThisVariation.map(file => this.#uploadFileWithRetry(file));
+      const uploadedVariationImageNames = await Promise.all(uploadPromises);
       
       processedVariations.push(this.#processVariationObject({
         ...variationBody,
@@ -104,7 +98,6 @@ export default class ProductRepository extends BaseRepository {
       comentarios: [],
     };
 
-    // Herança: Utiliza o método genérico do BaseRepository
     const insertedId = await super.create(productData);
     return { message: "Produto adicionado com sucesso!", productId: insertedId };
   }
@@ -112,32 +105,31 @@ export default class ProductRepository extends BaseRepository {
   async findByIds(ids, projection = {}) {
     const validIds = ids.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id));
     if (validIds.length === 0) return [];
-
     return await this.collection.find({ _id: { $in: validIds } }, { projection }).toArray();
   }
 
   async updateProductWithImages(id, body, files = []) {
-    if (!ObjectId.isValid(id)) throw new Error("ID de produto inválido.");
-
-    // Herança
+    if (!ObjectId.isValid(id)) throw new Error("ID de produto invalido.");
+    
     const existingProduct = await super.findById(id);
-    if (!existingProduct) throw new Error("Produto não encontrado.");
+    if (!existingProduct) throw new Error("Produto nao encontrado.");
 
     const newImages = [];
     if (files.length) {
-      for (const file of files) {
-        try {
-          const uploadedName = await this.#uploadFileWithRetry(file);
-          newImages.push(uploadedName);
-        } catch (error) {
+      const uploadPromises = files.map(file => 
+        this.#uploadFileWithRetry(file).catch(error => {
           console.error(`Erro ao processar imagem no update: ${error.message}`);
-        }
-      }
+          return null; 
+        })
+      );
+      
+      const results = await Promise.all(uploadPromises);
+      newImages.push(...results.filter(name => name !== null));
     }
 
     const keptImages = Array.isArray(body.existingImages) 
-      ? body.existingImages 
-      : body.existingImages ? [body.existingImages] : [];
+       ? body.existingImages 
+       : body.existingImages ? [body.existingImages] : [];
 
     const productData = {
       nome: body.name || body.nome,
@@ -150,17 +142,15 @@ export default class ProductRepository extends BaseRepository {
       descricao: body.descricao,
     };
 
-    // Herança
     await super.update(id, productData);
     return await super.findById(id);
   }
 
   async deleteProductAndImages(id) {
-    if (!ObjectId.isValid(id)) throw new Error("ID de produto inválido.");
-
-    // Herança
+    if (!ObjectId.isValid(id)) throw new Error("ID de produto invalido.");
+    
     const product = await super.findById(id);
-    if (!product) throw new Error("Produto não encontrado.");
+    if (!product) throw new Error("Produto nao encontrado.");
 
     if (product.imagens?.length > 0) {
       const filesCollection = this.db.collection('fs.files');
@@ -170,9 +160,8 @@ export default class ProductRepository extends BaseRepository {
       await Promise.all(deletePromises);
     }
 
-    // Herança
     const isDeleted = await super.delete(id);
-    if (!isDeleted) throw new Error("Não foi possível deletar o produto.");
+    if (!isDeleted) throw new Error("Nao foi possivel deletar o produto.");
     
     return { success: true };
   }

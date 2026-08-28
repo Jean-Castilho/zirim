@@ -6,9 +6,7 @@ export async function createHashPassword(password) {
   const salt = await bcrypt.genSalt(saltRounds);
   const hashedPassword = await bcrypt.hash(password, salt);
   return hashedPassword;
-}
-
-export const criarHashPass = createHashPassword;
+};
 
 export function createToken(payload) {
   const secret = process.env.JWT_SECRET;
@@ -19,11 +17,7 @@ export function createToken(payload) {
   return jwt.sign(payload, secret, { expiresIn });
 }
 
-export const criarToken = createToken;
-
-export async function comparePassword(password, hashedPassword) {
+export async function compararPassword(password, hashedPassword) {
   const match = await bcrypt.compare(password, hashedPassword);
   return match;
 }
-
-export const compararSenha = comparePassword;
