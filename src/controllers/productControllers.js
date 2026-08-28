@@ -33,6 +33,36 @@ export default class ProductController {
       }
     }
   }
+  
+  async getImage(req, res) {
+    try {
+      const { filename } = req.params;
+
+      const file = await this.repository.getImageMetadata(filename);
+
+      if (!file) {
+        return res.status(404).send('Imagem não encontrada');
+      }
+
+      res.set('Content-Type', file.contentType || 'image/webp');
+
+      const downloadStream = this.repository.getImageStream(filename);
+
+      downloadStream.on('error', (err) => {
+        console.error('Erro ao fazer stream da imagem:', err);
+        if (!res.headersSent) {
+          res.status(500).send('Erro interno ao carregar a imagem');
+        }
+      });
+
+      downloadStream.pipe(res);
+    } catch (error) {
+      console.error('Erro na rota de imagem:', error);
+      if (!res.headersSent) {
+        res.status(500).send('Erro interno do servidor');
+      }
+    }
+  }
 
   async getProductById(req) {
     const { id } = req.params;

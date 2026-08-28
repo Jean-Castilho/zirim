@@ -21,43 +21,13 @@ import {
   Checkout,
 } from "../controllers/pagesControllers.js";
 
+import ProductController from "../controllers/productControllers.js";
+
+const productController = new ProductController();
+
 const router = express.Router();
 
-router.get('/image/:filename', async (req, res) => {
-    try {
-        const bucket = getGridFSBucket();
-        const db = DataBase();
-        const filesCollection = db.collection('uploads.files');
-
-        const filename = req.params.filename;
-
-        const file = await filesCollection.findOne({ filename: filename });
-
-        if (!file) {
-            return res.status(404).send('Imagem não encontrada');
-        }
-
-        if (file.contentType) {
-            res.set('Content-Type', file.contentType);
-        } else {
-          res.set('Content-Type', 'image/webp'); 
-        }
-
-        const downloadStream = bucket.openDownloadStreamByName(filename);
-
-        downloadStream.on('error', (err) => {
-            console.error('Erro ao fazer stream da imagem:', err);
-            res.status(500).send('Erro interno ao carregar a imagem');
-        });
-
-        downloadStream.pipe(res);
-
-    } catch (error) {
-        console.error('Erro na rota de imagem:', error);
-        res.status(500).send('Erro interno do servidor');
-    }
-});
-
+router.get('/image/:filename', (req, res) => productController.getImage(req, res));
 router.get("/", Home);
 
 router.get("/products", Products);
