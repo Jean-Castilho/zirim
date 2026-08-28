@@ -8,11 +8,11 @@
       </li>
       <li><a href="/products" class="nav-link <%= isActive('/products') ? 'active' : '' %>">Produtos</a>
       </li>
-      <li><a href="/about" class="nav-link <%= isActive('/about') ? 'active' : '' %>">Sobre</a>
-      </li>
-      <li><a href="/contact" class="nav-link <%= isActive('/contact') ? 'active' : '' %>">Contato</a>
-      </li>
 
+      <% if (user) { %>
+        <li><a href="/contact" class="nav-link <%= isActive('/contact') ? 'active' : '' %>">Contato</a>
+        </li>
+        <% } %>
           <!-- Icons are now inside the nav-menu -->
           <li class="header-icons-container">
             <div class="header-icons">
