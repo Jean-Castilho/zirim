@@ -88,6 +88,13 @@ export const Login = (req, res) => {
   });
 };
 
+export const ResetPassword = (req, res) => {
+  renderPage(req, res, "../pages/auth/forgotpassword", {
+    titulo: "Recuperando Senha",
+    message: "utuilize seu email ou numero",
+  });
+};
+
 export const Register = (req, res) => {
   renderPage(req, res, "../pages/auth/register", {
     titulo: "Registrar Conta",

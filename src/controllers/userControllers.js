@@ -116,7 +116,29 @@ export default class UserController extends UserRepository {
             const { id } = req.params;
             const result = await this.delete(id);
             if (!result) throw new NotFoundError("Usuario nao encontrado.");
-            return res.status(200).json({ message: "Usuario excluido com sucesso." });
+            return res.status(200).json({ message: "Usuario excluido com sucesso."});
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async forgotPassword(req, res, next) {
+        try {
+            const email = req.body.email?.trim();
+
+            if (!email) {
+                throw new ValidationError("O e-mail é obrigatório para recuperar a senha.");
+            }
+
+            // Logica de negócio: aqui você chamaria o service para enviar o e-mail;
+            // Ex: await authService.requestPasswordReset(email);
+            
+            // Retorna um fragmento HTML para o HTMX injetar no #feedback-msg;
+            return res.status(200).send(`
+                <div class="p-3 mb-4 text-sm text-green-400 bg-green-950/30 rounded-xl border border-green-800/50">
+                    Se o e-mail <strong>${email}</strong> estiver em nossa base, você receberá um link em breve.
+                </div>
+            `);
         } catch (error) {
             next(error);
         }

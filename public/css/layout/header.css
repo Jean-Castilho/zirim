@@ -23,7 +23,7 @@
     font-family: var(--fonte-titulo);
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--cor-secundaria);
+    color: var(--cor-texto-claro);
     text-decoration: none;
 }
 
@@ -77,6 +77,25 @@
 .header-icons .nav-link:hover {
     background-color: rgba(0, 0, 0, 0.05);
     border-bottom-color: transparent;
+}
+
+.cart-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background-color: var(--cor-destaque);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    pointer-events: none;
+    border: 1.5px solid var(--cor-primaria);
 }
 
 .header-icons .nav-link.active {

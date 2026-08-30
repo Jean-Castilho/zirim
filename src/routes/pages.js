@@ -40,7 +40,7 @@ router.get("/contact", Contact);
 router.get("/register", Register);
 router.get("/login", generateCsrfToken, Login);
 
-router.get("/forgot-password", ResetPassword);
+router.get("/forgot-password", generateCsrfToken, ResetPassword);
 
 router.get("/verify-otp", VerifyOtp);
 

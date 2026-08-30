@@ -57,8 +57,9 @@
                                   <span class="material-icons notranslate md-22">favorite_border</span>
                                 </a>
                                 <a href="/cart" class="nav-link <%= isActive('/cart') ? 'active' : '' %>"
-                                  aria-label="Meu Carrinho">
+                                  aria-label="Meu Carrinho" style="position: relative;">
                                   <span class="material-icons notranslate md-22">shopping_cart</span>
+                                  <span id="cart-badge" class="cart-badge" style="display: none;">0</span>
                                 </a>
             </div>
           </li>
@@ -75,6 +76,24 @@
 
 </header>
 <script>
+  function updateCartBadge() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const badge = document.getElementById('cart-badge');
+    if (!badge) return;
+
+    const totalItems = cart.reduce((acc, item) => acc + item.quantidade, 0);
+
+    if (totalItems > 0) {
+      badge.innerText = totalItems > 99 ? '99+' : totalItems;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', updateCartBadge);
+  window.addEventListener('cartUpdated', updateCartBadge);
+
   const hamburger = document.querySelector('.hamburger');
   const navMenu = document.querySelector('.nav-menu');
   const navOverlay = document.querySelector('.nav-overlay');
@@ -86,10 +105,7 @@
       navOverlay.classList.toggle('active');
       document.body.classList.toggle('no-scroll');
     });
-  }
 
-  // Garante que todos os elementos necessários estejam presentes antes de adicionar o listener do overlay
-  if (hamburger && navMenu && navOverlay) {
     navOverlay.addEventListener('click', () => {
       hamburger.classList.remove('active');
       navMenu.classList.remove('active');
