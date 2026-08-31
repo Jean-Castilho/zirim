@@ -39,17 +39,13 @@ export const Products = async (req, res, next) => {
 };
 
 export const ProductDetails = async (req, res, next) => {
+
   try {
     const { id } = req.params;
-    if (!id) {
-      return res.status(400).render("../pages/public/product-details", {
-        titulo: "Detalhes do Produto",
-        product: null,
-        errorMessage: "ID de produto obrigatório.",
-      });
-    }
-
-    const product = await productRepository.findById(id);
+    // Verificamos apenas a existência do produto.
+    // O carregamento completo dos dados é feito via fetch no frontend para otimizar o TTFB.
+    const product = await productRepository.findById(id, { projection: { _id: 1 } });
+    consolelog(product)
     if (!product) {
       return res.status(404).render("../pages/public/product-details", {
         titulo: "Produto não encontrado",
@@ -59,12 +55,13 @@ export const ProductDetails = async (req, res, next) => {
     }
          
     renderPage(req, res, "../pages/public/product-details", {
-      titulo: product.nome || "Detalhes do Produto",
-      product,
+      titulo: "Carregando Produto...",
+      product: { _id: product._id },
     });
   } catch (error) {
     next(error);
   }
+
 };
 
 export const About = (req, res) => {

@@ -1,28 +1,376 @@
-<link rel="stylesheet" href="/css/pages/product-details.css">
-
 <style>
-  .pill-option.selected {
-    border-radius: 5px; 
-    border-color: #0056b3;
-    background-color: #dce9f9;
-    color: #0056b3;
+  /* Base Layout */
+  .product-details-page {
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .product-details-container {
+    display: grid;
+    margin: 0px 80px;
+    grid-template-columns: 1fr 1fr;
+    justify-items: center;
+  }
+
+  .product-gallery {
+    display: flex;
+    flex-direction: column;
+    width: 75%;
+    gap: 20px;
+  }
+
+  .product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Navigation & Typography */
+  .breadcrumb {
+    font-size: 0.9em;
+    color: #666;
+  }
+
+  .breadcrumb a {
+    color: var(--cor-secundaria);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .product-title {
+    font-size: 1.8rem;
+    line-height: 1.0;
+    color: var(--cor-primaria);
+    margin: 0;
+  }
+
+  /* Price Section */
+  .price-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .currency {
+    font-size: 1.2rem;
+    color: var(--cor-secundaria);
     font-weight: 600;
-    box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2);
+  }
+
+  .amount {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--cor-secundaria);
+  }
+
+  .price-note {
+    font-size: 0.85rem;
+    color: #999;
+    margin: 0;
+  }
+
+  /* Specifications */
+  .specifications {
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 12px;
+  }
+
+  .specifications h3 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: var(--cor-primaria);
+  }
+
+  .spec-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .spec-label {
+    font-weight: 600;
+    color: #666;
+  }
+
+  /* Selection & Controls */
+  .selectors {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .variation-section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .quantity-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .quantity-control {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: fit-content;
+  }
+
+  .qty-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+
+  .quantity-control input {
+    width: 60px;
+    height: 40px;
+    border: none;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* Buttons */
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn-primary, .btn-secondary {
+    flex: 1;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-transform: uppercase;
+  }
+
+  .btn-primary {
+    background: var(--cor-secundaria);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--cor-destaque);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(225, 7, 50, 0.3);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--cor-secundaria);
+    border: 2px solid var(--cor-secundaria);
+  }
+
+  .btn-secondary:hover {
+    background: var(--cor-secundaria);
+    color: white;
+  }
+
+  /* Guarantee Section */
+  .guarantee-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+
+  .guarantee-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .guarantee-item i {
+    color: var(--cor-secundaria);
+    font-size: 24px;
+  }
+
+  /* Description & Related */
+  .expanded-description {
+    background: #f9f9f9;
+    padding: 40px 60px;
+    border-radius: 16px;
+    margin-top: 40px;
+  }
+
+  .related-products {
+    margin-top: 40px;
+  }
+
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 24px;
+  }
+
+  .related-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+  }
+
+  .related-card img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+  }
+
+  .stock-badge {
+    position: absolute;
+    top: 20px;
+    right: 5px;
+    padding: 8px 16px;
+    background: #4CAF50;
+    color: white;
+    border-radius: 8px;
+  }
+
+  .pill-option.selected {
+    border-color: var(--cor-secundaria) !important;
+    background-color: var(--cor-primaria) !important;
+    color: white !important;
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .pill-option {
+    cursor: pointer;
+    padding: 10px 20px;
+    border: 2px solid var(--cor-borda);
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    background: white;
+  }
+
+  .pill-option:hover:not(.disabled):not(.selected) {
+    border-color: var(--cor-secundaria);
+    color: var(--cor-secundaria);
+    transform: translateY(-1px);
+  }
+
+  .pill-option.disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    filter: grayscale(1);
+    pointer-events: none;
+  }
+
+  .pill-option-color {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid transparent;
+  }
+
+  .pill-option-color:hover:not(.selected) {
+    transform: scale(1.15);
   }
 
   .pill-option-color.selected .color-swatch {
-    outline: 2px solid #0056b3;
-    outline-offset: 2px;
+    border-color: var(--cor-secundaria) !important;
+    background-color: transparent !important;
+    padding: 3px;
+  }
+
+  .color-swatch {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+  }
+
+  .main-image-container {
+    width: 100%;
+    height: 500px;
+    background-color: #f8f8f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 16px;
+    position: relative;
   }
 
   .main-image {
-    transition: opacity 0.3s ease, transform 0.4s ease;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .gallery-thumbnails {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+    overflow-x: auto;
+    padding: 5px 2px;
+    scrollbar-width: thin;
+  }
+
+  .thumbnail {
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    background: #fff;
+  }
+
+  .thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .thumbnail.active {
-    border: 2px solid #0056b3;
-    opacity: 1;
+    border-color: var(--cor-secundaria);
     transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   }
 
   .qty-btn:disabled {
@@ -33,37 +381,61 @@
   #addToCartButton:not(:disabled):active {
     transform: scale(0.98);
   }
+
+  .validation-error {
+    color: var(--cor-secundaria);
+    font-size: 0.85rem;
+    margin-top: 5px;
+    font-weight: 600;
+  }
+
+  /* Animação de Opacidade/Skeleton */
+  .skeleton {
+    background-color: #eee;
+    background-image: linear-gradient(90deg, #eee, #f5f5f5, #eee);
+    background-size: 200px 100%;
+    background-repeat: no-repeat;
+    display: inline-block;
+    line-height: 1;
+    width: 100%;
+    animation: skeleton-loading 1.5s infinite linear;
+    border-radius: 4px;
+    color: transparent !important;
+  }
+
+  @keyframes skeleton-loading {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 1024px) {
+    .product-details-container {
+      grid-template-columns: 1fr;
+      margin: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .action-buttons {
+      flex-direction: column;
+    }
+    .guarantee-section {
+      grid-template-columns: 1fr;
+    }
+    .product-gallery {
+      width: 100%;
+    }
+  }
+
+  .product-not-found {
+    padding: 60px 20px;
+    text-align: center;
+    color: #777;
+  }
 </style>
 
 <section class="product-details-page">
-  <% 
-    const productName = product?.nome; 
-    const productCategory = product?.categoria; 
-    const productDescription = product?.descricao || 'Sem descrição disponível.';
-    
-    const allVariations = product?.variacoes || [];
-    const initialVariation = allVariations.find(v => v.ativo && v.estoque > 0) || null;
-
-    const initialPrice = initialVariation?.preco ?? product?.preco ?? 0;
-    const initialEstoque = initialVariation?.estoque ?? 0;
-    
-    const initialImages = initialVariation?.imagens?.length > 0 
-      ? initialVariation.imagens 
-      : product?.imagens || [];
-
-    const galleryImages = initialImages.map(img => `/image/${img}`).slice(0, 5);
-
-    const inStockActiveVariations = allVariations.filter(v => v.ativo && v.estoque > 0);
-    const productCores = [
-      ...new Set(inStockActiveVariations.flatMap(v => v.cores || []))
-    ].filter(Boolean);
-
-    const productTamanhos = [
-      ...new Set(inStockActiveVariations.flatMap(v => v.tamanhos || []))
-    ].filter(Boolean);
-
-  %>
-
     <% if (!product) { %>
       <div class="product-not-found">
         <h2>Produto não encontrado</h2>
@@ -75,22 +447,16 @@
           <!-- Galeria de Imagens -->
           <div class="product-gallery">
             
-            <div class="main-image-container"> 
-              <img id="mainImage" src="<%= galleryImages[0] || '/path/to/default/image.webp' %>" alt="<%= productName %>" class="main-image">
-              <span class="stock-badge" id="stockBadgeDisplay">
-                <% if (initialEstoque > 0) { %>
-                  Em Estoque
-                <% } else { %>
-                  Indisponível
-                <% } %>
-              </span>
+            <div class="main-image-container skeleton"> 
+              <img id="mainImage" 
+                   src="/img/placeholder-product.webp"
+                   alt="Carregando..."
+                   class="main-image" style="opacity: 0; transition: opacity 0.5s ease;">
+              <span class="stock-badge skeleton" id="stockBadgeDisplay">Carregando</span>
             </div>
 
             <div class="gallery-thumbnails">
-              <% galleryImages.forEach((img, idx) => { %>
-                <img src="<%= img %>" alt="<%= productName %> view <%= idx + 1 %>"
-                  class="thumbnail <%= idx === 0 ? 'active' : '' %>" data-img-src="<%= img %>">
-                <% }) %>
+
             </div>
           
           </div>
@@ -99,20 +465,16 @@
           <!-- Informações do Produto -->
           <div class="product-info">
             <div class="breadcrumb">
-              <a href="/products">Produtos</a> / <span>
-                <%= productCategory %>
-              </span>
+              <a href="/products">Produtos</a> / <span id="breadcrumbCategory" class="skeleton">Categoria</span>
             </div>
-            <h1 class="product-title">
-              <%= productName %>
+            <h1 class="product-title skeleton" id="productTitle">
+              Nome do Produto
             </h1>
 
             <div class="price-section">
-              <div class="price">
+              <div class="price skeleton" id="productPriceContainer">
                 <span class="currency">R$</span>
-                <span class="amount" id="productPriceDisplay">
-                  <%= initialPrice.toFixed(2) %>
-                </span>
+                <span class="amount" id="productAmount">0,00</span>
               </div>
               <p class="price-note">Preço sujeito a alterações</p>
             </div>
@@ -122,82 +484,54 @@
               <h3>Especificações</h3>
               <div class="spec-item">
                 <span class="spec-label">Categoria:</span>
-                <span class="spec-value">
-                  <%= productCategory %>
-                </span>
+                <span class="spec-value skeleton" id="specCategory">Carregando...</span>
               </div>
-              <% if (productCores.length > 0) { %>
-                <div class="spec-item">
+                <div class="spec-item" id="coresSpecItem" style="display: none;">
                   <span class="spec-label">Cores disponíveis:</span>
-                  <span class="spec-value" id="productCoresDisplay">
-                    <%= productCores.join(', ') %></span>
-          </div>
-          <% } %>
-          <% if (productTamanhos.length > 0) { %>
-          <div class="spec-item">
-            <span class="spec-label">Tamanhos disponíveis:</span>
-            <span class="spec-value" id="productTamanhosDisplay"><%= productTamanhos.join(' , ') %></span>
-          </div>
-          <% } %>
+                  <span class="spec-value" id="specColors"></span>
+                </div>
+
+                <div class="spec-item" id="tamanhosSpecItem" style="display: none;">
+                  <span class="spec-label">Tamanhos disponíveis:</span>
+                  <span class="spec-value" id="specSizes"></span>
+                </div>
+
           <div class="spec-item">
             <span class="spec-label">Estoque:</span>
-            <span class="spec-value" id="productEstoqueDisplay"><%= initialEstoque > 0 ? initialEstoque + ' unidades' : 'Indisponível' %>
-            </span>
-                </div>
+            <span class="spec-value skeleton" id="specStock">0 unidades</span>
+          </div>
             </div>
 
             <div class="selectors">
-              <% if (productCores.length > 0) { %>
-                <div class="variation-section">
+                <div class="variation-section" id="colorSelectorSection" style="display: none;">
                   <label>Cor:</label> 
-                  <div class="pill-selector" id="colorPillSelector">
-                    <% productCores.forEach((cor)=> { %>
-                      <div class="pill-option pill-option-color" data-value="<%= cor %>">
-                        <span class="color-swatch"></span>
-                          </div> 
-                      <% }) %>
-                  </div>
+                  <div class="pill-selector" id="colorPillSelector"></div>
+                  <div id="colorError" class="validation-error" style="display:none">Selecione uma cor</div>
                   <input type="hidden" id="selectedColor" name="color">
                 </div>
-                <% } %>
 
-
-                  <% if (productTamanhos.length > 0) { %>
-                    <div class="variation-section">
-                      <label>Tamanho:</label> 
-                      <div class="pill-selector" id="sizePillSelector">
-                        <% productTamanhos.forEach((tamanho)=> { %>
-                          <div class="pill-option" data-value="<%= tamanho %>">
-                            <%= tamanho %>
-                          </div>
-                          <% }) %>
-                      </div>
-                      <input type="hidden" id="selectedSize" name="size">
-                    </div>
-                    <% } %>
+                <div class="variation-section" id="sizeSelectorSection" style="display: none;">
+                  <label>Tamanho:</label> 
+                  <div class="pill-selector" id="sizePillSelector"></div>
+                  <div id="sizeError" class="validation-error" style="display:none">Selecione um tamanho</div>
+                  <input type="hidden" id="selectedSize" name="size">
+                </div>
 
                       <!-- Seletor de Quantidade -->
                       <div class="quantity-section">
                         <div class="quantity-control">
-                          <button type="button" id="decreaseQtyBtn" class="qty-btn" <%= initialEstoque <= 0 ? 'disabled' : '' %>>-</button>
-                          <input type="number" id="quantity" value="<%= initialEstoque > 0 ? 1 : 0 %>" min="<%= initialEstoque > 0 ? 1 : 0 %>" max="<%= initialEstoque %>" readonly>
-                          <button type="button" id="increaseQtyBtn" class="qty-btn" <%= initialEstoque <= 0 ? 'disabled' : '' %>>+</button>
+                          <button type="button" id="decreaseQtyBtn" class="qty-btn" disabled>-</button>
+                          <input type="number" id="quantity" value="0" min="0" max="0" readonly>
+                          <button type="button" id="increaseQtyBtn" class="qty-btn" disabled>+</button>
                         </div>
                       </div>
             </div>
 
             <!-- Botões de Ação -->
             <div class="action-buttons">
-              <% if (allVariations.length > 0) { %>
                 <button class="btn-primary" id="addToCartButton" disabled>
-                  <i class="material-icons">shopping_cart</i>
-                  Selecione as opções
+                  <i class="material-icons">shopping_cart</i> Adicionar ao Carrinho
                 </button>
-                <% } else { %>
-                  <button class="btn-primary" id="addToCartButton" <%= initialEstoque > 0 ? '' : 'disabled' %>>
-                    <i class="material-icons">shopping_cart</i> <%= initialEstoque > 0 ? 'Adicionar ao Carrinho' : 'Produto Indisponível' %>
-                  </button>
-                  <% } %>
                   <button class="btn-secondary btn-favorite" data-product-id="<%= product._id %>">
                     <i class="material-icons favorite-icon">favorite_border</i>
                     <span>Favoritar</span>
@@ -245,9 +579,7 @@
      Seção de Descrição Expandida -->
         <div class="expanded-description">
           <h2>Sobre este Produto</h2>
-          <p>
-            <%= productDescription %>
-          </p>
+          <p id="productDescription" class="skeleton">Carregando descrição detalhada do produto...</p>
           <p>Este produto foi cuidadosamente selecionado para atender aos mais altos padrões de qualidade e design.
             Perfeito para quem busca estilo e conforto em uma única peça.</p>
         </div>
@@ -258,13 +590,13 @@
           <div class="related-grid">
             <div class="related-card">
               <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
-                alt="Produto relacionado">
+                alt="Produto relacionado" loading="lazy">
               <h4>Produto Relacionado 1</h4>
               <p class="price">R$ 199.99</p>
             </div>
             <div class="related-card">
               <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80"
-                alt="Produto relacionado">
+                alt="Produto relacionado" loading="lazy">
               <h4>Produto Relacionado 2</h4>
               <p class="price">R$ 249.99</p>
             </div>
@@ -272,347 +604,179 @@
         </div>
         <% } %>
 </section>
-
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const App = {
-      state: {
-        product: JSON.parse('<%- JSON.stringify(product) %>'),
-        selectedColor: null,
-        selectedSize: null,
-      },
+  let productDataGlobal = null;
+  let selectedVariation = null;
 
-      elements: {
-        mainImage: document.getElementById('mainImage'),
-        galleryThumbnails: document.querySelector('.gallery-thumbnails'),
-        priceDisplay: document.getElementById('productPriceDisplay'),
-        stockDisplay: document.getElementById('productEstoqueDisplay'),
-        stockBadge: document.getElementById('stockBadgeDisplay'),
-        colorSelector: document.getElementById('colorPillSelector'),
-        sizeSelector: document.getElementById('sizePillSelector'),
-        colorInput: document.getElementById('selectedColor'),
-        sizeInput: document.getElementById('selectedSize'),
-        quantityInput: document.getElementById('quantity'),
-        decreaseQtyBtn: document.getElementById('decreaseQtyBtn'),
-        increaseQtyBtn: document.getElementById('increaseQtyBtn'),
-        addToCartBtn: document.getElementById('addToCartButton'),
-      },
-
-      init() {
-        if (!this.state.product) return;
-        this.applyColorSwatches();
-        this.bindEvents();
-        this.updatePillStates();
-      },
-
-      bindEvents() {
-        this.elements.decreaseQtyBtn?.addEventListener('click', () => this.handleQuantityChange(-1));
-        this.elements.increaseQtyBtn?.addEventListener('click', () => this.handleQuantityChange(1));
-        this.elements.colorSelector?.addEventListener('click', (e) => this.handlePillClick(e, 'color'));
-        this.elements.sizeSelector?.addEventListener('click', (e) => this.handlePillClick(e, 'size'));
-        this.elements.addToCartBtn?.addEventListener('click', () => this.handleAddToCart());
-        this.elements.galleryThumbnails?.addEventListener('click', (e) => this.handleThumbnailClick(e));
-      },
-
-      handleQuantityChange(change) {
-        const current = parseInt(this.elements.quantityInput.value, 10);
-        const max = parseInt(this.elements.quantityInput.max, 10);
-        let newValue = current + change;
-        if (newValue < 1) newValue = 1;
-        if (newValue > max) newValue = max;
-        this.elements.quantityInput.value = newValue;
-      },
-
-      handlePillClick(event, type) {
-        const clickedPill = event.target.closest('.pill-option');
-        if (!clickedPill || clickedPill.classList.contains('disabled')) return;
-
-        const value = clickedPill.dataset.value;
-        const isCurrentlySelected = clickedPill.classList.contains('selected');
-        const hiddenInput = type === 'color' ? this.elements.colorInput : this.elements.sizeInput;
-
-        if (isCurrentlySelected) {
-          if (type === 'color') this.state.selectedColor = null;
-          if (type === 'size') this.state.selectedSize = null;
-          hiddenInput.value = '';
-          clickedPill.classList.remove('selected');
-        } else {
-          if (type === 'color') this.state.selectedColor = value;
-          if (type === 'size') this.state.selectedSize = value;
-          hiddenInput.value = value;
-          Array.from(clickedPill.parentElement.children).forEach(p => p.classList.remove('selected'));
-          clickedPill.classList.add('selected');
-        }
-
-        this.updatePillStates();
-        this.updateProductDisplay();
-      },
-
-      handleThumbnailClick(event) {
-        const thumbnail = event.target.closest('.thumbnail');
-        if (!thumbnail) return;
-        
-        // Transition effect
-        this.elements.mainImage.style.opacity = '0.5';
-        setTimeout(() => {
-          this.elements.mainImage.src = thumbnail.dataset.imgSrc;
-          this.elements.mainImage.style.opacity = '1';
-        }, 100);
-
-        Array.from(this.elements.galleryThumbnails.children).forEach(thumb => thumb.classList.remove('active'));
-        thumbnail.classList.add('active');
-      },
-
-      getVariationDetails() {
-        const variations = this.state.product.variacoes || [];
-        const { selectedColor, selectedSize } = this.state;
-
-        if (variations.length === 0) {
-          const stock = Number(this.state.product.estoque || 0);
-          return {
-            stock,
-            price: Number(this.state.product.preco || 0),
-            images: (this.state.product.imagens || []).map(img => `/image/${img}`),
-            active: stock > 0,
-            variation: null,
-          };
-        }
-
-        let matchedVariation = null;
-
-        if (selectedColor && selectedSize) {
-          matchedVariation = variations.find(v =>
-            v.ativo &&
-            v.cores?.includes(selectedColor) &&
-            v.tamanhos?.includes(selectedSize)
-          );
-        } else if (selectedColor) {
-          matchedVariation = variations.find(v =>
-            v.ativo &&
-            v.cores?.includes(selectedColor)
-          );
-        } else if (selectedSize) {
-          matchedVariation = variations.find(v =>
-            v.ativo &&
-            v.tamanhos?.includes(selectedSize)
-          );
-        }
-
-        const productImages = (this.state.product.imagens || []).map(img => `/image/${img}`);
-        
-        if (!matchedVariation) {
-            // Se não houver match completo, tenta encontrar o mais próximo ou mantém o inicial
-            matchedVariation = variations.find(v => v.ativo && v.estoque > 0) || variations.find(v => v.ativo) || variations[0];
-        }
-
-        const images = matchedVariation?.imagens?.length > 0
-          ? matchedVariation.imagens.map(img => `/image/${img}`)
-          : productImages;
-
-        return {
-          stock: Number(matchedVariation?.estoque ?? this.state.product.estoque ?? 0),
-          price: Number(matchedVariation?.preco ?? this.state.product.preco ?? 0),
-          images,
-          active: matchedVariation?.ativo ?? (this.state.product.estoque || 0) > 0,
-          variation: matchedVariation || null,
-        };
-      },
-
-      updateProductDisplay() {
-        const details = this.getVariationDetails();
-        const stock = Number(details.stock || 0);
-
-        this.elements.priceDisplay.textContent = Number(details.price || 0).toFixed(2);
-        this.elements.stockDisplay.textContent = stock > 0 ? `${stock} unidades` : 'Indisponível';
-        this.elements.quantityInput.max = stock;
-        
-        if (stock <= 0) {
-            this.elements.quantityInput.value = 0;
-            this.elements.quantityInput.min = 0;
-            this.elements.decreaseQtyBtn.disabled = true;
-            this.elements.increaseQtyBtn.disabled = true;
-        } else {
-            if (parseInt(this.elements.quantityInput.value, 10) === 0) this.elements.quantityInput.value = 1;
-            this.elements.quantityInput.min = 1;
-            this.elements.decreaseQtyBtn.disabled = false;
-            this.elements.increaseQtyBtn.disabled = false;
-        }
-
-        this.elements.stockBadge.textContent = stock > 0 ? 'Em Estoque' : 'Indisponível';
-        this.elements.stockBadge.classList.toggle('out-of-stock', stock <= 0);
-
-        this.updateGallery(details.images);
-        this.updateAddToCartButtonState();
-      },
-
-      updateGallery(images) {
-        const imagesToDisplay = images.slice(0, 5);
-        if (imagesToDisplay.length === 0) return;
-
-        // Verifica se a galeria atual é diferente da nova
-        const currentThumbs = Array.from(this.elements.galleryThumbnails.querySelectorAll('.thumbnail')).map(t => t.dataset.imgSrc);
-        const isDifferent = JSON.stringify(currentThumbs) !== JSON.stringify(imagesToDisplay);
-
-        if (isDifferent) {
-            this.elements.galleryThumbnails.innerHTML = '';
-            
-            // Transition main image
-            this.elements.mainImage.style.opacity = '0.5';
-            setTimeout(() => {
-                this.elements.mainImage.src = imagesToDisplay[0];
-                this.elements.mainImage.style.opacity = '1';
-            }, 150);
-
-            imagesToDisplay.forEach((imgSrc, idx) => {
-              const thumb = document.createElement('img');
-              thumb.className = `thumbnail ${idx === 0 ? 'active' : ''}`;
-              thumb.src = imgSrc;
-              thumb.dataset.imgSrc = imgSrc;
-              thumb.alt = `Product view ${idx + 1}`;
-              this.elements.galleryThumbnails.appendChild(thumb);
-            });
-        }
-      },
-
-      updatePillStates() {
-        const variations = this.state.product.variacoes || [];
-        if (variations.length === 0) return;
-
-        const { selectedColor, selectedSize } = this.state;
-
-        const update = (selector, type) => {
-          if (!selector) return;
-          Array.from(selector.children).forEach(pill => {
-            const value = pill.dataset.value;
-            const isAvailable = variations.some(v => {
-              if (!v.ativo || v.estoque <= 0) return false;
-
-              if (type === 'color') {
-                const matchesColor = v.cores?.includes(value);
-                const matchesSelectedSize = !selectedSize || v.tamanhos?.includes(selectedSize);
-                return matchesColor && matchesSelectedSize;
-              }
-
-              if (type === 'size') {
-                const matchesSize = v.tamanhos?.includes(value);
-                const matchesSelectedColor = !selectedColor || v.cores?.includes(selectedColor);
-                return matchesSize && matchesSelectedColor;
-              }
-
-              return false;
-            });
-            pill.classList.toggle('disabled', !isAvailable);
-          });
-        };
-
-        update(this.elements.colorSelector, 'color');
-        update(this.elements.sizeSelector, 'size');
-      },
-
-      updateAddToCartButtonState() {
-        const btn = this.elements.addToCartBtn;
-        if (!btn) return;
-
-        const variations = this.state.product.variacoes || [];
-        if (variations.length === 0) {
-            const stock = this.state.product.estoque || 0;
-            btn.disabled = stock <= 0;
-            btn.innerHTML = `<i class="material-icons">shopping_cart</i> ${stock > 0 ? 'Adicionar ao Carrinho' : 'Produto Indisponível'}`;
-            return;
-        }
-
-        const needsColor = this.elements.colorSelector && !this.state.selectedColor;
-        const needsSize = this.elements.sizeSelector && !this.state.selectedSize;
-
-        if (needsColor || needsSize) {
-          btn.disabled = true;
-          btn.innerHTML = '<i class="material-icons">shopping_cart</i> Selecione as opções';
-          return;
-        }
-
-        const details = this.getVariationDetails();
-        const stock = details.stock;
-        btn.disabled = stock <= 0;
-        btn.innerHTML = `<i class="material-icons">shopping_cart</i> ${stock > 0 ? 'Adicionar ao Carrinho' : 'Variação Indisponível'}`;
-      },
-
-      handleAddToCart() {
-        const details = this.getVariationDetails();
-        const stock = Number(details.stock || 0);
-        const qty = parseInt(this.elements.quantityInput.value, 10);
-
-        if (stock <= 0) {
-          if (typeof showNotification === 'function') showNotification('A variação selecionada está fora de estoque.', 'error');
-          else alert('A variação selecionada está fora de estoque.');
-          return;
-        }
-        
-        if (qty <= 0 || qty > stock) {
-          if (typeof showNotification === 'function') showNotification(`Quantidade inválida. Máximo disponível: ${stock}`, 'error');
-          else alert(`Por favor, insira uma quantidade válida (1-${stock}).`);
-          return;
-        }
-
-        const { selectedColor, selectedSize } = this.state;
-        
-        const cartItem = {
-            id: this.state.product._id,
-            nome: this.state.product.nome,
-            preco: details.price,
-            quantidade: qty,
-            cor: selectedColor,
-            tamanho: selectedSize,
-            imagem: details.images[0],
-            variationId: details.variation ? details.variation._id : null
-        };
-
-        this.addToCart(cartItem);
-        
-        if (typeof showNotification === 'function') {
-            showNotification(`${qty} unidade(s) adicionadas ao carrinho!`, 'success');
-        } else {
-            alert(`Adicionado ${qty} unidade(s) ao carrinho!`);
-        }
-      },
-
-      addToCart(item) {
-          let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-          
-          const existingIndex = cart.findIndex(i => 
-              i.id === item.id && 
-              i.cor === item.cor && 
-              i.tamanho === item.tamanho &&
-              i.variationId === item.variationId
-          );
-
-          if (existingIndex > -1) {
-              cart[existingIndex].quantidade += item.quantidade;
-          } else {
-              cart.push(item);
-          }
-
-          localStorage.setItem('cart', JSON.stringify(cart));
-          window.dispatchEvent(new CustomEvent('cartUpdated', { detail: { cart } }));
-      },
-
-      applyColorSwatches() {
-        const colorMap = { 'vermelho': '#FF0000', 'azul': '#0000FF', 'verde': '#008000', 'preto': '#000000', 'branco': '#FFFFFF', 'amarelo': '#FFFF00', 'laranja': '#FFA500', 'roxo': '#800080', 'rosa': '#FFC0CB', 'cinza': '#808080' };
-        document.querySelectorAll('.pill-option-color').forEach(pill => {
-          const colorName = pill.dataset.value.toLowerCase();
-          const swatch = pill.querySelector('.color-swatch');
-          if (swatch) {
-            const hexColor = colorMap[colorName];
-            swatch.style.backgroundColor = hexColor || colorName;
-            if (colorName === 'branco' || hexColor === '#FFFFFF') {
-              swatch.style.border = '1px solid #ccc';
-            }
-          }
-        });
-      },
+  async function getProductInfo() {
+    const productId = '<%= product ? product._id : "" %>';
+    const csrfToken = '<%= locals.csrfToken || "" %>';
+    
+    const elements = {
+      title: document.getElementById('productTitle'),
+      amount: document.getElementById('productAmount'),
+      description: document.getElementById('productDescription')
     };
 
-    App.init();
-  });
+    if (!productId) return;
+
+    try {
+      const response = await fetch('/products/projectionByIds', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
+        body: JSON.stringify({ ids: [productId] })
+      });
+      const data = await response.json();
+      const p = data[0];
+      
+      if (!p) return;
+      productDataGlobal = p;
+
+      // Cálculo inicial de estoque e preço (baseado na primeira variação)
+      const variations = p.variacoes || [];
+      const initialVar = variations[0] || {};
+      const totalStock = variations.reduce((acc, v) => acc + (v.estoque || 0), 0);
+      const initialPrice = initialVar.preco || 0;
+
+      // Atualiza Imagem e Stock Badge
+      const mainImg = document.getElementById('mainImage');
+      const firstImage = initialVar.imagens?.[0] || 'placeholder-product.webp';
+      mainImg.src = `/image/${firstImage}`;
+      mainImg.alt = p.nome;
+      mainImg.style.opacity = '1';
+      mainImg.parentElement.classList.remove('skeleton');
+
+      const stockBadge = document.getElementById('stockBadgeDisplay');
+      stockBadge.textContent = totalStock > 0 ? 'Em estoque' : 'Indisponível';
+      stockBadge.classList.remove('skeleton');
+
+      // Thumbnails - Coleta todas as imagens de todas as variações
+      const allImages = [...new Set(variations.flatMap(v => v.imagens || []))];
+      const thumbContainer = document.querySelector('.gallery-thumbnails');
+      thumbContainer.innerHTML = allImages.map((img, i) => `
+        <div class="thumbnail ${i === 0 ? 'active' : ''}" onclick="updateGallery('/image/${img}', this)">
+          <img src="/image/${img}" alt="Miniatura ${i}" loading="lazy">
+        </div>
+      `).join('');
+
+      // Informações Textuais
+      elements.title.textContent = p.nome;
+      elements.title.classList.remove('skeleton');
+      
+      document.getElementById('breadcrumbCategory').textContent = p.categoria || 'Geral';
+      document.getElementById('breadcrumbCategory').classList.remove('skeleton');
+      
+      document.getElementById('specCategory').textContent = p.categoria || 'Geral';
+      document.getElementById('specCategory').classList.remove('skeleton');
+
+      document.getElementById('productAmount').textContent = initialPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      document.getElementById('productPriceContainer').classList.remove('skeleton');
+
+      document.getElementById('specStock').textContent = `${totalStock} unidades`;
+      document.getElementById('specStock').classList.remove('skeleton');
+
+      elements.description.textContent = p.descricao || 'Sem descrição disponível.';
+      elements.description.classList.remove('skeleton');
+
+      // Configura Seletores de Variação
+      renderVariationSelectors(variations);
+
+      // Habilita botão se houver estoque
+      if (totalStock > 0) {
+        document.getElementById('addToCartButton').disabled = false;
+      }
+    
+    } catch (error) {
+      console.error("Erro ao buscar informações do produto:", error);
+    }
+  }
+
+  function renderVariationSelectors(variations) {
+    const colors = [...new Set(variations.flatMap(v => v.cores || []))];
+    const sizes = [...new Set(variations.flatMap(v => v.tamanhos || []))];
+
+    if (colors.length > 0) {
+      const colorSection = document.getElementById('colorSelectorSection');
+      const colorContainer = document.getElementById('colorPillSelector');
+      colorSection.style.display = 'block';
+      colorContainer.innerHTML = colors.map(c => `
+        <div class="pill-option" onclick="selectAttribute('color', '${c}', this)">${c}</div>
+      `).join('');
+      
+      // Atualiza spec
+      document.getElementById('coresSpecItem').style.display = 'block';
+      document.getElementById('specColors').textContent = colors.join(', ');
+    }
+
+    if (sizes.length > 0) {
+      const sizeSection = document.getElementById('sizeSelectorSection');
+      const sizeContainer = document.getElementById('sizePillSelector');
+      sizeSection.style.display = 'block';
+      sizeContainer.innerHTML = sizes.map(s => `
+        <div class="pill-option" onclick="selectAttribute('size', '${s}', this)">${s}</div>
+      `).join('');
+
+      // Atualiza spec
+      document.getElementById('tamanhosSpecItem').style.display = 'block';
+      document.getElementById('specSizes').textContent = sizes.join(', ');
+    }
+  }
+
+  function selectAttribute(type, value, el) {
+    // Toggle UI
+    el.parentElement.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    
+    const color = type === 'color' ? value : document.querySelector('#colorPillSelector .selected')?.textContent;
+    const size = type === 'size' ? value : document.querySelector('#sizePillSelector .selected')?.textContent;
+
+    // Tenta encontrar a variação exata
+    const match = productDataGlobal.variacoes.find(v => 
+      (!color || v.cores.includes(color)) && 
+      (!size || v.tamanhos.includes(size))
+    );
+
+    if (match) {
+      document.getElementById('productAmount').textContent = match.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      document.getElementById('specStock').textContent = `${match.estoque} unidades`;
+      if (match.imagens?.[0]) {
+        updateGallery(`/image/${match.imagens[0]}`);
+      }
+    }
+  }
+
+  function updateGallery(src, thumbEl = null) {
+    const mainImg = document.getElementById('mainImage');
+    mainImg.style.opacity = '0';
+    setTimeout(() => {
+      mainImg.src = src;
+      mainImg.style.opacity = '1';
+    }, 200);
+
+    if (thumbEl) {
+      document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+      thumbEl.classList.add('active');
+    }
+  }
+
+  function changeMainImage(element) {
+    const mainImg = document.getElementById('mainImage');
+    mainImg.src = element.src;
+    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+    element.classList.add('active');
+  }
+
+  function exibirEspecificacao(itemId, valueId, lista) {
+    if (lista && lista.length > 0) {
+      document.getElementById(itemId).style.display = 'block';
+      document.getElementById(valueId).textContent = lista.join(', ');
+    }
+  }
+
+  getProductInfo();
 </script>
 
 <script src="/js/favorited.js"></script>

@@ -23,22 +23,22 @@
                 </a>
 
                 <% if (user.role==='admin' ) { %>
-                  <a href="/admin/dashboard" class="nav-link <%= isActive('/admin/dashboard') ? 'active' : '' %>"
+                  <a href="/dashboard" class="nav-link <%= isActive('/dashboard') ? 'active' : '' %>"
                     aria-label="Painel do Administrador">
                     <span class="material-icons notranslate md-22">admin_panel_settings</span>
                   </a>
                   <% } %>
 
                     <% if (user.role==='delivery' || user.role==='admin' ) { %>
-                      <a href="/admin/delivery" class="nav-link <%= isActive('/admin/delivery') ? 'active' : '' %>"
+                      <a href="/delivery" class="nav-link <%= isActive('/delivery') ? 'active' : '' %>"
                         aria-label="Painel do Entregador">
                         <span class="material-icons notranslate md-22">local_shipping</span>
                       </a>
                       <% } %>
 
                         <% if (user.role==='staff' || user.role==='admin' ) { %>
-                          <a href="/admin/inventory"
-                            class="nav-link <%= isActive('/admin/inventory') ? 'active' : '' %>" aria-label="Estoque">
+                          <a href="/inventory" class="nav-link <%= isActive('/inventory') ? 'active' : '' %>"
+                            aria-label="Estoque">
                             <span class="material-icons notranslate md-22">inventory</span>
                           </a>
                           <% } %>
