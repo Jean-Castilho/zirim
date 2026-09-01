@@ -45,7 +45,7 @@ export const ProductDetails = async (req, res, next) => {
     // Verificamos apenas a existência do produto.
     // O carregamento completo dos dados é feito via fetch no frontend para otimizar o TTFB.
     const product = await productRepository.findById(id, { projection: { _id: 1 } });
-    consolelog(product)
+    console.log(product)
     if (!product) {
       return res.status(404).render("../pages/public/product-details", {
         titulo: "Produto não encontrado",
