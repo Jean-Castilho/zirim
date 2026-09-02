@@ -106,15 +106,27 @@
   /* Selection & Controls */
   .selectors {
     display: flex;
-    justify-content: space-between;
-    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 32px;
+    margin-bottom: 24px;
   }
 
   .variation-section {
     display: flex;
     flex-direction: column;
-    margin-bottom: 12px;
-    gap: 8px;
+    gap: 12px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .variation-section label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #444;
+    margin-bottom: 2px;
   }
 
   .quantity-section {
@@ -260,40 +272,42 @@
     background-color: var(--cor-primaria) !important;
     color: white !important;
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   }
 
   .pill-option {
     cursor: pointer;
-    padding: 10px 20px;
-    border: 2px solid var(--cor-borda);
-    border-radius: 12px;
+    padding: 12px 24px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     user-select: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 500;
-    background: white;
+    font-weight: 600;
+    background: #f9fafb;
+    font-size: 0.95rem;
+    color: #374151;
   }
 
   .pill-option:hover:not(.disabled):not(.selected) {
     border-color: var(--cor-secundaria);
-    color: var(--cor-secundaria);
     transform: translateY(-1px);
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   }
 
   .pill-option.disabled {
-    opacity: 0.25;
-    cursor: not-allowed;
+    opacity: 0.35;
+    cursor: pointer; /* Permite o clique para 'destravar' a navegação */
     text-decoration: line-through;
     filter: grayscale(1);
-    pointer-events: none;
   }
 
   .pill-option-color {
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
     padding: 0;
     border-radius: 50%;
     overflow: hidden;
@@ -305,10 +319,10 @@
     transform: scale(1.15);
   }
 
-  .pill-option-color.selected .color-swatch {
-    border-color: var(--cor-secundaria) !important;
-    background-color: transparent !important;
-    padding: 3px;
+  .pill-option-color.selected {
+    background-color: white !important;
+    border: 2px solid var(--cor-secundaria) !important;
+    padding: 2px;
   }
 
   .color-swatch {
@@ -317,6 +331,13 @@
     border-radius: 50%;
     border: 1px solid rgba(0,0,0,0.1);
     transition: transform 0.3s ease;
+  }
+
+  .pill-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
   }
 
   .main-image-container {
@@ -387,6 +408,26 @@
     font-size: 0.85rem;
     margin-top: 5px;
     font-weight: 600;
+  }
+
+  /* Animação e estado ativo para validação */
+  .validation-error.active {
+    display: block !important;
+    animation: shake 0.4s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+  }
+
+  .pill-selector.error-ring {
+    border: 1px solid var(--cor-secundaria);
+    padding: 5px;
+    border-radius: 10px;
+    transition: border 0.3s ease;
   }
 
   /* Animação de Opacidade/Skeleton */
@@ -473,8 +514,8 @@
 
             <div class="price-section">
               <div class="price skeleton" id="productPriceContainer">
-                <span class="currency">R$</span>
-                <span class="amount" id="productAmount">0,00</span>
+                <span class="currency"></span>
+                <span class="amount" id="productAmount"></span>
               </div>
               <p class="price-note">Preço sujeito a alterações</p>
             </div>
@@ -608,6 +649,33 @@
   let productDataGlobal = null;
   let selectedVariation = null;
 
+  // Controles de Quantidade
+  const qtyInput = document.getElementById('quantity');
+  const decreaseBtn = document.getElementById('decreaseQtyBtn');
+  const increaseBtn = document.getElementById('increaseQtyBtn');
+  const addToCartBtn = document.getElementById('addToCartButton');
+
+  function updateQuantity(val) {
+    let current = parseInt(qtyInput.value) || 0;
+    const max = parseInt(qtyInput.max) || 0;
+    
+    if (val > 0 && current < max) current++;
+    if (val < 0 && current > 1) current--;
+    
+    qtyInput.value = current;
+    decreaseBtn.disabled = current <= 1;
+    increaseBtn.disabled = current >= max;
+  }
+
+  decreaseBtn.addEventListener('click', () => updateQuantity(-1));
+  increaseBtn.addEventListener('click', () => updateQuantity(1));
+
+  function resetQuantity(maxStock) {
+    qtyInput.value = maxStock > 0 ? 1 : 0;
+    qtyInput.max = maxStock;
+    updateQuantity(0);
+  }
+
   async function getProductInfo() {
     const productId = '<%= product ? product._id : "" %>';
     const csrfToken = '<%= locals.csrfToken || "" %>';
@@ -624,12 +692,14 @@
       const response = await fetch('/products/projectionByIds', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ ids: [productId] })
       });
       const data = await response.json();
+
+      console.log(data);
+
       const p = data[0];
       
       if (!p) return;
@@ -684,10 +754,9 @@
       // Configura Seletores de Variação
       renderVariationSelectors(variations);
 
-      // Habilita botão se houver estoque
-      if (totalStock > 0) {
-        document.getElementById('addToCartButton').disabled = false;
-      }
+      // Habilita o botão se houver estoque disponível em qualquer variação.
+      // A validação de seleção específica agora ocorre no clique do botão.
+      addToCartBtn.disabled = totalStock <= 0;
     
     } catch (error) {
       console.error("Erro ao buscar informações do produto:", error);
@@ -726,25 +795,111 @@
   }
 
   function selectAttribute(type, value, el) {
-    // Toggle UI
-    el.parentElement.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
-    el.classList.add('selected');
-    
-    const color = type === 'color' ? value : document.querySelector('#colorPillSelector .selected')?.textContent;
-    const size = type === 'size' ? value : document.querySelector('#sizePillSelector .selected')?.textContent;
+    if (el) {
+      const isAlreadySelected = el.classList.contains('selected');
 
-    // Tenta encontrar a variação exata
-    const match = productDataGlobal.variacoes.find(v => 
-      (!color || v.cores.includes(color)) && 
-      (!size || v.tamanhos.includes(size))
+      if (isAlreadySelected) {
+        // Deseleciona se clicar no item já ativo (Liberdade de navegação)
+        el.classList.remove('selected');
+      } else {
+        // Se clicar em algo bloqueado visualmente, resetamos o seletor oposto para destravar a navegação
+        if (el.classList.contains('disabled')) {
+          const otherSelector = type === 'color' ? '#sizePillSelector' : '#colorPillSelector';
+          document.querySelectorAll(`${otherSelector} .pill-option`).forEach(p => p.classList.remove('selected'));
+        }
+        
+        // Define a nova seleção no grupo
+        el.parentElement.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
+        el.classList.add('selected');
+      }
+    }
+
+    // Captura os valores selecionados após a atualização das classes
+    const color = document.querySelector('#colorPillSelector .selected')?.textContent?.trim();
+    const size = document.querySelector('#sizePillSelector .selected')?.textContent?.trim();
+
+    // Atualiza a disponibilidade visual dos outros atributos
+    updatePillAvailability(color, size);
+
+    // Encontra as variações que batem com a seleção (suporta strings com espaços do DB)
+    const matches = productDataGlobal.variacoes.filter(v => 
+      (!color || v.cores.map(c => c.trim()).includes(color)) && 
+      (!size || v.tamanhos.map(s => String(s).trim()).includes(size))
     );
 
-    if (match) {
+    // Calcula o estoque total da seleção atual (soma se parcial, valor único se completo)
+    const currentStock = matches.reduce((acc, v) => acc + (v.estoque || 0), 0);
+    document.getElementById('specStock').textContent = `${currentStock} unidades`;
+
+    const isColorRequired = document.getElementById('colorSelectorSection').style.display !== 'none';
+    const isSizeRequired = document.getElementById('sizeSelectorSection').style.display !== 'none';
+    
+    // Verifica se todos os atributos visíveis foram selecionados
+    const selectionComplete = (!isColorRequired || !!color) && (!isSizeRequired || !!size);
+    const colorError = document.getElementById('colorError');
+    const sizeError = document.getElementById('sizeError');
+    const colorContainer = document.getElementById('colorPillSelector');
+    const sizeContainer = document.getElementById('sizePillSelector');
+
+    // Limpa estados de erro visual ao selecionar um atributo
+    if (color) { 
+      colorError.classList.remove('active'); 
+      colorContainer.classList.remove('error-ring'); 
+    }
+    if (size) { 
+      sizeError.classList.remove('active'); 
+      sizeContainer.classList.remove('error-ring'); 
+    }
+
+    if (selectionComplete && matches.length > 0) {
+      const match = matches[0]; // Na seleção completa, o primeiro match é a variação única
+      selectedVariation = match;
       document.getElementById('productAmount').textContent = match.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-      document.getElementById('specStock').textContent = `${match.estoque} unidades`;
-      if (match.imagens?.[0]) {
-        updateGallery(`/image/${match.imagens[0]}`);
+      
+      resetQuantity(match.estoque);
+      
+      if (match.imagens?.[0]) updateGallery(`/image/${match.imagens[0]}`);
+      addToCartBtn.disabled = match.estoque <= 0;
+    } else {
+      selectedVariation = null;
+      resetQuantity(currentStock);
+
+      // Retorna ao preço inicial quando a seleção está incompleta ou vazia
+      if (productDataGlobal && productDataGlobal.variacoes?.[0]) {
+        document.getElementById('productAmount').textContent = productDataGlobal.variacoes[0].preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
       }
+    }
+  }
+
+  function updatePillAvailability(selectedColor, selectedSize) {
+    if (!productDataGlobal || !productDataGlobal.variacoes) return;
+
+    // Se uma cor foi selecionada, desabilita tamanhos sem estoque para essa cor
+    if (document.getElementById('sizeSelectorSection').style.display !== 'none') {
+      const sizePills = document.querySelectorAll('#sizePillSelector .pill-option');
+      sizePills.forEach(pill => {
+        const sizeVal = pill.textContent.trim();
+        const hasStock = productDataGlobal.variacoes.some(v => 
+          (!selectedColor || v.cores.map(c => c.trim()).includes(selectedColor)) && 
+          v.tamanhos.includes(sizeVal) && 
+          v.estoque > 0
+        );
+        pill.classList.toggle('disabled', !hasStock);
+      });
+    }
+
+    // Se um tamanho foi selecionado, desabilita cores sem estoque para esse tamanho
+    if (document.getElementById('colorSelectorSection').style.display !== 'none') {
+      const colorPills = document.querySelectorAll('#colorPillSelector .pill-option');
+      colorPills.forEach(pill => {
+        const colorVal = pill.textContent.trim();
+        const hasStock = productDataGlobal.variacoes.some(v => 
+          v.cores.map(c => c.trim()).includes(colorVal) && 
+          (!selectedSize || v.tamanhos.includes(selectedSize)) && 
+          v.estoque > 0
+        );
+        pill.classList.toggle('disabled', !hasStock);
+      });
     }
   }
 
@@ -774,6 +929,77 @@
       document.getElementById(itemId).style.display = 'block';
       document.getElementById(valueId).textContent = lista.join(', ');
     }
+  }
+
+  addToCartBtn.addEventListener('click', () => {
+    const isColorRequired = document.getElementById('colorSelectorSection').style.display !== 'none';
+    const isSizeRequired = document.getElementById('sizeSelectorSection').style.display !== 'none';
+    const colorSelected = document.querySelector('#colorPillSelector .selected');
+    const sizeSelected = document.querySelector('#sizePillSelector .selected');
+
+    let hasError = false;
+
+    if (isColorRequired && !colorSelected) {
+      document.getElementById('colorError').classList.add('active');
+      document.getElementById('colorPillSelector').classList.add('error-ring');
+      hasError = true;
+    }
+
+    if (isSizeRequired && !sizeSelected) {
+      document.getElementById('sizeError').classList.add('active');
+      document.getElementById('sizePillSelector').classList.add('error-ring');
+      hasError = true;
+    }
+
+    if (hasError) {
+      if (typeof showNotification === 'function') {
+        showNotification('Selecione as opções desejadas antes de prosseguir.', 'error');
+      }
+      return;
+    }
+
+    if (!selectedVariation) return;
+
+    const cartItem = {
+      productId: productDataGlobal._id,
+      variationId: selectedVariation._id || `${productDataGlobal._id}-${selectedVariation.cores[0]}-${selectedVariation.tamanhos[0]}`,
+      cor: document.querySelector('#colorPillSelector .selected')?.textContent,
+      tamanho: document.querySelector('#sizePillSelector .selected')?.textContent,
+      nome: productDataGlobal.nome,
+      preco: selectedVariation.preco,
+      quantidade: parseInt(qtyInput.value),
+      imagem: selectedVariation.imagens?.[0] ? `/image/${selectedVariation.imagens[0]}` : '/img/placeholder-product.webp',
+      estoqueMax: selectedVariation.estoque
+    };
+
+    saveToCart(cartItem);
+  });
+
+  function saveToCart(item) {
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    
+    const existingIndex = cart.findIndex(i => i.variationId === item.variationId);
+    
+
+    if (existingIndex > -1) {
+      const newQty = cart[existingIndex].quantidade + item.quantidade;
+      cart[existingIndex].quantidade = Math.min(newQty, item.estoqueMax);
+    } else {
+      cart.push(item);
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    showNotification(`adicionado ao carrinho!`, 'success');
+  }
+
+  /**
+   * Função adicional para resetar completamente a navegação de variações.
+   * Pode ser vinculada a um botão de "Limpar escolhas".
+   */
+  function clearAllVariationSelections() {
+    document.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
+    // Dispara a lógica de atualização passando null para os parâmetros
+    selectAttribute(null, null, null);
   }
 
   getProductInfo();

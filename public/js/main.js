@@ -1,22 +1,40 @@
 function showNotification(message, type = 'success') {
-    const container = document.getElementById('notification-container');
-    if (!container) return;
+    let container = document.getElementById('notification-container');
+    
+    // Cria o container dinamicamente se não existir
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        document.body.appendChild(container);
+    }
 
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
-    notification.innerText = message;
+    
+    // Define o ícone baseado no tipo
+    let icon = 'info';
+    if (type === 'success') icon = 'check_circle';
+    if (type === 'error') icon = 'error';
+    if (type === 'warning') icon = 'warning';
+
+        //<i class="material-icons">${icon}</i>
+    notification.innerHTML = `
+        <span>${message}</span>
+    `;
 
     container.appendChild(notification);
 
-    setTimeout(() => {
+    // Trigger para animação de entrada
+    requestAnimationFrame(() => {
         notification.classList.add('show');
-    }, 10);
+    });
 
     // Remove after 3 seconds
     setTimeout(() => {
         notification.classList.remove('show');
-        setTimeout(() => {
+        // Aguarda a transição terminar para remover do DOM
+        notification.addEventListener('transitionend', () => {
             notification.remove();
-        }, 300); 
+        }, { once: true });
     }, 3000);
 }

@@ -638,3 +638,50 @@
     color: #666;
     margin-bottom: 20px;
 }
+
+/* Toast Notifications Container */
+#notification-container {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+/* Estilo individual do Toast */
+.notification {
+    pointer-events: auto;
+    min-width: 300px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    color: var(--cor-primaria);
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transform: translateX(120%);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-left: 6px solid #ccc;
+}
+
+.notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notification i { font-size: 24px; }
+.notification span { font-size: 0.95rem; font-weight: 500; }
+
+/* Variantes de Status */
+.notification-success { border-left-color: #4CAF50; }
+.notification-success i { color: #4CAF50; }
+.notification-error { border-left-color: var(--cor-secundaria); }
+.notification-error i { color: var(--cor-secundaria); }
+.notification-info { border-left-color: #2196F3; }
+.notification-info i { color: #2196F3; }

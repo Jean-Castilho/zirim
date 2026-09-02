@@ -42,7 +42,7 @@ router.post("/projectionByIds", async (req, res, next) => {
     }
 
     const products = await productController.getProductsByIds(ids, projection || {});
-    
+    console.log(products);
     await handleResponse(res, Promise.resolve(products));
   } catch (error) {
     next(error);

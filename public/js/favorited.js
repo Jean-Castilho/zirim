@@ -9,7 +9,6 @@ function addToFavorites(productId, buttonElement) {
 
     if (favorites.includes(productId)) {
 
-
         showNotification('Este produto já está nos seus favoritos!', 'info');
         return false;
     }
