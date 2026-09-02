@@ -80,19 +80,13 @@ export const ProductDetails = async (req, res, next) => {
 
 };
 
-export const About = (req, res) => {
-  renderPage(req, res, "../pages/public/about", {
-    titulo: "Sobre Nós",
-    message: "Saiba mais sobre nossa loja!",
-  });
-};
-
 export const Contact = (req, res) => {
   renderPage(req, res, "../pages/public/contact", {
     titulo: "Contato",
     message: "Entre em contato conosco!",
   });
 };
+
 
 export const Login = (req, res) => {
   renderPage(req, res, "../pages/auth/login", {
@@ -102,7 +96,7 @@ export const Login = (req, res) => {
 };
 
 export const ResetPassword = (req, res) => {
-  renderPage(req, res, "../pages/auth/forgotpassword", {
+  renderPage(req, res, "../pages/auth/reset-password", {
     titulo: "Recuperando Senha",
     message: "utuilize seu email ou numero",
   });
@@ -136,6 +130,10 @@ export const VerifyOtp = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
+
 
 export const Favorites = async (req, res, next) => {
   try {

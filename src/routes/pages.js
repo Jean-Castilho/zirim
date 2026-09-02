@@ -9,8 +9,7 @@ import {
   Register, 
   Login, 
   ResetPassword,
-  Contact, 
-  About, 
+  Contact,
   Favorites, 
   Cart,
   VerifyOtp,
@@ -34,13 +33,12 @@ router.get("/", Home);
 router.get("/products", Products);
 router.get("/product/:id", ProductDetails);
 
-router.get("/about", About);
 router.get("/contact", Contact);
 
 router.get("/register", Register);
 router.get("/login", generateCsrfToken, Login);
 
-router.get("/forgot-password", generateCsrfToken, ResetPassword);
+router.get("/reset-password", generateCsrfToken, ResetPassword);
 
 router.get("/verify-otp", VerifyOtp);
 

@@ -1,28 +1,42 @@
 <section class="register-page">
   <div class="register-container">
     <h1 class="register-title"><%= titulo %></h1>
-    <p class="register-message"><%= message %></p>
 
     <form id="registerForm" class="register-form">
       <div class="form-group">
         <label for="name">Nome Completo</label>
-        <input type="text" id="name" name="name" placeholder="Seu nome completo" required>
+        <div class="input-with-icon">
+          <i class="material-icons">person_outline</i>
+          <input type="text" id="name" name="name" placeholder="Seu nome completo" required>
+        </div>
       </div>
       <div class="form-group">
         <label for="email">E-mail</label>
-        <input type="email" id="email" name="email" placeholder="Seu e-mail" required>
+        <div class="input-with-icon">
+          <i class="material-icons">mail_outline</i>
+          <input type="email" id="email" name="email" placeholder="Seu e-mail" required>
+        </div>
       </div>
       <div class="form-group">
         <label for="phone">Telefone</label>
-        <input type="text" id="phone" name="phone" placeholder="Seu telefone" required>
+        <div class="input-with-icon">
+          <i class="material-icons">phone_iphone</i>
+          <input type="text" id="phone" name="phone" placeholder="Seu telefone" required>
+        </div>
       </div>
       <div class="form-group">
         <label for="password">Senha</label>
-        <input type="password" id="password" name="password" placeholder="Crie uma senha" required>
+        <div class="input-with-icon">
+          <i class="material-icons">lock_outline</i>
+          <input type="password" id="password" name="password" placeholder="Crie uma senha" required>
+        </div>
       </div>
       <div class="form-group">
         <label for="confirmPassword">Confirmar Senha</label>
-        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirme sua senha" required>
+        <div class="input-with-icon">
+          <i class="material-icons">verified_user</i>
+          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirme sua senha" required>
+        </div>
       </div>
       <button type="submit" class="btn-primary">Registrar</button>
     </form>
@@ -98,96 +112,130 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 70vh;
-    background-color: var(--cor-fundo-claro);
+    margin-top: 2rem;
+    min-height: 78vh;
+    background-color: var(--cor-fundo-site);
     padding: var(--espacamento-grande);
   }
 
   .register-container {
     background-color: #fff;
-    padding: var(--espacamento-grande);
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding:  1.5rem 2rem 2rem;
+    border-radius: 16px;
+    box-shadow: var(--sombra-suave);
     width: 100%;
-    max-width: 450px; /* Um pouco mais largo que o login para acomodar mais campos */
+    max-width: 430px;
     text-align: center;
   }
 
   .register-title {
     color: var(--cor-primaria);
-    margin-bottom: var(--espacamento-medio);
+    margin-bottom: 0.8rem;
+    font-size: 1.8rem;
     font-family: var(--fonte-titulo);
   }
 
   .register-message {
-    color: var(--cor-texto-escuro);
+    color: var(--cor-texto-medio);
     margin-bottom: var(--espacamento-grande);
   }
 
   .register-form .form-group {
-    margin-bottom: var(--espacamento-medio);
+    margin-bottom: 1.2rem;
     text-align: left;
+    position: relative;
   }
 
   .register-form label {
     display: block;
-    margin-bottom: var(--espacamento-pequeno);
+    margin-bottom: var(--espacamento-xs);
     color: var(--cor-texto-escuro);
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-with-icon i {
+    position: absolute;
+    left: 12px;
+    color: #999;
+    font-size: 20px;
   }
 
   .register-form input[type="text"],
   .register-form input[type="email"],
   .register-form input[type="password"] {
     width: 100%;
-    padding: var(--espacamento-medio);
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
     border: 1px solid var(--cor-borda);
-    border-radius: 4px;
+    border-radius: 8px;
     box-sizing: border-box;
     font-size: 1rem;
+    transition: var(--transicao-suave);
+    background-color: #fafafa;
   }
 
   .register-form input[type="text"]:focus,
   .register-form input[type="email"]:focus,
   .register-form input[type="password"]:focus {
-    border-color: var(--cor-secundaria);
+    border-color: var(--cor-primaria);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(var(--cor-secundaria-rgb), 0.2);
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(var(--cor-primaria-rgb, 0, 0, 0), 0.1);
   }
 
+  .register-form input:focus + i {
+    color: var(--cor-primaria);
+  }
 
   .btn-primary {
     background-color: var(--cor-secundaria);
     color: var(--cor-texto-claro);
-    padding: var(--espacamento-medio) var(--espacamento-grande);
+    padding: 1rem var(--espacamento-md);
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: bold;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
     width: 100%;
-    margin-top: var(--espacamento-medio);
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
   }
 
   .btn-primary:hover {
-    background-color: darken(var(--cor-secundaria), 10%); /* Isso exigiria um pré-processador CSS */
-    /* Alternativa simples: */
-    filter: brightness(90%);
+    filter: brightness(110%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
   }
 
+  .btn-primary:active {
+    transform: translateY(0);
+  }
 
   .login-link {
     color: var(--cor-primaria);
     text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
   }
 
   .login-link:hover {
     text-decoration: underline;
+    color: var(--cor-secundaria);
   }
 
   .login-prompt {
     margin-top: var(--espacamento-grande);
-    color: var(--cor-texto-escuro);
+    color: var(--cor-texto-medio);
   }
 </style>
