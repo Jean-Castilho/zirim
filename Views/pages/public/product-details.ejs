@@ -1,489 +1,6 @@
-<style>
-  /* Base Layout */
-  .product-details-page {
-    padding: 40px 20px;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  .product-details-container {
-    display: grid;
-    margin: 0px 80px;
-    grid-template-columns: 1fr 1fr;
-    justify-items: center;
-  }
-
-  .product-gallery {
-    display: flex;
-    flex-direction: column;
-    width: 75%;
-    gap: 20px;
-  }
-
-  .product-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  /* Navigation & Typography */
-  .breadcrumb {
-    font-size: 0.9em;
-    color: #666;
-  }
-
-  .breadcrumb a {
-    color: var(--cor-secundaria);
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  .product-title {
-    font-size: 1.8rem;
-    line-height: 1.0;
-    color: var(--cor-primaria);
-    margin: 0;
-  }
-
-  /* Price Section */
-  .price-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-  }
-
-  .price {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-  }
-
-  .currency {
-    font-size: 1.2rem;
-    color: var(--cor-secundaria);
-    font-weight: 600;
-  }
-
-  .amount {
-    font-size: 2.2em;
-    font-weight: 700;
-    color: var(--cor-secundaria);
-  }
-
-  .price-note {
-    font-size: 0.85rem;
-    color: #999;
-    margin: 0;
-  }
-
-  /* Specifications */
-  .specifications {
-    padding: 10px;
-    background: #f9f9f9;
-    border-radius: 12px;
-  }
-
-  .specifications h3 {
-    margin: 0 0 12px 0;
-    font-size: 1rem;
-    color: var(--cor-primaria);
-  }
-
-  .spec-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 7px 0;
-    border-bottom: 1px solid #e0e0e0;
-  }
-
-  .spec-label {
-    font-weight: 600;
-    color: #666;
-  }
-
-  /* Selection & Controls */
-  .selectors {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 32px;
-    margin-bottom: 24px;
-  }
-
-  .variation-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .variation-section label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #444;
-    margin-bottom: 2px;
-  }
-
-  .quantity-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .quantity-control {
-    display: flex;
-    align-items: center;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    width: fit-content;
-  }
-
-  .qty-btn {
-    width: 40px;
-    height: 40px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 1.2rem;
-  }
-
-  .quantity-control input {
-    width: 60px;
-    height: 40px;
-    border: none;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-
-  /* Buttons */
-  .action-buttons {
-    display: flex;
-    gap: 12px;
-  }
-
-  .btn-primary, .btn-secondary {
-    flex: 1;
-    padding: 16px 24px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-transform: uppercase;
-  }
-
-  .btn-primary {
-    background: var(--cor-secundaria);
-    color: white;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: var(--cor-destaque);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(225, 7, 50, 0.3);
-  }
-
-  .btn-secondary {
-    background: white;
-    color: var(--cor-secundaria);
-    border: 2px solid var(--cor-secundaria);
-  }
-
-  .btn-secondary:hover {
-    background: var(--cor-secundaria);
-    color: white;
-  }
-
-  /* Guarantee Section */
-  .guarantee-section {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-  }
-
-  .guarantee-item {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .guarantee-item i {
-    color: var(--cor-secundaria);
-    font-size: 24px;
-  }
-
-  /* Description & Related */
-  .expanded-description {
-    background: #f9f9f9;
-    padding: 40px 60px;
-    border-radius: 16px;
-    margin-top: 40px;
-  }
-
-  .related-products {
-    margin-top: 40px;
-  }
-
-  .related-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 24px;
-  }
-
-  .related-card {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
-  }
-
-  .related-card img {
-    width: 100%;
-    height: 240px;
-    object-fit: cover;
-  }
-
-  .stock-badge {
-    position: absolute;
-    top: 20px;
-    right: 5px;
-    padding: 8px 16px;
-    background: #4CAF50;
-    color: white;
-    border-radius: 8px;
-  }
-
-  .pill-option.selected {
-    border-color: var(--cor-secundaria) !important;
-    background-color: var(--cor-primaria) !important;
-    color: white !important;
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  }
-
-  .pill-option {
-    cursor: pointer;
-    padding: 12px 24px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    user-select: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    background: #f9fafb;
-    font-size: 0.95rem;
-    color: #374151;
-  }
-
-  .pill-option:hover:not(.disabled):not(.selected) {
-    border-color: var(--cor-secundaria);
-    transform: translateY(-1px);
-    background: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  }
-
-  .pill-option.disabled {
-    opacity: 0.35;
-    cursor: pointer; /* Permite o clique para 'destravar' a navegação */
-    text-decoration: line-through;
-    filter: grayscale(1);
-  }
-
-  .pill-option-color {
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    border-radius: 50%;
-    overflow: hidden;
-    position: relative;
-    border: 2px solid transparent;
-  }
-
-  .pill-option-color:hover:not(.selected) {
-    transform: scale(1.15);
-  }
-
-  .pill-option-color.selected {
-    background-color: white !important;
-    border: 2px solid var(--cor-secundaria) !important;
-    padding: 2px;
-  }
-
-  .color-swatch {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 1px solid rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
-  }
-
-  .pill-selector {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: flex-start;
-  }
-
-  .main-image-container {
-    width: 100%;
-    height: 500px;
-    background-color: #f8f8f8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    border-radius: 16px;
-    position: relative;
-  }
-
-  .main-image {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-
-  .gallery-thumbnails {
-    display: flex;
-    gap: 12px;
-    margin-top: 15px;
-    overflow-x: auto;
-    padding: 5px 2px;
-    scrollbar-width: thin;
-  }
-
-  .thumbnail {
-    width: 90px;
-    height: 90px;
-    flex-shrink: 0;
-    border-radius: 8px;
-    overflow: hidden;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
-    background: #fff;
-  }
-
-  .thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .thumbnail.active {
-    border-color: var(--cor-secundaria);
-    transform: scale(1.05);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  }
-
-  .qty-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  #addToCartButton:not(:disabled):active {
-    transform: scale(0.98);
-  }
-
-  .validation-error {
-    color: var(--cor-secundaria);
-    font-size: 0.85rem;
-    margin-top: 5px;
-    font-weight: 600;
-  }
-
-  /* Animação e estado ativo para validação */
-  .validation-error.active {
-    display: block !important;
-    animation: shake 0.4s ease-in-out;
-  }
-
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    50% { transform: translateX(5px); }
-    75% { transform: translateX(-5px); }
-  }
-
-  .pill-selector.error-ring {
-    border: 1px solid var(--cor-secundaria);
-    padding: 5px;
-    border-radius: 10px;
-    transition: border 0.3s ease;
-  }
-
-  /* Animação de Opacidade/Skeleton */
-  .skeleton {
-    background-color: #eee;
-    background-image: linear-gradient(90deg, #eee, #f5f5f5, #eee);
-    background-size: 200px 100%;
-    background-repeat: no-repeat;
-    display: inline-block;
-    line-height: 1;
-    width: 100%;
-    animation: skeleton-loading 1.5s infinite linear;
-    border-radius: 4px;
-    color: transparent !important;
-  }
-
-  @keyframes skeleton-loading {
-    0% { background-position: -200px 0; }
-    100% { background-position: calc(200px + 100%) 0; }
-  }
-
-  /* Responsive Adjustments */
-  @media (max-width: 1024px) {
-    .product-details-container {
-      grid-template-columns: 1fr;
-      margin: 0;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .action-buttons {
-      flex-direction: column;
-    }
-    .guarantee-section {
-      grid-template-columns: 1fr;
-    }
-    .product-gallery {
-      width: 100%;
-    }
-  }
-
-  .product-not-found {
-    padding: 60px 20px;
-    text-align: center;
-    color: #777;
-  }
-</style>
+<link rel="stylesheet" href="/css/pages/product-details.css">
 
 <section class="product-details-page">
-    <% if (!product) { %>
-      <div class="product-not-found">
-        <h2>Produto não encontrado</h2>
-        <p>Verifique se o link está correto ou tente novamente mais tarde.</p>
-        <a href="/products" class="btn-back-products">Voltar para produtos</a>
-      </div>
-      <% } else { %>
         <div class="product-details-container">
           <!-- Galeria de Imagens -->
           <div class="product-gallery">
@@ -527,15 +44,6 @@
                 <span class="spec-label">Categoria:</span>
                 <span class="spec-value skeleton" id="specCategory">Carregando...</span>
               </div>
-                <div class="spec-item" id="coresSpecItem" style="display: none;">
-                  <span class="spec-label">Cores disponíveis:</span>
-                  <span class="spec-value" id="specColors"></span>
-                </div>
-
-                <div class="spec-item" id="tamanhosSpecItem" style="display: none;">
-                  <span class="spec-label">Tamanhos disponíveis:</span>
-                  <span class="spec-value" id="specSizes"></span>
-                </div>
 
           <div class="spec-item">
             <span class="spec-label">Estoque:</span>
@@ -557,7 +65,7 @@
                   <div id="sizeError" class="validation-error" style="display:none">Selecione um tamanho</div>
                   <input type="hidden" id="selectedSize" name="size">
                 </div>
-
+              
                       <!-- Seletor de Quantidade -->
                       <div class="quantity-section">
                         <div class="quantity-control">
@@ -627,7 +135,6 @@
 
         <div class="related-products">
           <h2>Você pode gostar também</h2>
-          <p class="related-subtitle">Confira outros produtos da mesma categoria</p>
           <div class="related-grid">
             <div class="related-card">
               <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
@@ -643,7 +150,6 @@
             </div>
           </div>
         </div>
-        <% } %>
 </section>
 <script>
   let productDataGlobal = null;
@@ -677,7 +183,7 @@
   }
 
   async function getProductInfo() {
-    const productId = '<%= product ? product._id : "" %>';
+    const productId = '<%= product._id %>';
     const csrfToken = '<%= locals.csrfToken || "" %>';
     
     const elements = {
@@ -774,10 +280,6 @@
       colorContainer.innerHTML = colors.map(c => `
         <div class="pill-option" onclick="selectAttribute('color', '${c}', this)">${c}</div>
       `).join('');
-      
-      // Atualiza spec
-      document.getElementById('coresSpecItem').style.display = 'block';
-      document.getElementById('specColors').textContent = colors.join(', ');
     }
 
     if (sizes.length > 0) {
@@ -787,10 +289,6 @@
       sizeContainer.innerHTML = sizes.map(s => `
         <div class="pill-option" onclick="selectAttribute('size', '${s}', this)">${s}</div>
       `).join('');
-
-      // Atualiza spec
-      document.getElementById('tamanhosSpecItem').style.display = 'block';
-      document.getElementById('specSizes').textContent = sizes.join(', ');
     }
   }
 

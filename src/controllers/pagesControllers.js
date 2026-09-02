@@ -42,15 +42,24 @@ export const ProductDetails = async (req, res, next) => {
 
   try {
     const { id } = req.params;
+
+    if (!id || id === 'null' || id === 'undefined') {
+      return res.status(404).render("pages/partials/Error", {
+        titulo: "Produto não encontrado",
+        statusCode: 404,
+        errorMessage: "ID do produto inválido ou não fornecido.",
+      });
+    }
+
     // Verificamos apenas a existência do produto.
     // O carregamento completo dos dados é feito via fetch no frontend para otimizar o TTFB.
     const product = await productRepository.findById(id, { projection: { _id: 1 } });
-    console.log(product)
+    
     if (!product) {
-      return res.status(404).render("../pages/public/product-details", {
+      return res.status(404).render("pages/partials/Error", {
         titulo: "Produto não encontrado",
-        product: null,
-        errorMessage: "Produto não encontrado.",
+        statusCode: 404,
+        errorMessage: "O produto que você está procurando não existe ou foi removido.",
       });
     }
          
@@ -59,6 +68,13 @@ export const ProductDetails = async (req, res, next) => {
       product: { _id: product._id },
     });
   } catch (error) {
+    if (error.name === 'CastError' || error.message.includes('ObjectId')) {
+      return res.status(404).render("pages/partials/Error", {
+        titulo: "Produto não encontrado",
+        statusCode: 404,
+        errorMessage: "Produto não encontrado (ID inválido).",
+      });
+    }
     next(error);
   }
 

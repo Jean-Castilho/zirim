@@ -1,6 +1,146 @@
-<div class="error-container" style="text-align: center; padding: 50px;">
-    <h1>Ops! Algo deu errado.</h1>
-    <h2 style="color: #D2042D;"><%= statusCode %></h2>
-    <p><%= errorMessage %></p>
-    <a href="/" class="btn" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #D2042D; color: white; text-decoration: none; border-radius: 5px;">Voltar para a Home</a>
+<div class="error-page-wrapper">
+    <div class="breadcrumb">
+        <a href="/">Home</a> / <span>Erro</span>
+    </div>
+
+    <div class="error-container">
+        <div class="error-content">
+            <div class="error-visual">
+                <i class="material-icons error-icon">error_outline</i>
+                <% if (locals.statusCode) { %>
+                    <span class="error-code-badge"><%= statusCode %></span>
+                <% } %>
+            </div>
+            
+            <h1 class="error-title"><%= titulo || 'Ops! Algo deu errado.' %></h1>
+            
+            <p class="error-message"><%= errorMessage || 'Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.' %></p>
+            
+            <div class="error-actions">
+                <a href="/" class="btn-primary">
+                    <i class="material-icons">home</i> Voltar para a Home
+                </a>
+                <a href="/products" class="btn-secondary">
+                    <i class="material-icons">shopping_bag</i> Ver Produtos
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    .error-page-wrapper {
+        padding: 40px 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+        min-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        font-family: var(--fonte-principal);
+    }
+
+    .error-container {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 0;
+    }
+
+    .error-content {
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+        background: var(--cor-fundo-claro);
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid var(--cor-borda);
+    }
+
+    .error-visual {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 30px;
+    }
+
+    .error-icon {
+        font-size: 100px;
+        color: var(--cor-secundaria);
+    }
+
+    .error-code-badge {
+        position: absolute;
+        bottom: 0;
+        right: -10px;
+        background: var(--cor-primaria);
+        color: var(--cor-texto-claro);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        font-family: var(--fonte-botoes);
+    }
+
+    .error-title {
+        font-size: 2rem;
+        color: var(--cor-primaria);
+        margin: 0 0 15px 0;
+        font-family: var(--fonte-titulo);
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .error-message {
+        font-size: 1.1rem;
+        color: var(--cor-texto-escuro);
+        line-height: 1.6;
+        margin-bottom: 35px;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-direction: column;
+    }
+
+    .error-actions .btn-primary, 
+    .error-actions .btn-secondary {
+        width: 100%;
+        justify-content: center;
+        padding: 16px 24px;
+        font-family: var(--fonte-botoes);
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .error-actions .btn-primary:hover {
+        background-color: var(--cor-destaque);
+    }
+
+    /* Ajuste fino para breadcrumb */
+    .breadcrumb {
+        font-size: 0.9em;
+        color: var(--cor-texto-escuro);
+        margin-bottom: 20px;
+        font-family: var(--fonte-principal);
+    }
+
+    .breadcrumb a {
+        color: var(--cor-secundaria);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    @media (min-width: 640px) {
+        .error-actions {
+            flex-direction: row;
+        }
+        .error-content {
+            padding: 60px;
+        }
+    }
+</style>

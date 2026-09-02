@@ -3,29 +3,31 @@
     display: flex;
     justify-content: center;
     padding: var(--espacamento-grande);
-    background-color: var(--cor-fundo-claro);
+    background-color: #f4f7f6;
     min-height: 78vh;
   }
 
   .profile-container {
     width: 100%;
-    max-width: 1150px;
-    background-color: #fff;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    max-width: 1200px;
+    background-color: transparent;
     padding: var(--espacamento-grande);
   }
 
   .profile-title {
     color: var(--cor-primaria);
     font-family: var(--fonte-titulo);
-    margin-bottom: var(--espacamento-pequeno);
+    margin-bottom: var(--espacamento-sm);
     text-align: center;
+    font-weight: 700;
+    font-size: 1.8rem;
   }
 
   .profile-message {
-    color: var(--cor-texto-escuro);
+    color: var(--cor-texto-medio);
     text-align: center;
-    margin-bottom: var(--espacamento-grande);
+    margin-bottom: var(--espacamento-lg);
   }
 
   .profile-content {
@@ -33,43 +35,72 @@
     flex-direction: column;
     gap: var(--espacamento-grande);
   }
+  .profile-content div{
+
+    margin: 14px;
+
+  }
 
   .user-info-card,
   .user-orders-card {
-    background-color: var(--cor-fundo-claro);
+    background-color: #fff;
     border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    padding: var(--espacamento-grande);
+    border-radius: var(--raio-grande);
+    padding: var(--espacamento-lg);
+    box-shadow: var(--sombra-suave);
   }
 
   .user-info-card h2,
   .user-orders-card h2 {
     color: var(--cor-primaria);
-    margin-bottom: var(--espacamento-medio);
-    border-bottom: 2px solid var(--cor-secundaria);
-    padding-bottom: var(--espacamento-pequeno);
-    display: inline-block;
+    margin-bottom: var(--espacamento-grande);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: var(--espacamento-sm);
+    border-bottom: 2px solid var(--cor-fundo-site);
+    padding-bottom: var(--espacamento-md);
+  }
+
+  .profile-avatar-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--espacamento-grande);
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--cor-primaria), #333);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: bold;
+    box-shadow: var(--sombra-media);
+    border: 3px solid #fff;
   }
 
   .info-group {
-    margin-bottom: var(--espacamento-medio);
+    margin-bottom: 1.2rem;
     display: flex;
     flex-direction: column;
   }
 
   .info-group label {
-    font-weight: bold;
-    color: var(--cor-texto-escuro);
-    margin-bottom: 4px;
-    font-size: 0.9rem;
+    color: var(--cor-texto-suave);
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
   .info-group p {
-    color: var(--cor-texto-escuro);
+    color: #444;
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
+    font-weight: 500;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -78,39 +109,41 @@
   }
 
   .badge {
-    font-size: 0.75rem;
-    padding: 3px 8px;
-    border-radius: 12px;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 20px;
     color: white;
-    font-weight: bold;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
   }
 
   .badge.verified {
-    background-color: #2ecc71;
-    /* Verde */
+    background-color: var(--cor-sucesso);
+    box-shadow: 0 2px 5px rgba(46, 204, 113, 0.2);
   }
 
   .badge.unverified {
-    background-color: var(--cor-destaque);
-    /* Vermelho */
+    background-color: var(--cor-erro);
   }
 
   .btn-logout {
-    display: inline-block;
-    background-color: var(--cor-destaque);
-    color: var(--cor-texto-claro);
-    padding: var(--espacamento-pequeno) var(--espacamento-medio);
+    display: block;
+    width: 100%;
+    border: 2px solid var(--cor-destaque);
+    color: var(--cor-destaque);
+    background-color: transparent;
+    padding: 12px;
     text-decoration: none;
-    border-radius: 4px;
-    font-weight: bold;
+    border-radius: 8px;
+    font-weight: 600;
     transition: background-color 0.3s;
     text-align: center;
   }
 
   .btn-logout:hover {
-    filter: brightness(90%);
+    background-color: var(--cor-destaque);
+    color: #fff;
   }
 
   .orders-list {
@@ -119,36 +152,38 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--espacamento-medio);
+    gap: var(--espacamento-md);
   }
 
   .order-item {
     background-color: #fff;
     border: 1px solid var(--cor-borda);
-    border-radius: 6px;
-    padding: var(--espacamento-medio);
+    border-radius: var(--raio-padrao);
+    padding: var(--espacamento-md);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    transition: box-shadow 0.3s;
+    gap: var(--espacamento-sm);
+    transition: var(--transicao-suave);
   }
 
   .order-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-media);
+    border-color: var(--cor-borda-forte);
   }
 
   .order-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--cor-fundo-neutro);
-    padding-bottom: 8px;
+    padding-bottom: var(--espacamento-xs);
     margin-bottom: 4px;
+    border-bottom: 1px solid var(--cor-fundo-site);
   }
 
   .order-header strong {
-    color: var(--cor-primaria);
-    font-size: 1.1rem;
+    color: var(--cor-texto-escuro);
+    font-size: 1rem;
   }
 
   .order-date {
@@ -163,28 +198,30 @@
   }
 
   .order-status {
-    font-weight: bold;
-    color: var(--cor-secundaria);
-    background-color: rgba(243, 156, 18, 0.1);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--cor-alerta);
+    background-color: #fffaf0;
+    border: 1px solid #feebc8;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
   }
 
   .order-total {
     font-weight: bold;
-    color: var(--cor-texto-escuro);
+    color: var(--cor-primaria);
     font-size: 1.1rem;
   }
 
   .no-orders {
-    color: var(--cor-texto-escuro);
+    color: var(--cor-texto-suave);
     font-style: italic;
-    background-color: #fff;
-    padding: var(--espacamento-medio);
-    border-radius: 4px;
-    border: 1px dashed var(--cor-borda);
+    background-color: var(--cor-fundo-site);
+    padding: var(--espacamento-lg);
+    border-radius: var(--raio-padrao);
+    border: 2px dashed var(--cor-borda-forte);
     text-align: center;
+    margin-top: var(--espacamento-md);
   }
 
   @media (min-width: 768px) {
@@ -216,6 +253,7 @@
 
     .profile-container {
       padding: 0px;
+      margin: 15px;
       border: none;
       box-shadow: none;
     }
@@ -224,13 +262,18 @@
 
 <section class="profile-page">
   <div class="profile-container">
-
     <h1 class="profile-title">
       <%= titulo %>
     </h1>
 
     <div class="profile-content">
       <div class="user-info-card">
+        <div class="profile-avatar-container">
+          <div class="profile-avatar">
+            <%= user?.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+          </div>
+        </div>
+        
         <h2>Informações do Usuário</h2>
         <div class="info-group">
           <label>Nome:</label>

@@ -10,9 +10,9 @@
 
   .login-container {
     background-color: #fff;
-    padding: var(--espacamento-medio);
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 3rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 430px;
     text-align: center;
@@ -20,8 +20,8 @@
 
   .login-title {
     color: var(--cor-primaria);
-    margin-top: 1rem;
-    margin-bottom: var(--espacamento-medio);
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
     font-family: var(--fonte-titulo);
   }
 
@@ -31,80 +31,122 @@
   }
 
   .login-form .form-group {
-    margin-bottom: var(--espacamento-medio);
+    margin-bottom: 1.5rem;
     text-align: left;
+    position: relative;
   }
 
   .login-form label {
     display: block;
-    margin-bottom: var(--espacamento-pequeno);
+    margin-bottom: 0.5rem;
     color: var(--cor-texto-escuro);
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-with-icon i {
+    position: absolute;
+    left: 12px;
+    color: #999;
+    font-size: 20px;
   }
 
   .login-form input[type="text"],
   .login-form input[type="password"] {
     width: 100%;
-    padding: var(--espacamento-medio);
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
     border: 1px solid var(--cor-borda);
-    border-radius: 4px;
+    border-radius: 8px;
     box-sizing: border-box; /* Garante que padding não aumente a largura total */
     font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fafafa;
   }
 
   .login-form input[type="text"]:focus,
   .login-form input[type="password"]:focus {
-    border-color: var(--cor-secundaria);
+    border-color: var(--cor-primaria);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(var(--cor-secundaria-rgb), 0.2); /* Exemplo de como usar RGB se definido */
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(var(--cor-primaria-rgb, 0, 0, 0), 0.1);
   }
 
-  .login-options {
+  .login-form input:focus + i {
+    color: var(--cor-primaria);
+  }
+
+  .form-options {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--espacamento-grande);
+    margin: 0.5rem 0 1.5rem;
     font-size: 0.9rem;
   }
 
   .remember-me {
     display: flex;
     align-items: center;
+    cursor: pointer;
   }
 
   .remember-me input {
     margin-right: var(--espacamento-pequeno);
+    cursor: pointer;
   }
 
   .forgot-password-link,
   .register-link {
     color: var(--cor-primaria);
     text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
   }
 
   .forgot-password-link:hover,
   .register-link:hover {
     text-decoration: underline;
+    color: var(--cor-secundaria);
   }
 
   .btn-primary {
     background-color: var(--cor-secundaria);
     color: var(--cor-texto-claro);
-    padding: var(--espacamento-medio) var(--espacamento-grande);
+    padding: 1rem var(--espacamento-md);
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1rem;
     font-weight: bold;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
     width: 100%;
-    margin-top: var(--espacamento-medio);
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
   }
 
   .btn-primary:hover {
-    background-color: darken(var(--cor-secundaria), 10%); /* Isso exigiria um pré-processador CSS */
-    /* Alternativa simples: */
-    filter: brightness(90%);
+    filter: brightness(110%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .register-prompt {
@@ -122,11 +164,17 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label for="email">E-mail ou Usuário</label>
-        <input type="text" id="email" name="email" placeholder="Seu e-mail ou nome de usuário" required>
+        <div class="input-with-icon">
+          <i class="material-icons">person_outline</i>
+          <input type="text" id="email" name="email" placeholder="Seu e-mail ou usuário" required>
+        </div>
       </div>
       <div class="form-group">
         <label for="password">Senha</label>
-        <input type="password" id="password" name="password" placeholder="Sua senha" required>
+        <div class="input-with-icon">
+          <i class="material-icons">lock_outline</i>
+          <input type="password" id="password" name="password" placeholder="Sua senha" required>
+        </div>
       </div>
       <div class="form-options">
         <div class="remember-me">
@@ -143,8 +191,13 @@
         e.preventDefault();
         
         const form = e.target;
+        const btn = form.querySelector('.btn-primary');
         const formData = new URLSearchParams(new FormData(form));
         
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Entrando...';
+
         try {
             const response = await fetch('/login', {
             method: 'POST',
