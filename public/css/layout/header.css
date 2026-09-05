@@ -34,12 +34,6 @@
     align-items: center;
 }
 
-.nav-menu li {
-
-    margin: 10px;
-
-}
-
 .nav-link {
     color: var(--cor-texto-claro);
     font-weight: 900;
