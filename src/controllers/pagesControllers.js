@@ -24,8 +24,29 @@ export const Home = async (req, res, next) => {
 
 export const Products = async (req, res, next) => {
   try {
-    const products = await productRepository.findAll({}, {
-      projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } }
+    const { q, category } = req.query;
+    const filter = {};
+
+    // Filtro dinâmico: busca no nome ou em campos das variações (cor, tamanho, sku)
+    if (q) {
+      filter.$or = [
+        { nome: { $regex: q, $options: 'i' } },
+        { "variacoes.cor": { $regex: q, $options: 'i' } },
+        { "variacoes.tamanho": { $regex: q, $options: 'i' } },
+        { "variacoes.sku": { $regex: q, $options: 'i' } }
+      ];
+    }
+    
+    // Filtro por categoria (se não for "Todos")
+    if (category && category !== 'Todos') filter.categoria = category;
+
+    const products = await productRepository.findAll(filter, {
+      projection: { 
+        nome: 1, 
+        categoria: 1, 
+        'variacoes.imagens': { $slice: 1 }, 
+        'variacoes.preco': 1 
+      }
     });
     
     renderPage(req, res, "../pages/public/products", {

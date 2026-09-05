@@ -5,21 +5,6 @@
     margin: 0 auto;
   }
 
-  .products-header {
-    text-align: center;
-    margin: 1rem;
-  }
-
-  .products-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-  }
-
-  .products-header p {
-    font-size: 1.1rem;
-    color: #666;
-  }
-
   /* Keyframes para a animação de escala suave */
   @keyframes smooth-scale {
     0% {
@@ -415,11 +400,6 @@
 </style>
 
 <div class="products-container">
-  <header class="products-header">
-    <h1>
-      <%= titulo %>
-    </h1>
-  </header>
 
   <div class="filters">
 
@@ -427,16 +407,16 @@
 
       <label for="search-input">Buscar</label>
 
-      <input type="search" id="search-input" placeholder="Digite um produto..." autocomplete="off" />
+      <input type="search" id="search-input" placeholder="Digite seu produto..." autocomplete="off" />
 
-      <button id="filter-dropdown-button" class="filter-dropdown-button search-button" type="button">
-        <i class="material-icons">filter_list</i>
+      <button id="search-button" class="search-button" title="Pesquisar">
+        <i class="material-icons" translate="no">search</i>
       </button>
 
-      <button id="search-button" class="search-button">
-        <i class="material-icons">search</i>
-      </button>
 
+      <button id="filter-dropdown-button" class="filter-dropdown-button search-button" type="button" title="Filtros">
+        <i class="material-icons" translate="no">filter_list</i>
+      </button>
 
       <div id="filter-dropdown-content" class="filter-dropdown-content">
         <a href="/products" class="active">Todos</a>
@@ -460,8 +440,8 @@
 
             <img src="<%= product.variacoes[0].imagens[0] && product.variacoes[0].imagens.length > 0 ? '/image/' + product.variacoes[0].imagens[0] : 'https://via.placeholder.com/40' %>" alt="<%= product.nome %>">
 
-            <button class="btn-favorite event-Favorit" data-product-id="<%= product._id %>" data-is-favorited="false">
-              <i class="material-icons favorite-icon">favorite_border</i>
+            <button class="btn-favorite event-Favorit" data-product-id="<%= product._id %>" data-is-favorited="false" title="Favoritar">
+              <i class="material-icons favorite-icon" translate="no">favorite_border</i>
             </button>
 
           </div>
@@ -475,7 +455,7 @@
         <% }) %>
           <% } else { %>
             <div class="empty-state">
-              <i class="material-icons">sentiment_dissatisfied</i>
+              <i class="material-icons" translate="no">sentiment_dissatisfied</i>
               <p>Nenhum produto encontrado.</p>
             </div>
             <% } %>
@@ -489,11 +469,38 @@
     const filterDropdownButton = document.getElementById('filter-dropdown-button');
     const filterDropdownContent = document.getElementById('filter-dropdown-content');
 
+    const updateProducts = async (url) => {
+      const grid = document.querySelector('.products-grid');
+      grid.style.opacity = '0.5'; // Feedback visual de carregamento
+
+      try {
+        const response = await fetch(url, {
+          headers: { 'hx-request': 'true' }
+        });
+        const html = await response.text();
+        
+        // Parseia o HTML retornado e extrai apenas o grid de produtos
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newGrid = doc.querySelector('.products-grid');
+        
+        if (newGrid) {
+          grid.innerHTML = newGrid.innerHTML;
+          // Dispara evento para o favorited.js re-inicializar os ícones
+          document.body.dispatchEvent(new CustomEvent('htmx:afterSwap', { 
+            detail: { target: grid } 
+          }));
+        }
+      } catch (error) {
+        console.error('Erro na busca dinâmica:', error);
+      } finally {
+        grid.style.opacity = '1';
+      }
+    };
+
     const performSearch = () => {
       const searchQuery = searchInput.value.trim();
-      if (searchQuery) {
-        window.location.href = `/search/${encodeURIComponent(searchQuery)}`;
-      }
+      updateProducts(`/products?q=${encodeURIComponent(searchQuery)}`);
     };
 
     filterDropdownButton.addEventListener('click', (event) => {
@@ -505,6 +512,19 @@
       if (!filterDropdownContent.contains(event.target) && !filterDropdownButton.contains(event.target)) {
         filterDropdownContent.classList.remove('show');
       }
+    });
+
+    // Torna os links de categoria também dinâmicos
+    filterDropdownContent.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const url = link.getAttribute('href');
+        updateProducts(url);
+        filterDropdownContent.classList.remove('show');
+        
+        filterDropdownContent.querySelectorAll('a').forEach(a => a.classList.remove('active'));
+        link.classList.add('active');
+      });
     });
 
     searchInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { event.preventDefault(); performSearch(); } });
