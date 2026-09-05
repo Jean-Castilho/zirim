@@ -65,7 +65,6 @@
   }
 
   .product-card {
-    width: 260px;
     padding: 0px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -170,7 +169,7 @@
       justify-items: stretch;
     }
 
-    .product-card {
+    .categories-wrapper div {
       width: 100%;
     }
 
@@ -196,8 +195,7 @@
     <div class="categories-wrapper">
 
       <div class="category-card">
-        <img
-          src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
+        <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
           alt="Roupas Femininas">
         <div class="category-card-content">
           <h3>Moda</h3>
@@ -225,15 +223,12 @@
       <div class="featured-products-wrapper">
         <% products.forEach(product=> { %>
           <div class="product-card">
-            <% 
-            
-            let imgSrc='https://via.placeholder.com/400x400' ; 
-            
-            if (Array.isArray(product.variacoes[0].imagens) && product.variacoes[0].imagens.length > 0) {
+            <% let imgSrc='https://via.placeholder.com/400x400' ; if (Array.isArray(product.variacoes[0].imagens) &&
+              product.variacoes[0].imagens.length> 0) {
 
               imgSrc = '/image/' + product.variacoes[0].imagens[0];
-            
-            }
+
+              }
 
               %>
               <img src="<%= imgSrc %>" alt="<%= product.nome %>">

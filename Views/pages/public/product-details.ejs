@@ -13,7 +13,7 @@
               <span class="stock-badge skeleton" id="stockBadgeDisplay">Carregando</span>
             </div>
 
-            <div class="gallery-thumbnails">
+            <div class="skeleton gallery-thumbnails">
 
             </div>
           
@@ -242,20 +242,27 @@
       elements.title.textContent = p.nome;
       elements.title.classList.remove('skeleton');
       
-      document.getElementById('breadcrumbCategory').textContent = p.categoria || 'Geral';
-      document.getElementById('breadcrumbCategory').classList.remove('skeleton');
+      const breadcrumbCat = document.getElementById('breadcrumbCategory');
+      breadcrumbCat.textContent = p.categoria || 'Geral';
+      breadcrumbCat.classList.remove('skeleton');
       
-      document.getElementById('specCategory').textContent = p.categoria || 'Geral';
-      document.getElementById('specCategory').classList.remove('skeleton');
+      const specCat = document.getElementById('specCategory');
+      specCat.textContent = p.categoria || 'Geral';
+      specCat.classList.remove('skeleton');
 
-      document.getElementById('productAmount').textContent = initialPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      const amountElem = document.getElementById('productAmount');
+      amountElem.textContent = initialPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
       document.getElementById('productPriceContainer').classList.remove('skeleton');
 
-      document.getElementById('specStock').textContent = `${totalStock} unidades`;
-      document.getElementById('specStock').classList.remove('skeleton');
+      const specStock = document.getElementById('specStock');
+      specStock.textContent = `${totalStock} unidades`;
+      specStock.classList.remove('skeleton');
 
       elements.description.textContent = p.descricao || 'Sem descrição disponível.';
       elements.description.classList.remove('skeleton');
+
+      // Remove skeleton do container de thumbnails
+      thumbContainer.classList.remove('skeleton');
 
       // Configura Seletores de Variação
       renderVariationSelectors(variations);

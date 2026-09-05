@@ -26,29 +26,29 @@ export const Products = async (req, res, next) => {
   try {
     const { q, category } = req.query;
     const filter = {};
-
-    // Filtro dinâmico: busca no nome ou em campos das variações (cor, tamanho, sku)
-    if (q) {
-      filter.$or = [
-        { nome: { $regex: q, $options: 'i' } },
-        { "variacoes.cor": { $regex: q, $options: 'i' } },
-        { "variacoes.tamanho": { $regex: q, $options: 'i' } },
-        { "variacoes.sku": { $regex: q, $options: 'i' } }
-      ];
-    }
-    
-    // Filtro por categoria (se não for "Todos")
-    if (category && category !== 'Todos') filter.categoria = category;
-
-    const products = await productRepository.findAll(filter, {
+    const options = {
       projection: { 
         nome: 1, 
         categoria: 1, 
         'variacoes.imagens': { $slice: 1 }, 
         'variacoes.preco': 1 
-      }
-    });
-    
+      },
+      sort: { _id: -1 }
+    };
+
+    // Implementação de Busca Nativa MongoDB ($text)
+    if (q) {
+      filter.$text = { $search: q };
+      // O score só está disponível quando $text é usado
+      options.projection.score = { $meta: "textScore" };
+      options.sort = { score: { $meta: "textScore" } };
+    }
+
+    // Filtro por categoria (se não for "Todos")
+    if (category && category !== 'Todos') filter.categoria = category;
+
+    const products = await productRepository.findAll(filter, options);
+
     renderPage(req, res, "../pages/public/products", {
       titulo: "Produtos",
       message: "Confira nossos produtos!",

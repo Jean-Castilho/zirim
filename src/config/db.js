@@ -36,6 +36,36 @@ export const connectDataBase = async () => {
       );
     }
 
+    // Gerenciamento de índice de texto para busca nativa
+    const productsCollection = db.collection("products");
+    
+    try {
+      // O MongoDB permite apenas UM índice de texto por coleção.
+      // Precisamos remover o antigo se houver conflito de configuração ou nome.
+      const indexes = await productsCollection.listIndexes().toArray();
+      const textIndex = indexes.find(idx => idx.textIndexVersion);
+      
+      if (textIndex && textIndex.name !== "ProductSearchIndex") {
+        console.log(`Removendo índice de texto antigo: ${textIndex.name}`);
+        await productsCollection.dropIndex(textIndex.name);
+      }
+
+      await productsCollection.createIndex({
+        nome: "text",
+        "variacoes.cores": "text",
+        "variacoes.tamanhos": "text",
+        "variacoes.sku": "text",
+        categoria: "text"
+      }, {
+        name: "ProductSearchIndex",
+        default_language: "portuguese"
+      });
+      console.log("Índice de texto nativo configurado com sucesso.");
+    } catch (indexError) {
+      console.warn("Aviso na criação de índice:", indexError.message);
+      // Não bloqueia a inicialização se for apenas um aviso de índice
+    }
+
     bucket = new GridFSBucket(db, { bucketName: "uploads" });
   } catch (error) {
     console.error("Erro ao conectar ao banco de dados:", error);

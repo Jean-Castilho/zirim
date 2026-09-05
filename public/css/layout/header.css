@@ -143,11 +143,10 @@
         background-color: var(--cor-fundo-claro);
         flex-direction: column;
         align-items: flex-start;
-        padding: 2rem 1.5rem;
+        padding: 2rem 1.2rem;
         transition: left 0.3s ease-in-out;
         z-index: 1001;
         box-shadow: var(--sombra-padrao);
-        overflow-y: auto;
         scroll-behavior: smooth;
         gap: 1.5rem;
     }
