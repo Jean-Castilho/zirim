@@ -43,13 +43,13 @@
     border-radius: var(--raio-grande);
     padding: var(--espacamento-lg);
     box-shadow: var(--sombra-suave);
-    margin: 10px;
+    margin: 15px;
   }
 
   .user-info-card h2,
   .user-orders-card h2 {
     color: var(--cor-primaria);
-    margin-bottom: var(--espacamento-grande);
+    margin: var(--espacamento-md);
     font-size: 1.25rem;
     display: flex;
     align-items: center;
@@ -126,7 +126,6 @@
 
   .btn-logout {
     display: block;
-    width: 100%;
     border: 2px solid var(--cor-destaque);
     color: var(--cor-destaque);
     background-color: transparent;
@@ -241,13 +240,16 @@
   @media (max-width: 600px) {
     .user-info-card,
     .user-orders-card {
-      padding: var(--espacamento-medio);
+      padding: var(--espacamento-md);
     }
 
     .profile-title {
       margin: var(--espacamento-medio);
     }
 
+  .info-group p {
+    flex-direction: column;
+  }
     .profile-container {
       padding: 0px;
       margin: 15px;

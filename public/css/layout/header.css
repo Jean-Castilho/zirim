@@ -30,7 +30,7 @@
 .nav-menu {
     list-style: none;
     display: flex;
-    gap: var(--espacamento-grande);
+    gap: var(--espacamento-md);
     align-items: center;
 }
 
