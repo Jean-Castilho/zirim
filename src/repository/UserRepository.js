@@ -20,13 +20,21 @@ export default class UserRepository extends BaseRepository {
   async findByEmail(email, options = {}) {
     if (!email) return null;
     const normalized = String(email).trim().toLowerCase();
-    return await this.collection.findOne({ "email.endereco": normalized }, options);
+    return await this.collection.findOne({
+      $or: [
+        { "email.endereco": normalized }
+      ]
+    }, options);
   }
 
   async findByPhone(phone) {
     if (!phone) return null;
     const normalizedPhone = String(phone).trim();
-    return await this.collection.findOne({ "phone.number": normalizedPhone });
+    return await this.collection.findOne({
+      $or: [
+        { "phone.number": normalizedPhone }
+      ]
+    });
   }
 
   async findOne(query, options = {}) {
@@ -35,12 +43,21 @@ export default class UserRepository extends BaseRepository {
   }
 
   async verifyExists({ email, phone } = {}) {
-    const query = {};
-    if (email) query["email.endereco"] = String(email).trim().toLowerCase();
-    if (phone) query["phone.number"] = String(phone).trim();
-    if (Object.keys(query).length === 0) return null;
+    const orConditions = [];
+    if (email) {
+      const normalizedEmail = String(email).trim().toLowerCase();
+      orConditions.push({ "email.endereco": normalizedEmail });
+      orConditions.push({ "email": normalizedEmail });
+    }
+    if (phone) {
+      const normalizedPhone = String(phone).trim();
+      orConditions.push({ "phone.number": normalizedPhone });
+      orConditions.push({ "phone": normalizedPhone });
+    }
 
-    return await this.collection.findOne(query);
+    if (orConditions.length === 0) return null;
+
+    return await this.collection.findOne({ $or: orConditions });
   }
 
   async create(data) {

@@ -35,12 +35,12 @@ router.get("/product/:id", ProductDetails);
 
 router.get("/contact", Contact);
 
-router.get("/register", Register);
+router.get("/register", generateCsrfToken, Register);
 router.get("/login", generateCsrfToken, Login);
 
 router.get("/reset-password", generateCsrfToken, ResetPassword);
 
-router.get("/verify-otp", VerifyOtp);
+router.get("/verify-otp", generateCsrfToken, VerifyOtp);
 
 router.get("/cart", Cart);
 router.get("/favorites", Favorites);

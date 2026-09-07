@@ -18,8 +18,10 @@ const parseErrorData = (error) => {
   }
 
   const statusCode = error.statusCode || 500;
+  const message = error.message || 'Ocorreu um erro interno no servidor.';
   const payload = {
-    error: error.message || 'Ocorreu um erro interno no servidor.',
+    message,
+    error: message,
     type: error.name || 'Error',
     code: statusCode,
   };
@@ -74,6 +76,25 @@ export const renderPageWithData = async (req, res, page, dataPromise, defaultOpt
   }
 };
 
+/**
+ * Middleware global de tratamento de erros para Express.
+ */
+export const errorMiddleware = (err, req, res, next) => {
+  const { statusCode, payload } = parseErrorData(err);
+  
+  // Se for uma requisição que espera JSON ou HTMX
+  if (req.xhr || req.headers.accept?.includes('json') || req.headers['hx-request']) {
+    return res.status(statusCode).json(payload);
+  }
+  
+  // Caso contrário, tenta renderizar uma página de erro amigável
+  renderPage(req, res, "../pages/partials/Error", {
+    titulo: "Erro",
+    statusCode,
+    errorMessage: payload.message || payload.error,
+  });
+};
+
 // ============================================================================
 // SISTEMA DE ERROS CUSTOMIZADOS
 // ============================================================================
@@ -92,6 +113,7 @@ export class GeneralError extends Error {
 
   toJSON() {
     const result = {
+      message: this.message,
       error: this.message,
       type: this.name,
       code: this.getCode(),

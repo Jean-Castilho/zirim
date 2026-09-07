@@ -21,7 +21,7 @@
         
         const form = e.target;
         const formData = new URLSearchParams(new FormData(form));
-        
+        console.log(formData);
         try {
           const response = await fetch('/verify-otp', {
             method: 'POST',
@@ -46,6 +46,7 @@
           window.showNotification?.('Erro de conexão.', 'error');
         }
       });
+
     </script>
 
     <p class="resend-otp-prompt">Não recebeu o código? <a href="/send-otp?email=<%= email %>" class="resend-otp-link">Reenviar código</a></p>

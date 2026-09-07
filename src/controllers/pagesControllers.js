@@ -116,13 +116,6 @@ export const Login = (req, res) => {
   });
 };
 
-export const ResetPassword = (req, res) => {
-  renderPage(req, res, "../pages/auth/reset-password", {
-    titulo: "Recuperando Senha",
-    message: "utuilize seu email ou numero",
-  });
-};
-
 export const Register = (req, res) => {
   renderPage(req, res, "../pages/auth/register", {
     titulo: "Registrar Conta",
@@ -130,12 +123,23 @@ export const Register = (req, res) => {
   });
 };
 
+export const ResetPassword = (req, res) => {
+
+  renderPage(req, res, "../pages/auth/reset-password", {
+    titulo: "Recuperando Senha",
+    message: "Encontre sua conta e defina uma nova senha!",
+  });
+
+};
+
 export const VerifyOtp = async (req, res, next) => {
   try {
     const userEmail = req.session?.user?.email?.endereco;
+    
     if (!userEmail) {
       return res.redirect('/login');
     }
+
     const normalized = String(userEmail).trim().toLowerCase();
     
     renderPage(req, res, "../pages/auth/verify-otp", {

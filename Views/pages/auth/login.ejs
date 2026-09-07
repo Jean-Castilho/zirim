@@ -3,7 +3,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 90vh; /* Ajuste conforme a altura do seu header */
+    min-height: 90vh;
+    /* Ajuste conforme a altura do seu header */
     background-color: var(--cor-fundo-site);
     padding: var(--espacamento-grande);
   }
@@ -63,7 +64,8 @@
     padding: 0.8rem 1rem 0.8rem 2.5rem;
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
-    box-sizing: border-box; /* Garante que padding não aumente a largura total */
+    box-sizing: border-box;
+    /* Garante que padding não aumente a largura total */
     font-size: 1rem;
     transition: var(--transicao-suave);
     background-color: #fafafa;
@@ -77,7 +79,7 @@
     box-shadow: 0 0 0 4px rgba(var(--cor-primaria-rgb, 0, 0, 0), 0.1);
   }
 
-  .login-form input:focus + i {
+  .login-form input:focus+i {
     color: var(--cor-primaria);
   }
 
@@ -157,8 +159,12 @@
 
 <section class="login-page">
   <div class="login-container">
-    <h1 class="login-title"><%= titulo %></h1>
-    <p class="login-message"><%= message %></p>
+    <h1 class="login-title">
+      <%= titulo %>
+    </h1>
+    <p class="login-message">
+      <%= message %>
+    </p>
 
     <form id="loginForm" class="login-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -179,73 +185,65 @@
       <div class="form-options">
         <div class="remember-me">
           <input type="checkbox" id="rememberMe" name="rememberMe">
-          <label for="rememberMe">Lembrar-me</label> 
+          <label for="rememberMe">Lembrar-me</label>
         </div>
-        <a href="/reset-password" class="forgot-password-link" hx-get="/reset-password" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">Esqueceu a senha?</a>
+        <a href="/reset-password" class="forgot-password-link" hx-get="/reset-password" hx-target="#main-content"
+          hx-swap="innerHTML" hx-push-url="true">Esqueceu a senha?</a>
       </div>
       <button type="submit" class="btn-primary">Entrar</button>
     </form>
 
     <script>
-      document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      document.getElementById('loginForm').addEventListener('submit', async function (e) {
         e.preventDefault();
-        
+
         const form = e.target;
         const btn = form.querySelector('.btn-primary');
         const formData = new URLSearchParams(new FormData(form));
-        
+
         btn.disabled = true;
-        const originalText = btn.innerHTML;
         btn.innerHTML = 'Entrando...';
 
         try {
-            const response = await fetch('/login', {
+          const response = await fetch('/login', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Accept': 'application/json'
             },
             body: formData.toString()
           });
-          
+
           const contentType = response.headers.get("content-type");
-          let result;
-          if (contentType && contentType.includes("application/json")) {
-            result = await response.json();
-          } else {
-            result = await response.text();
-          }
-          
+          let result = await response.json();
+
+          console.log('Resposta do servidor:', result);
+
           if (response.ok) {
-            console.log('Login com sucesso:', result);
-            if (typeof showNotification === 'function') {
-                showNotification('Login realizado com sucesso!', 'success');
-            } else {
-                alert('Login realizado!');
-            }
+              showNotification('Login realizado com sucesso!', 'success');
+            
             if (result.user && result.user.email && !result.user.email.verified) {
-                window.location.href = '/verify-otp'; 
+              window.location.href = '/verify-otp';
             } else {
-                window.location.href = '/profile'; // Ou para a página inicial '/'
+              window.location.href = '/profile'; // Ou para a página inicial '/'
             }
           } else {
+            btn.disabled = false;
+            btn.innerHTML = 'Entrar';
             console.error('Erro no login:', result);
-            if (typeof showNotification === 'function') {
-                showNotification(result.message || 'Erro ao realizar login', 'error');
-            } else {
-                alert(result.message || 'Erro ao realizar login');
-            }
+            showNotification(result.message || 'Erro ao realizar login', 'error');
+
           }
         } catch (error) {
           console.error('Erro de rede:', error);
-          if (typeof showNotification === 'function') {
-              showNotification('Erro de conexão ao tentar fazer login.', 'error');
-          } else {
-              alert('Erro de conexão ao tentar fazer login.');
-          }
+
+          showNotification('Erro de conexão ao tentar fazer login.', 'error');
+
         }
       });
     </script>
 
-    <p class="register-prompt">Não tem uma conta? <a href="/register" class="register-link" hx-get="/register" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">Crie uma agora!</a></p>
+    <p class="register-prompt">Não tem uma conta? <a href="/register" class="register-link" hx-get="/register"
+        hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">Crie uma agora!</a></p>
   </div>
 </section>

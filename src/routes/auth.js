@@ -4,7 +4,8 @@ import { validateCsrfToken, requireAuth, requireAdmin } from "../middleware/auth
 
 // Separação de domínios em controllers distintos
 import UserController from "../controllers/userControllers.js";
-const userController = new UserController(); 
+
+const userController = new UserController();
 
 const router = express.Router();
 

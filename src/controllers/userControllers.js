@@ -1,10 +1,12 @@
 import UserRepository from "../repository/UserRepository.js";
+
 import {
     GeneralError,
     UnauthorizedError,
     ValidationError,
     NotFoundError
 } from "../utils/handleResponse.js";
+
 import {
     createHashPassword,
     createToken,
@@ -21,6 +23,8 @@ export default class UserController extends UserRepository {
             _id: user._id,
             email: user.email.endereco,
         });
+
+        console.log(user);
 
         req.session.user = {
             ...user,
@@ -44,14 +48,15 @@ export default class UserController extends UserRepository {
         const { email, password } = req.body;
         try {
             const user = await this.findByEmailForAuth(email);
+            
             if (!user) {
-                throw new UnauthorizedError("Usuario nao encontrado.");
+                throw new ValidationError("Usuario nao encontrado.");
             }
             const ismatch = await compararPassword(password, user.password);
             if (!ismatch) {
-                throw new UnauthorizedError("Email ou senha incorretos.");
+                throw new ValidationError("Email ou senha incorretos.");
             }
-            
+
             await this.#establishSession(req, res, next, user, 200, "Login realizado");
         } catch (error) {
             next(error);
@@ -62,23 +67,32 @@ export default class UserController extends UserRepository {
         try {
             const validation = validateUser(req.body);
             const dataUser = validation.data;
+
+            console.log(dataUser);
+            console.log(validation);
+
             if (!validation.isValid) {
                 throw new ValidationError(
-                    "Dados invalidos. Por favor, verifique os campos.",
+                    validation.errors[0].message,
                     validation.errors
                 );
             }
-            const userExists = await this.verifyExists({
-                email: dataUser.email,
-                phone: dataUser.phone,
-            });
-            if (userExists) {
-                throw new GeneralError("Usuario ja existe.", 409);
+
+            // Verificação granular de existência
+            const emailExists = await this.findByEmail(dataUser.email);
+            if (emailExists) {
+                throw new GeneralError("Este e-mail já está sendo utilizado.", 409);
             }
-            
+
+            const phoneExists = await this.findByPhone(dataUser.phone);
+            if (phoneExists) {
+                throw new GeneralError("Este número de telefone já está sendo utilizado.", 409);
+            }
+
             dataUser.password = await createHashPassword(dataUser.password);
+
             const createdUser = await this.create(dataUser);
-            
+
             await this.#establishSession(req, res, next, createdUser, 201, "Usuario registrado com sucesso");
         } catch (error) {
             next(error);
@@ -86,7 +100,9 @@ export default class UserController extends UserRepository {
     }
 
     async verifyOtp(req, res, next) {
+
         const { email, otp } = req.body;
+        
         try {
             if (!req.session?.user?._id) {
                 throw new UnauthorizedError("Sessao expirada ou usuario nao autenticado.");
@@ -105,10 +121,13 @@ export default class UserController extends UserRepository {
                 _id: user._id.toString()
             };
             await req.session.save();
+    
             return res.status(200).json({ message: "Email verificado com sucesso!", redirect: "/" });
+        
         } catch (error) {
             next(error);
         }
+    
     }
 
     async deleteUser(req, res, next) {
@@ -123,7 +142,9 @@ export default class UserController extends UserRepository {
     }
 
     async forgotPassword(req, res, next) {
+        
         try {
+
             const email = req.body.email?.trim();
 
             if (!email) {
@@ -139,8 +160,12 @@ export default class UserController extends UserRepository {
                     Se o e-mail <strong>${email}</strong> estiver em nossa base, você receberá um link em breve.
                 </div>
             `);
+        
         } catch (error) {
+        
             next(error);
+        
         }
+
     }
 }

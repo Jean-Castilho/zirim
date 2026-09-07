@@ -1,8 +1,12 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/css/intlTelInput.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/js/intlTelInput.min.js"></script>
+
 <section class="register-page">
   <div class="register-container">
     <h1 class="register-title"><%= titulo %></h1>
 
     <form id="registerForm" class="register-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label for="name">Nome Completo</label>
         <div class="input-with-icon">
@@ -42,11 +46,30 @@
     </form>
 
     <script>
+      // Inicialização do intl-tel-input
+      const phoneInput = document.querySelector("#phone");
+      const iti = window.intlTelInput(phoneInput, {
+        initialCountry: "br",
+        separateDialCode: true,
+        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/js/utils.js",
+      });
+
       document.getElementById('registerForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const form = e.target;
         const formData = new URLSearchParams(new FormData(form));
+
+        // Validação e formatação do telefone
+        if (!iti.isValidNumber()) {
+          const errorMsg = 'Por favor, insira um número de telefone válido.';
+          if (typeof showNotification === 'function') {
+            showNotification(errorMsg, 'error');
+          } else { alert(errorMsg); }
+          return;
+        }
+        // Substitui o valor do telefone pelo formato internacional (ex: +55...)
+        formData.set('phone', iti.getNumber());
 
         if (formData.get('password') !== formData.get('confirmPassword')) {
           if (typeof showNotification === 'function') {
@@ -61,18 +84,13 @@
           const response = await fetch('/register', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Accept': 'application/json'
             },
             body: formData.toString()
           });
           
-          const contentType = response.headers.get("content-type");
-          let result;
-          if (contentType && contentType.includes("application/json")) {
-            result = await response.json();
-          } else {
-            result = await response.text();
-          }
+          const result = await response.json();
           
           if (response.ok) {
             console.log('Registro com sucesso:', result);
@@ -82,10 +100,11 @@
                 alert('Registro realizado com sucesso!');
             }
             setTimeout(() => {
-                window.location.href = '/'; // redireciona para login ou admin dashboard
+                window.location.href = '/'; // Redireciona apenas em caso de sucesso absoluto
             }, 1000);
           } else {
             console.error('Erro no registro:', result);
+            // NÃO redireciona e NÃO permite login implícito
             if (typeof showNotification === 'function') {
                 showNotification(result.message || 'Erro ao realizar registro', 'error');
             } else {
@@ -108,6 +127,15 @@
 </section>
 
 <style>
+  /* Ajustes para o intl-tel-input */
+  .iti { width: 100%; margin-bottom: 0.5rem; }
+  .iti__country-list { text-align: left; }
+  
+  /* Remove o ícone original apenas do campo de telefone para evitar sobreposição com a bandeira */
+  .form-group:has(#phone) .input-with-icon i {
+    display: none;
+  }
+
   .register-page {
     display: flex;
     justify-content: center;

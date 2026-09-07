@@ -30,7 +30,7 @@
 .nav-menu {
     list-style: none;
     display: flex;
-    gap: var(--espacamento-md);
+    gap: var(--espacamento-lg);
     align-items: center;
 }
 
@@ -61,7 +61,7 @@
 .header-icons {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: var(--espacamento-md);
 }
 
 .header-icons .nav-link {
@@ -216,7 +216,7 @@
         align-items: center;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 1.0rem;
+        gap: var(--espacamento-md);
     }
 
     .header-icons .nav-link {

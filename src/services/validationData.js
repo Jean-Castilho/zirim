@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 
 const nameRegex = /^[\p{L}\p{M}'\s-]+$/u;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^\+?[\d\s()-]+$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 dotenv.config();
@@ -30,7 +29,10 @@ export const validateUser = (data) => {
     });
   }
 
-  if (!normalizedData.phone || !phoneRegex.test(normalizedData.phone)) {
+  // Remove caracteres não numéricos para validar a extensão real (DDD + Número)
+  const digitsOnly = normalizedData.phone ? String(normalizedData.phone).replace(/\D/g, '') : '';
+  
+  if (!normalizedData.phone || digitsOnly.length < 10 || digitsOnly.length > 13) {
     errors.push({
       field: "phone",
       message:

@@ -36,6 +36,16 @@ export const connectDataBase = async () => {
       );
     }
 
+    // Gerenciamento de índices de usuários
+    const usersCollection = db.collection("users");
+    try {
+      await usersCollection.createIndex({ "email.endereco": 1 }, { unique: true, name: "UserEmailUnique" });
+      await usersCollection.createIndex({ "phone.number": 1 }, { unique: true, name: "UserPhoneUnique" });
+      console.log("Índices de usuários configurados com sucesso.");
+    } catch (err) {
+      console.warn("Aviso ao criar índices de usuários:", err.message);
+    }
+
     // Gerenciamento de índice de texto para busca nativa
     const productsCollection = db.collection("products");
     
