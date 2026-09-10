@@ -217,8 +217,6 @@
           const contentType = response.headers.get("content-type");
           let result = await response.json();
 
-          console.log('Resposta do servidor:', result);
-
           if (response.ok) {
               showNotification('Login realizado com sucesso!', 'success');
             
@@ -230,15 +228,11 @@
           } else {
             btn.disabled = false;
             btn.innerHTML = 'Entrar';
-            console.error('Erro no login:', result);
             showNotification(result.message || 'Erro ao realizar login', 'error');
-
           }
         } catch (error) {
           console.error('Erro de rede:', error);
-
           showNotification('Erro de conexão ao tentar fazer login.', 'error');
-
         }
       });
     </script>

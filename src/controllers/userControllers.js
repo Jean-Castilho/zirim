@@ -24,8 +24,6 @@ export default class UserController extends UserRepository {
             email: user.email.endereco,
         });
 
-        console.log(user);
-
         req.session.user = {
             ...user,
             _id: user._id.toString()
@@ -45,7 +43,8 @@ export default class UserController extends UserRepository {
     }
 
     async login(req, res, next) {
-        const { email, password } = req.body;
+        const { email, password, rememberMe } = req.body;
+        const rememberUser = rememberMe === 'on' ? true : false;
         try {
             const user = await this.findByEmailForAuth(email);
             
