@@ -12,6 +12,12 @@ const router = express.Router();
 router.post("/login", validateCsrfToken, (req, res, next) => userController.login(req, res, next));
 router.post("/register", validateCsrfToken, (req, res, next) => userController.register(req, res, next));
 router.post("/forgotPassword", validateCsrfToken, (req, res, next) => userController.forgotPassword(req, res, next));
+
+router.post("/updatePassword", requireAuth, (req, res, next) => userController.updatePassword(req, res, next));
+
 router.post("/verify-otp", validateCsrfToken, (req, res, next) => userController.verifyOtp(req, res, next));
+
+router.post("/deleteUser/:id", requireAuth, (req, res, next) => userController.deleteUser(req, res, next));
+router.post("/updateProfile", requireAuth, (req, res, next) => userController.updateProfile(req, res, next));
 
 export default router;

@@ -64,16 +64,6 @@ export default class ProductController {
     }
   }
 
-  async getProductById(req) {
-    const { id } = req.params;
-    if (!id) throw new ValidationError("ID do produto é obrigatório.");
-
-    const product = await this.repository.findById(id);
-    if (!product) throw new NotFoundError("Produto não encontrado.");
-    
-    return product;
-  }
-
   async getProductsByIds(ids, projection = {}) {
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       throw new ValidationError("Array de IDs é requerido para a projeção.");

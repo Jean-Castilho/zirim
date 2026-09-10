@@ -6,13 +6,14 @@ import { fileURLToPath } from 'url';
 
 import Server from "./src/server.js";
 import { connectDataBase, closeDataBase } from './src/config/db.js';
+import { errorMiddleware } from "./src/utils/handleResponse.js";
 
 const app = express();
-const port = process.env.PORT || 3080;
+const port = process.env.PORT || 3090;
 const isProd = process.env.NODE_ENV === 'production';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// 1. Configurações de Template e Assetsconst app = express();
+// 1. Configurações de Template e Assets
 app.set('trust proxy', 1); 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'Views'));
@@ -52,7 +53,10 @@ app.use((req, res, next) => {
 // 5. Inicialização de Rotas
 Server(app);
 
-// 6. Gerenciamento de Ciclo de Vida do Servidor
+// 6. Middleware de Erro Global
+app.use(errorMiddleware);
+
+// 7. Gerenciamento de Ciclo de Vida do Servidor
 const start = async () => {
     try {
         await connectDataBase();
