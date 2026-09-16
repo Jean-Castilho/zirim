@@ -41,7 +41,8 @@ export default class UserController {
     }
 
     async login(req, res, next) {
-        const { email, password } = req.body;
+        const { email, password, rememberMe } = req.body;
+        const rememberUser = rememberMe === 'on' ? true : false;
         try {
             const user = await this.service.authenticate(email, password);
             await this.#establishSession(req, res, next, user, 200, "Login realizado");
