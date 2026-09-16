@@ -1,21 +1,20 @@
 import { sendEmailOtp } from "../services/contactService.js";
 import { renderPage } from "../utils/handleResponse.js";
-import ProductRepository from "../repository/ProductRepository.js";
+import ProductService from "../services/ProductService.js";
+import UserService from "../services/UserService.js";
+import { NotFoundError } from "../utils/handleResponse.js";
 
-// Instanciação direta da camada de dados
-const productRepository = new ProductRepository();
+const productService = new ProductService();
+const userService = new UserService();
 
 export const Home = async (req, res, next) => {
   try {
-    const products = await productRepository.findAll({}, {
-      projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } },
-      limit: 6
-    });
+    const products = await productService.listProductsForHome();
     
     renderPage(req, res, "../pages/public/home", {
       titulo: "Zirim - Moda e Calçados",
       message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
-      products: products,
+      products,
     });
   } catch (error) {
     next(error);
@@ -24,31 +23,7 @@ export const Home = async (req, res, next) => {
 
 export const Products = async (req, res, next) => {
   try {
-    const { q, category } = req.query;
-    const filter = {};
-    const options = {
-      projection: { 
-        nome: 1, 
-        categoria: 1, 
-        'variacoes.imagens': { $slice: 1 }, 
-        'variacoes.preco': 1 
-      },
-      sort: { _id: -1 }
-    };
-
-    // Implementação de Busca Nativa MongoDB ($text)
-    if (q) {
-      filter.$text = { $search: q };
-      // O score só está disponível quando $text é usado
-      options.projection.score = { $meta: "textScore" };
-      options.sort = { score: { $meta: "textScore" } };
-    }
-
-    // Filtro por categoria (se não for "Todos")
-    if (category && category !== 'Todos') filter.categoria = category;
-
-    const products = await productRepository.findAll(filter, options);
-
+    const products = await productService.searchProducts(req.query);
     renderPage(req, res, "../pages/public/products", {
       titulo: "Produtos",
       message: "Confira nossos produtos!",
@@ -73,11 +48,10 @@ export const ProductDetails = async (req, res, next) => {
     }
 
     // Verificamos apenas a existência do produto.
-    // O carregamento completo dos dados é feito via fetch no frontend para otimizar o TTFB.
-    const product = await productRepository.findById(id, { projection: { _id: 1 } });
+    const product = await productService.repository.findById(id, { projection: { _id: 1 } });
     
     if (!product) {
-      return res.status(404).render("pages/partials/Error", {
+      return res.status(404).render("../pages/partials/Error", {
         titulo: "Produto não encontrado",
         statusCode: 404,
         errorMessage: "O produto que você está procurando não existe ou foi removido.",
@@ -108,7 +82,6 @@ export const Contact = (req, res) => {
   });
 };
 
-
 export const Login = (req, res) => {
   renderPage(req, res, "../pages/auth/login", {
     titulo: "Login",
@@ -124,12 +97,10 @@ export const Register = (req, res) => {
 };
 
 export const ResetPassword = (req, res) => {
-
   renderPage(req, res, "../pages/auth/reset-password", {
     titulo: "Recuperando Senha",
     message: "Encontre sua conta e defina uma nova senha!",
   });
-
 };
 
 export const VerifyOtp = async (req, res, next) => {
@@ -156,10 +127,6 @@ export const VerifyOtp = async (req, res, next) => {
   }
 };
 
-
-
-
-
 export const Favorites = async (req, res, next) => {
   try {
     renderPage(req, res, "../pages/public/favorites", {
@@ -185,11 +152,27 @@ export const Profile = (req, res) => {
   });
 };
 
-export const Dashboard = (req, res) => {
-  renderPage(req, res, "../pages/admin/dashboard", {
-    titulo: "Administração",
-    message: "Gerencie as informações da loja",
-  });
+export const Dashboard = async (req, res, next) => {
+  try {
+    // Coleta dados reais do e-commerce direto dos repositórios encapsulados nos serviços
+    const totalProducts = await productService.repository.collection.countDocuments({});
+    const totalUsers = await userService.repository.collection.countDocuments({});
+    const latestProducts = await productService.repository.collection
+      .find({}, { projection: { nome: 1, categoria: 1, variacoes: 1 } })
+      .sort({ _id: -1 })
+      .limit(5)
+      .toArray();
+
+    renderPage(req, res, "../pages/admin/dashboard", {
+      titulo: "Administração",
+      message: "Gerencie as informações da loja",
+      totalProducts,
+      totalUsers,
+      latestProducts
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const Delivery = (req, res) => {
@@ -201,7 +184,7 @@ export const Delivery = (req, res) => {
 
 export const Inventory = async (req, res, next) => {
   try {
-    const products = await productRepository.findAll();
+    const products = await productService.repository.findAll();
          
     renderPage(req, res, "../pages/admin/inventory/tabela-product", {
       titulo: "Gerenciamento de Inventário",
@@ -216,11 +199,8 @@ export const Inventory = async (req, res, next) => {
 export const Checkout = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const db = DataBase();
-    const order = await db.collection("orders").findOne({ _id: new ObjectId(id) });
-
     if (!order) {
-      return next(new NotFoundError("Pedido não encontrado."));
+      return next(new NotFoundError("Pedido não encontrado.", id));
     }
 
     renderPage(req, res, "../pages/public/checkout", {

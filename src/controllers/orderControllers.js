@@ -5,6 +5,7 @@ export default class OrderController {
         this.repository = new OrderRepository();
     }
 
-    
-
+    async gerarPix(valor) { /* Lógica Pix */ }
+    async consultarPix(id) { /* Lógica Consulta */ }
+    async creatOrder(req, res) { /* Lógica Criação */ }
 }

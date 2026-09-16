@@ -1,4 +1,4 @@
-import UserRepository from "../repository/UserRepository.js";
+import UserService from "../services/UserService.js";
 
 import {
     GeneralError,
@@ -7,15 +7,13 @@ import {
     NotFoundError
 } from "../utils/handleResponse.js";
 
-import {
-    createHashPassword,
-    createToken,
-    compararPassword
-} from "../services/authServices.js";
-import { validateUser } from "../services/validationData.js";
+import { createToken } from "../services/authServices.js";
 import { verifyOtpCode } from "../services/otpService.js";
 
-export default class UserController extends UserRepository {
+export default class UserController {
+    constructor() {
+        this.service = new UserService();
+    }
     
     async #establishSession(req, res, next, user, statusCode, message) {
         const cookieSecure = process.env.NODE_ENV === 'production';
@@ -23,8 +21,6 @@ export default class UserController extends UserRepository {
             _id: user._id,
             email: user.email.endereco,
         });
-
-        console.log(user);
 
         req.session.user = {
             ...user,
@@ -47,16 +43,7 @@ export default class UserController extends UserRepository {
     async login(req, res, next) {
         const { email, password } = req.body;
         try {
-            const user = await this.findByEmailForAuth(email);
-            
-            if (!user) {
-                throw new ValidationError("Usuario nao encontrado.");
-            }
-            const ismatch = await compararPassword(password, user.password);
-            if (!ismatch) {
-                throw new ValidationError("Email ou senha incorretos.");
-            }
-
+            const user = await this.service.authenticate(email, password);
             await this.#establishSession(req, res, next, user, 200, "Login realizado");
         } catch (error) {
             next(error);
@@ -65,34 +52,7 @@ export default class UserController extends UserRepository {
 
     async register(req, res, next) {
         try {
-            const validation = validateUser(req.body);
-            const dataUser = validation.data;
-
-            console.log(dataUser);
-            console.log(validation);
-
-            if (!validation.isValid) {
-                throw new ValidationError(
-                    validation.errors[0].message,
-                    validation.errors
-                );
-            }
-
-            // Verificação granular de existência
-            const emailExists = await this.findByEmail(dataUser.email);
-            if (emailExists) {
-                throw new GeneralError("Este e-mail já está sendo utilizado.", 409);
-            }
-
-            const phoneExists = await this.findByPhone(dataUser.phone);
-            if (phoneExists) {
-                throw new GeneralError("Este número de telefone já está sendo utilizado.", 409);
-            }
-
-            dataUser.password = await createHashPassword(dataUser.password);
-
-            const createdUser = await this.create(dataUser);
-
+            const createdUser = await this.service.registerUser(req.body);
             await this.#establishSession(req, res, next, createdUser, 201, "Usuario registrado com sucesso");
         } catch (error) {
             next(error);
@@ -104,18 +64,18 @@ export default class UserController extends UserRepository {
         const { email, otp } = req.body;
         
         try {
+            
             if (!req.session?.user?._id) {
                 throw new UnauthorizedError("Sessao expirada ou usuario nao autenticado.");
             }
+
             const otpEntry = await verifyOtpCode(email, otp);
             if (!otpEntry) {
                 throw new GeneralError("Codigo OTP invalido ou expirado.", 400);
             }
-            const updatedUser = await this.updateProfile(req.session.user._id, { emailVerified: true });
-            if (!updatedUser) {
-                throw new NotFoundError("Usuario nao encontrado para atualizacao.");
-            }
-            const user = await this.findById(req.session.user._id);
+            
+            const user = await this.service.verifyAndUpgradeUser(req.session.user._id);
+           
             req.session.user = {
                 ...user,
                 _id: user._id.toString()
@@ -133,7 +93,7 @@ export default class UserController extends UserRepository {
     async deleteUser(req, res, next) {
         try {
             const { id } = req.params;
-            const result = await this.delete(id);
+            const result = await this.service.repository.delete(id); // Repository ainda acessível via service se necessário
             if (!result) throw new NotFoundError("Usuario nao encontrado.");
             return res.status(200).json({ message: "Usuario excluido com sucesso."});
         } catch (error) {
