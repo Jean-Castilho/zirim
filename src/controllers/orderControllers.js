@@ -5,7 +5,15 @@ export default class OrderController {
         this.repository = new OrderRepository();
     }
 
-    async gerarPix(valor) { /* Lógica Pix */ }
-    async consultarPix(id) { /* Lógica Consulta */ }
-    async creatOrder(req, res) { /* Lógica Criação */ }
+    async gerarPix(valor) {
+        return await this.repository.gerarPix(valor);
+    }
+
+    async consultarPix(id) {
+        return await this.repository.consultarPix(id);
+    }
+
+    async creatOrder(req, res) {
+        return await this.repository.creatOrder(req, res);
+    }
 }

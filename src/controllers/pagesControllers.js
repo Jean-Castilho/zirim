@@ -3,9 +3,11 @@ import { renderPage } from "../utils/handleResponse.js";
 import ProductService from "../services/ProductService.js";
 import UserService from "../services/UserService.js";
 import { NotFoundError } from "../utils/handleResponse.js";
+import OrderRepository from "../repository/OrderRepository.js";
 
 const productService = new ProductService();
 const userService = new UserService();
+const orderRepository = new OrderRepository();
 
 export const Home = async (req, res, next) => {
   try {
@@ -35,7 +37,6 @@ export const Products = async (req, res, next) => {
 };
 
 export const ProductDetails = async (req, res, next) => {
-
   try {
     const { id } = req.params;
 
@@ -199,6 +200,7 @@ export const Inventory = async (req, res, next) => {
 export const Checkout = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const order = await orderRepository.findById(id);
     if (!order) {
       return next(new NotFoundError("Pedido não encontrado.", id));
     }

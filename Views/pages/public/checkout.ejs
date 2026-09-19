@@ -1,33 +1,262 @@
 <style>
-    .checkout-container { max-width: 800px; margin: 2rem auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .payment-info { text-align: center; margin-top: 2rem; }
-    .qr-code-container { margin: 20px 0; }
-    .qr-code-container img { max-width: 300px; }
-    .pix-code { background: #f4f4f4; padding: 15px; word-break: break-all; border: 1px dashed #ccc; border-radius: 4px; margin-top: 10px; }
-    .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; background-color: #ffeeba; color: #856404; }
+    .checkout-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 30px;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+    .pix-qr-container {
+        margin: 25px auto;
+        max-width: 250px;
+        position: relative;
+    }
+    .pix-qr-container img {
+        width: 100%;
+        height: auto;
+        border: 2px solid #f0f0f0;
+        border-radius: 12px;
+        padding: 15px;
+        background: white;
+    }
+    .pix-code-box {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.85rem;
+        word-break: break-all;
+        margin: 20px 0;
+        max-height: 100px;
+        overflow-y: auto;
+        border: 1px dashed #ced4da;
+        text-align: left;
+        color: #495057;
+    }
+    .btn-copy {
+        background: #222;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .btn-copy:hover {
+        background: #444;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .btn-copy:active {
+        transform: translateY(0);
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+    }
+    .status-pending { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .status-approved { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    
+    .status-heading {
+        font-size: 1.6rem;
+        color: #1a1a1a;
+        margin-bottom: 12px;
+        font-weight: 700;
+    }
+    .order-items-summary {
+        text-align: left;
+        margin-top: 30px;
+        border-top: 1px solid #eee;
+        padding-top: 25px;
+    }
+    .summary-item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        font-size: 0.95rem;
+        color: #444;
+    }
+    .summary-item-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .summary-item-img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #f0f0f0;
+        background: #fafafa;
+    }
+    .summary-item-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .summary-item-name {
+        font-weight: 600;
+        color: #222;
+        font-size: 1rem;
+    }
+    .summary-item-meta {
+        font-size: 0.85rem;
+        color: #888;
+    }
+    .total-row {
+        border-top: 2px solid #f0f0f0;
+        padding-top: 15px;
+        margin-top: 15px;
+        font-size: 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .success-checkmark {
+        font-size: 5rem;
+        color: #28a745;
+        margin-bottom: 20px;
+        animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes scaleIn {
+        from { transform: scale(0); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
 </style>
 
 <div class="checkout-container">
-    <h1>Finalizar Pagamento</h1>
-    <% if (typeof order !== 'undefined' && order.payment) { %>
-        <div class="payment-info">
-            <div class="status-badge">Status: <%= order.payment.status %></div>
-            <p>Escaneie o QR Code abaixo para pagar via PIX:</p>
-            <div class="qr-code-container">
-                <img src="data:image/png;base64, <%= order.payment.qr_code_base64 %>" alt="QR Code PIX">
+    <div class="card" id="payment-card">
+        <h2 class="status-heading" id="checkout-title">Aguardando Pagamento PIX</h2>
+        <p style="color: #6c757d; font-size: 0.95rem;">Utilize o código abaixo no app do seu banco para confirmar o pedido.</p>
+        
+        <div id="pix-payment-area">
+            <div class="pix-qr-container">
+                <img src="data:image/jpeg;base64,<%= order.payment.qr_code_base64 %>" alt="QR Code PIX">
             </div>
-            <p>Ou copie o código PIX:</p>
-            <div class="pix-code" id="pix-code"><%= order.payment.qr_code %></div>
-            <button onclick="copyPix()" style="margin-top: 10px; padding: 10px 20px; background-color: #D2042D; color: white; border: none; border-radius: 4px; cursor: pointer;">Copiar Código</button>
+            
+            <div class="pix-code-box" id="pix-code-text"><%= order.payment.qr_code %></div>
+            
+            <button class="btn-copy" id="btn-copy-pix">
+                <span class="material-icons" style="font-size: 1.3rem;">content_copy</span>
+                Copiar Código PIX
+            </button>
         </div>
-    <% } else { %>
-        <p>Informações de pagamento não encontradas.</p>
-    <% } %>
+
+        <div id="status-container">
+            <span class="status-badge status-pending" id="payment-status-badge">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons spinning" style="font-size: 1.1rem; animation: rotate 2s linear infinite;">sync</span>
+                    Aguardando confirmação...
+                </span>
+            </span>
+        </div>
+
+        <div class="order-items-summary">
+            <h3 style="margin-bottom: 20px; color: #222; font-weight: 700;">Resumo do Pedido</h3>
+            <% order.items.forEach(item => { %>
+                <div class="summary-item-row">
+                    <div class="summary-item-info">
+                        <img src="/image/<%= item.imagem %>" alt="<%= item.nome %>" class="summary-item-img" onerror="this.src='/img/placeholder-product.png'">
+                        <div class="summary-item-details">
+                            <span class="summary-item-name"><%= item.nome %></span>
+                            <span class="summary-item-meta">
+                                Qtd: <%= item.quantidade %>
+                                <% if(item.cor) { %> | <%= item.cor %> <% } %>
+                                <% if(item.tamanho) { %> | <%= item.tamanho %> <% } %>
+                            </span>
+                        </div>
+                    </div>
+                    <strong style="color: #222;">R$ <%= (item.preco * item.quantidade).toFixed(2) %></strong>
+                </div>
+            <% }) %>
+            
+            <div class="total-row">
+                <span style="color: #222; font-weight: 700;">Total do Pedido</span>
+                <strong style="color: #D2042D;">R$ <%= Number(order.payment.transaction_amount).toFixed(2) %></strong>
+            </div>
+        </div>
+    </div>
 </div>
 
-<script>
-    function copyPix() {
-        const pixCode = document.getElementById('pix-code').innerText;
-        navigator.clipboard.writeText(pixCode).then(() => alert('Código PIX copiado!'));
+<style>
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const paymentId = "<%= order.payment.id %>";
+        const btnCopy = document.getElementById('btn-copy-pix');
+        const pixCodeText = document.getElementById('pix-code-text').innerText;
+        const statusBadge = document.getElementById('payment-status-badge');
+        const pixPaymentArea = document.getElementById('pix-payment-area');
+        const checkoutTitle = document.getElementById('checkout-title');
+
+        btnCopy.addEventListener('click', () => {
+            navigator.clipboard.writeText(pixCodeText).then(() => {
+                const originalContent = btnCopy.innerHTML;
+                btnCopy.style.background = '#28a745';
+                btnCopy.innerHTML = '<span class="material-icons" style="font-size: 1.3rem;">check</span> Copiado!';
+                setTimeout(() => {
+                    btnCopy.style.background = '';
+                    btnCopy.innerHTML = originalContent;
+                }, 2500);
+            }).catch(err => {
+                console.error('Erro ao copiar:', err);
+            });
+        });
+
+        async function checkPaymentStatus() {
+            try {
+                const response = await fetch(`/orders/status/${paymentId}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                
+                if (data.status === 'approved') {
+                    clearInterval(statusInterval);
+                    
+                    checkoutTitle.innerText = "Pagamento Confirmado!";
+                    pixPaymentArea.style.opacity = '0';
+                    setTimeout(() => {
+                        pixPaymentArea.style.display = 'none';
+                        
+                        statusBadge.className = "status-badge status-approved";
+                        statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">check_circle</span> Pagamento recebido com sucesso!</span>';
+                        
+                        const successIcon = document.createElement('div');
+                        successIcon.className = 'success-checkmark material-icons';
+                        successIcon.innerText = 'check_circle';
+                        document.getElementById('payment-card').prepend(successIcon);
+                    }, 300);
+                }
+            } catch (error) {
+                console.error('Erro na sincronização:', error);
+            }
+        }
+
+        const statusInterval = setInterval(checkPaymentStatus, 8000);
+    });
 </script>

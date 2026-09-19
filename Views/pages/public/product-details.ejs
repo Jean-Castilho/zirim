@@ -466,10 +466,10 @@
     if (!selectedVariation) return;
 
     const cartItem = {
+      id: productDataGlobal._id,
       productId: productDataGlobal._id,
-      variationId: selectedVariation._id || `${productDataGlobal._id}-${selectedVariation.cores[0]}-${selectedVariation.tamanhos[0]}`,
-      cor: document.querySelector('#colorPillSelector .selected')?.textContent,
-      tamanho: document.querySelector('#sizePillSelector .selected')?.textContent,
+      cor: document.querySelector('#colorPillSelector .selected')?.textContent?.trim() || '',
+      tamanho: document.querySelector('#sizePillSelector .selected')?.textContent?.trim() || '',
       nome: productDataGlobal.nome,
       preco: selectedVariation.preco,
       quantidade: parseInt(qtyInput.value),
@@ -483,7 +483,11 @@
   function saveToCart(item) {
     let cart = JSON.parse(localStorage.getItem('cart') || '[]');
     
-    const existingIndex = cart.findIndex(i => i.variationId === item.variationId);
+    const existingIndex = cart.findIndex(i => 
+      i.productId === item.productId && 
+      i.cor === item.cor && 
+      i.tamanho === item.tamanho
+    );
     
 
     if (existingIndex > -1) {

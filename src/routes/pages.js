@@ -36,12 +36,12 @@ router.get("/contact", Contact);
 
 router.get("/register", generateCsrfToken, Register);
 router.get("/login", generateCsrfToken, Login);
-
 router.get("/reset-password", generateCsrfToken, ResetPassword);
-
 router.get("/verify-otp", generateCsrfToken, VerifyOtp);
 
 router.get("/cart", Cart);
+router.get("/checkout/:id", Checkout);
+
 router.get("/favorites", Favorites);
 
 router.get("/profile", Profile);

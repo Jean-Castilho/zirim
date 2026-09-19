@@ -22,6 +22,8 @@ export const validateCartItems = async (items) => {
       ...item,
       id: String(item.id),
       quantity,
+      cor: item.cor ? String(item.cor).trim() : '',
+      tamanho: item.tamanho ? String(item.tamanho).trim() : ''
     };
   });
 
@@ -41,18 +43,34 @@ export const validateCartItems = async (items) => {
     throw new Error(`Os seguintes produtos não foram encontrados: ${notFound.join(", ")}`);
   }
 
-  return selectedProducts.map((product) => {
-    const cartItem = normalizedItems.find(
-      (item) => item.id === product._id.toString(),
-    );
+  const productMap = new Map(selectedProducts.map((p) => [p._id.toString(), p]));
+
+  return normalizedItems.map((cartItem) => {
+    const product = productMap.get(cartItem.id);
+    
+    // Busca a variação correspondente por cor e tamanho para obter o preço correto
+    const variation = product.variacoes?.find((v) => {
+      const matchColor = !cartItem.cor || v.cores?.map(c => c.trim()).includes(cartItem.cor);
+      const matchSize = !cartItem.tamanho || v.tamanhos?.map(s => String(s).trim()).includes(cartItem.tamanho);
+      return matchColor && matchSize;
+    });
+
+    const preco = variation ? variation.preco : (product.preco || product.variacoes?.[0]?.preco || 0);
+    
+    // Otimização: Lógica de seleção de imagem consolidada
+    const imagem = variation?.imagens?.[0] 
+                || product.variacoes?.find(v => v.imagens?.length > 0)?.imagens?.[0]
+                || 'default-product.png';
 
     return {
       id: product._id,
       nome: product.nome,
-      preco: product.preco,
-      quantidade: cartItem ? cartItem.quantity : 0,
-      garantia: product.garantia,
-      imagens: product.imagens,
+      preco: preco,
+      imagem: imagem,
+      quantidade: cartItem.quantity,
+      garantia: product.garantia || null,
+      cor: cartItem.cor,
+      tamanho: cartItem.tamanho
     };
   });
 };
