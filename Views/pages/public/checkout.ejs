@@ -146,30 +146,44 @@
 
 <div class="checkout-container">
     <div class="card" id="payment-card">
-        <h2 class="status-heading" id="checkout-title">Aguardando Pagamento PIX</h2>
-        <p style="color: #6c757d; font-size: 0.95rem;">Utilize o código abaixo no app do seu banco para confirmar o pedido.</p>
-        
-        <div id="pix-payment-area">
-            <div class="pix-qr-container">
-                <img src="data:image/jpeg;base64,<%= order.payment.qr_code_base64 %>" alt="QR Code PIX">
-            </div>
-            
-            <div class="pix-code-box" id="pix-code-text"><%= order.payment.qr_code %></div>
-            
-            <button class="btn-copy" id="btn-copy-pix">
-                <span class="material-icons" style="font-size: 1.3rem;">content_copy</span>
-                Copiar Código PIX
-            </button>
-        </div>
-
-        <div id="status-container">
-            <span class="status-badge status-pending" id="payment-status-badge">
-                <span style="display: flex; align-items: center; gap: 8px;">
-                    <span class="material-icons spinning" style="font-size: 1.1rem; animation: rotate 2s linear infinite;">sync</span>
-                    Aguardando confirmação...
+        <% if (order.statusInterno === 'pago' || order.payment.status === 'approved') { %>
+            <div class="success-checkmark material-icons">check_circle</div>
+            <h2 class="status-heading">Pagamento Confirmado!</h2>
+            <p style="color: #6c757d; font-size: 0.95rem;">Seu pedido está sendo processado e em breve será enviado.</p>
+            <div id="status-container">
+                <span class="status-badge status-approved">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons">check_circle</span>
+                        Pagamento recebido com sucesso!
+                    </span>
                 </span>
-            </span>
-        </div>
+            </div>
+        <% } else { %>
+            <h2 class="status-heading" id="checkout-title">Aguardando Pagamento PIX</h2>
+            <p style="color: #6c757d; font-size: 0.95rem;">Utilize o código abaixo no app do seu banco para confirmar o pedido.</p>
+            
+            <div id="pix-payment-area">
+                <div class="pix-qr-container">
+                    <img src="data:image/jpeg;base64,<%= order.payment.qr_code_base64 %>" alt="QR Code PIX">
+                </div>
+                
+                <div class="pix-code-box" id="pix-code-text"><%= order.payment.qr_code %></div>
+                
+                <button class="btn-copy" id="btn-copy-pix">
+                    <span class="material-icons" style="font-size: 1.3rem;">content_copy</span>
+                    Copiar Código PIX
+                </button>
+            </div>
+
+            <div id="status-container">
+                <span class="status-badge status-pending" id="payment-status-badge">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons spinning" style="font-size: 1.1rem; animation: rotate 2s linear infinite;">sync</span>
+                        Aguardando confirmação...
+                    </span>
+                </span>
+            </div>
+        <% } %>
 
         <div class="order-items-summary">
             <h3 style="margin-bottom: 20px; color: #222; font-weight: 700;">Resumo do Pedido</h3>
@@ -209,26 +223,29 @@
     document.addEventListener('DOMContentLoaded', () => {
         const paymentId = "<%= order.payment.id %>";
         const btnCopy = document.getElementById('btn-copy-pix');
-        const pixCodeText = document.getElementById('pix-code-text').innerText;
+        const pixCodeText = document.getElementById('pix-code-text') ? document.getElementById('pix-code-text').innerText : '';
         const statusBadge = document.getElementById('payment-status-badge');
         const pixPaymentArea = document.getElementById('pix-payment-area');
         const checkoutTitle = document.getElementById('checkout-title');
 
-        btnCopy.addEventListener('click', () => {
-            navigator.clipboard.writeText(pixCodeText).then(() => {
-                const originalContent = btnCopy.innerHTML;
-                btnCopy.style.background = '#28a745';
-                btnCopy.innerHTML = '<span class="material-icons" style="font-size: 1.3rem;">check</span> Copiado!';
-                setTimeout(() => {
-                    btnCopy.style.background = '';
-                    btnCopy.innerHTML = originalContent;
-                }, 2500);
-            }).catch(err => {
-                console.error('Erro ao copiar:', err);
+        if (btnCopy) {
+            btnCopy.addEventListener('click', () => {
+                navigator.clipboard.writeText(pixCodeText).then(() => {
+                    const originalContent = btnCopy.innerHTML;
+                    btnCopy.style.background = '#28a745';
+                    btnCopy.innerHTML = '<span class="material-icons" style="font-size: 1.3rem;">check</span> Copiado!';
+                    setTimeout(() => {
+                        btnCopy.style.background = '';
+                        btnCopy.innerHTML = originalContent;
+                    }, 2500);
+                }).catch(err => {
+                    console.error('Erro ao copiar:', err);
+                });
             });
-        });
+        }
 
         async function checkPaymentStatus() {
+            if (!paymentId) return;
             try {
                 const response = await fetch(`/orders/status/${paymentId}`);
                 if (!response.ok) return;
@@ -238,25 +255,30 @@
                 if (data.status === 'approved') {
                     clearInterval(statusInterval);
                     
-                    checkoutTitle.innerText = "Pagamento Confirmado!";
-                    pixPaymentArea.style.opacity = '0';
-                    setTimeout(() => {
-                        pixPaymentArea.style.display = 'none';
-                        
-                        statusBadge.className = "status-badge status-approved";
-                        statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">check_circle</span> Pagamento recebido com sucesso!</span>';
-                        
-                        const successIcon = document.createElement('div');
-                        successIcon.className = 'success-checkmark material-icons';
-                        successIcon.innerText = 'check_circle';
-                        document.getElementById('payment-card').prepend(successIcon);
-                    }, 300);
+                    if (checkoutTitle) checkoutTitle.innerText = "Pagamento Confirmado!";
+                    if (pixPaymentArea) {
+                        pixPaymentArea.style.opacity = '0';
+                        setTimeout(() => {
+                            pixPaymentArea.style.display = 'none';
+                            
+                            statusBadge.className = "status-badge status-approved";
+                            statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">check_circle</span> Pagamento recebido com sucesso!</span>';
+                            
+                            const successIcon = document.createElement('div');
+                            successIcon.className = 'success-checkmark material-icons';
+                            successIcon.innerText = 'check_circle';
+                            document.getElementById('payment-card').prepend(successIcon);
+                        }, 300);
+                    }
                 }
             } catch (error) {
                 console.error('Erro na sincronização:', error);
             }
         }
 
-        const statusInterval = setInterval(checkPaymentStatus, 8000);
+        const isAlreadyPaid = "<%= (order.statusInterno === 'pago' || order.payment.status === 'approved') %>" === "true";
+        if (!isAlreadyPaid) {
+            const statusInterval = setInterval(checkPaymentStatus, 8000);
+        }
     });
 </script>

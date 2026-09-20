@@ -195,12 +195,42 @@
 
   .order-status {
     font-weight: 600;
-    color: var(--cor-alerta);
-    background-color: #fffaf0;
-    border: 1px solid #feebc8;
     padding: 6px 12px;
     border-radius: 6px;
     font-size: 0.75rem;
+    text-transform: capitalize;
+    display: inline-block;
+  }
+
+  .order-status.pago {
+    color: var(--cor-sucesso);
+    background-color: #e6fffa;
+    border: 1px solid #b2f5ea;
+  }
+
+  .order-status.pendente {
+    color: var(--cor-alerta);
+    background-color: #fffaf0;
+    border: 1px solid #feebc8;
+  }
+
+  .order-status.cancelado {
+    color: var(--cor-erro);
+    background-color: #fff5f5;
+    border: 1px solid #fed7d7;
+  }
+
+  .order-link {
+    font-size: 0.85rem;
+    color: var(--cor-info);
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 8px;
+    display: block;
+  }
+
+  .order-link:hover {
+    text-decoration: underline;
   }
 
   .order-total {
@@ -218,6 +248,25 @@
     border: 2px dashed var(--cor-borda-forte);
     text-align: center;
     margin-top: var(--espacamento-md);
+  }
+
+  .profile-actions {
+    margin-top: 1rem;
+  }
+
+  .order-link-pay {
+    color: var(--cor-destaque) !important;
+    font-weight: bold !important;
+  }
+
+  .order-link-pay-content {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .order-link-pay-icon {
+    font-size: 1rem;
   }
 
   @media (min-width: 768px) {
@@ -272,7 +321,7 @@
             <%= user?.name ? user.name.charAt(0).toUpperCase() : 'U' %>
           </div>
         </div>
-        
+
         <h2>Informações do Usuário</h2>
         <div class="info-group">
           <label>Nome:</label>
@@ -284,22 +333,22 @@
           <label>Email:</label>
           <p>
             <%= user?.email?.endereco || 'Não informado' %>
-              <% if (user?.email?.endereco) { %>
-                <span class="badge <%= user?.email?.verified ? 'verified' : 'unverified' %>">
-                  <%= user?.email?.verified ? 'Verificado' : 'Não verificado' %>
-                </span>
-                <% } %>
+            <% if (user?.email?.endereco) { %>
+              <span class="badge <%= user?.email?.verified ? 'verified' : 'unverified' %>">
+                <%= user?.email?.verified ? 'Verificado' : 'Não verificado' %>
+              </span>
+            <% } %>
           </p>
         </div>
         <div class="info-group">
           <label>Telefone:</label>
           <p>
             <%= user?.phone?.number || 'Não informado' %>
-              <% if (user?.phone?.number) { %>
-                <span class="badge <%= user?.phone?.verified ? 'verified' : 'unverified' %>">
-                  <%= user?.phone?.verified ? 'Verificado' : 'Não verificado' %>
-                </span>
-                <% } %>
+            <% if (user?.phone?.number) { %>
+              <span class="badge <%= user?.phone?.verified ? 'verified' : 'unverified' %>">
+                <%= user?.phone?.verified ? 'Verificado' : 'Não verificado' %>
+              </span>
+            <% } %>
           </p>
         </div>
         <div class="info-group">
@@ -308,35 +357,48 @@
             <%= user?.role ==='admin' ? 'Administrador' : 'Usuário' %>
           </p>
         </div>
-        <div class="profile-actions" style="margin-top: 1rem;">
+        <div class="profile-actions">
           <a href="/logout" class="btn-logout">Sair da Conta</a>
         </div>
       </div>
 
       <div class="user-orders-card">
         <h2>Meus Pedidos</h2>
-        <% if (user?.orderns && user.orderns.length> 0) { %>
+        <% if (user?.orderns && user.orderns.length > 0) { %>
           <ul class="orders-list">
-            <% user.orderns.forEach(order=> { %>
+            <% user.orderns.slice().reverse().forEach(order => { %>
               <li class="order-item">
                 <div class="order-header">
-                  <strong>Pedido #<%= order._id || order.id || 'N/A' %></strong>
+                  <strong>Pedido #<%= String(order._id || order.id || 'N/A').slice(-6).toUpperCase() %></strong>
                   <span class="order-date">
                     <%= new Date(order.createdAt || order.date || Date.now()).toLocaleDateString('pt-BR') %>
                   </span>
                 </div>
                 <div class="order-details">
-                  <div class="order-status">Status: <%= order.status || 'Processando' %>
+                  <div class="order-status <%= order.status || 'pendente' %>">
+                    <%= order.status || 'pendente' %>
                   </div>
-                  <div class="order-total">Total: R$ <%= (order.total || 0).toFixed(2) %>
+                  <div class="order-total">
+                    R$ <%= (order.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %>
                   </div>
                 </div>
+                <% if (order._id || order.id) { %>
+                  <% if (order.status === 'pendente') { %>
+                    <a href="/checkout/<%= order._id || order.id %>" class="order-link order-link-pay">
+                      <span class="order-link-pay-content">
+                        Pagar Pedido <span class="material-icons order-link-pay-icon">payment</span>
+                      </span>
+                    </a>
+                  <% } else { %>
+                    <a href="/checkout/<%= order._id || order.id %>" class="order-link">Visualizar detalhes</a>
+                  <% } %>
+                <% } %>
               </li>
-              <% }) %>
+            <% }) %>
           </ul>
-          <% } else { %>
-            <p class="no-orders">Você ainda não realizou nenhum pedido.</p>
-            <% } %>
+        <% } else { %>
+          <p class="no-orders">Você ainda não realizou nenhum pedido.</p>
+        <% } %>
       </div>
     </div>
   </div>

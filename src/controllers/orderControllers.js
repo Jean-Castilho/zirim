@@ -16,4 +16,14 @@ export default class OrderController {
     async creatOrder(req, res) {
         return await this.repository.creatOrder(req, res);
     }
+
+    async handleWebhook(req, res) {
+        try {
+            await this.repository.handleWebhook(req);
+            return res.status(200).send('OK');
+        } catch (error) {
+            console.error('Erro no controller de webhook:', error);
+            return res.status(500).send('Internal Server Error');
+        }
+    }
 }

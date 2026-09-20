@@ -4,6 +4,7 @@ import ProductService from "../services/ProductService.js";
 import UserService from "../services/UserService.js";
 import { NotFoundError } from "../utils/handleResponse.js";
 import OrderRepository from "../repository/OrderRepository.js";
+import { ObjectId } from "mongodb";
 
 const productService = new ProductService();
 const userService = new UserService();
@@ -146,11 +147,42 @@ export const Cart = (req, res) => {
   });
 };
 
-export const Profile = (req, res) => {
-  renderPage(req, res, "../pages/auth/profile", {
-    titulo: "Meu Perfil",
-    message: "Gerencie suas informações de perfil!",
-  });
+export const Profile = async (req, res, next) => {
+  try {
+    const userId = req.session?.user?._id;
+    if (!userId) {
+      return res.redirect('/login');
+    }
+
+    const userProfile = await userService.repository.findById(userId);
+    
+    // Busca pedidos diretamente da coleção orders como fonte da verdade definitiva
+    const orders = await orderRepository.collection.find({
+        $or: [
+            { "user._id": userId },
+            { "user._id": String(userId) },
+            { "user._id": new ObjectId(userId) }
+        ]
+    }).sort({ createdAt: -1 }).toArray();
+    
+    // Sincroniza o array de pedidos do objeto user para compatibilidade com o template
+    userProfile.orderns = orders.map(o => ({
+        _id: o._id,
+        status: o.statusInterno || 'pendente',
+        total: o.payment?.transaction_amount || 0,
+        createdAt: o.createdAt
+    }));
+
+    res.locals.user = userProfile;
+    
+    renderPage(req, res, "../pages/auth/profile", {
+      titulo: "Meu Perfil",
+      message: "Gerencie suas informações de perfil!",
+      user: userProfile
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const Dashboard = async (req, res, next) => {

@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { DataBase } from "../config/db.js";
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+import crypto from 'crypto';
 
 import BaseRepository from "./BaseRepository.js";
 import { validateCartItems } from "../services/orderService.js";
@@ -34,6 +35,7 @@ export default class OrderRepository extends BaseRepository {
             transaction_amount: parseFloat(valorInteiro),
             description: 'Pagamento PIX - Zirim Store',
             payment_method_id: 'pix',
+            notification_url: 'https://zirim.onrender.com/orders/webhook',
             payer: {
                 email: userData.email?.endereco || userData.email || "contato@zirim.com",
                 first_name: firstName,
@@ -64,6 +66,20 @@ export default class OrderRepository extends BaseRepository {
         }
     }
 
+    mapStatus(mpStatus) {
+        const mapping = {
+            'pending': 'pendente',
+            'approved': 'pago',
+            'authorized': 'pago',
+            'in_process': 'pendente',
+            'rejected': 'cancelado',
+            'cancelled': 'cancelado',
+            'refunded': 'cancelado',
+            'charged_back': 'cancelado'
+        };
+        return mapping[mpStatus] || 'pendente';
+    }
+
     async consultarPix(id) {
         if (!id) {
             return { error: 'O campo "id" é obrigatório.' };
@@ -72,8 +88,8 @@ export default class OrderRepository extends BaseRepository {
         try {
             const paymentInfo = await paymentClient.get({ id });
 
-            if (paymentInfo && paymentInfo.status === 'approved') {
-                await this.processarBaixaEstoque(id);
+            if (paymentInfo) {
+                await this.sincronizarStatusPedido(id, paymentInfo.status);
             }
 
             return paymentInfo;
@@ -83,24 +99,62 @@ export default class OrderRepository extends BaseRepository {
         }
     }
 
-    async processarBaixaEstoque(paymentId) {
+    async sincronizarStatusPedido(paymentId, mpStatus) {
         const order = await this.getCollection().findOne({
             $or: [
                 { "payment.id": paymentId },
                 { "payment.id": Number(paymentId) }
-            ],
-            "payment.status": { $ne: "approved" }
+            ]
         });
 
-        if (!order) return; 
+        if (!order) return;
+
+        const novoStatus = this.mapStatus(mpStatus);
+        
+        // Evita processamento redundante se o status não mudou
+        if (order.payment && order.payment.status === mpStatus && order.statusInterno === novoStatus) {
+             // Se for aprovado, garantimos que a baixa de estoque foi feita (pode ter falhado antes)
+             if (mpStatus === 'approved') {
+                 await this.executarBaixaEstoque(order);
+             }
+             return;
+        }
 
         // 1. Atualiza status do pedido
         await this.getCollection().updateOne(
             { _id: order._id },
-            { $set: { "payment.status": "approved", "updatedAt": new Date() } }
+            { 
+                $set: { 
+                    "payment.status": mpStatus, 
+                    "statusInterno": novoStatus,
+                    "updatedAt": new Date() 
+                } 
+            }
         );
 
-        // 2. Baixa de estoque otimizada via bulkWrite
+        // 2. Atualiza status no perfil do usuário
+        if (order.user && order.user._id) {
+            const usersCollection = this.db.collection("users");
+            
+            // Query flexível para ID do usuário (string ou ObjectId)
+            const userQuery = ObjectId.isValid(order.user._id)
+                ? { $or: [{ _id: new ObjectId(order.user._id) }, { _id: String(order.user._id) }] }
+                : { _id: String(order.user._id) };
+
+            await usersCollection.updateOne(
+                { ...userQuery, "orderns._id": order._id },
+                { $set: { "orderns.$.status": novoStatus } }
+            );
+        }
+
+        // 3. Se aprovado, processa baixa de estoque
+        if (mpStatus === 'approved') {
+            await this.executarBaixaEstoque(order);
+        }
+    }
+
+    async executarBaixaEstoque(order) {
+        // Baixa de estoque otimizada via bulkWrite
         const productsCollection = this.db.collection("products");
         const bulkOps = order.items.map(item => ({
             updateOne: {
@@ -144,10 +198,34 @@ export default class OrderRepository extends BaseRepository {
                 user: { _id: user._id, phone: user.phone },
                 payment: paymentResult,
                 items: validatedItems,
+                statusInterno: this.mapStatus(paymentResult.status),
                 createdAt: new Date()
             };
 
             const orderCreat = await this.getCollection().insertOne(payloadOrder);
+
+            // Atualiza o perfil do usuário vinculando a nova ordem
+            const usersCollection = this.db.collection("users");
+            
+            // Query flexível para ID do usuário (string ou ObjectId)
+            const userQuery = ObjectId.isValid(user._id)
+                ? { $or: [{ _id: new ObjectId(user._id) }, { _id: String(user._id) }] }
+                : { _id: String(user._id) };
+
+            await usersCollection.updateOne(
+                userQuery,
+                { 
+                    $push: { 
+                        orderns: {
+                            _id: orderCreat.insertedId,
+                            status: payloadOrder.statusInterno,
+                            total: totalPrice,
+                            createdAt: payloadOrder.createdAt
+                        }
+                    }
+                }
+            );
+
             return res.redirect(`/checkout/${orderCreat.insertedId.toString()}`);
         } catch (error) {
             console.error('Erro ao criar pedido:', error);
@@ -155,20 +233,47 @@ export default class OrderRepository extends BaseRepository {
         }
     }
 
-    async getPaymentbyId(req, res) {
-        const { id } = req.query;
+    async handleWebhook(req) {
+        const { type, data } = req.body;
+        const xSignature = req.headers['x-signature'];
+        const xRequestId = req.headers['x-request-id'];
 
-        if (!id) {
-            return res.status(400).json({ error: 'ID de pagamento obrigatório.' });
+        console.log('Webhook recebido:', { type, data, xSignature });
+
+        // Validação de Assinatura
+        if (xSignature && process.env.MERCADOPAGO_WEBHOOK_SECRET) {
+            try {
+                const parts = xSignature.split(',');
+                const ts = parts.find(p => p.startsWith('ts=')).split('=')[1];
+                const hash = parts.find(p => p.startsWith('v1=')).split('=')[1];
+                
+                const manifest = `id:${data.id};request-id:${xRequestId};ts:${ts};`;
+                const hmac = crypto.createHmac('sha256', process.env.MERCADOPAGO_WEBHOOK_SECRET)
+                    .update(manifest)
+                    .digest('hex');
+
+                if (hmac !== hash) {
+                    console.error('Assinatura do webhook inválida!');
+                    throw new Error('Invalid signature');
+                }
+            } catch (err) {
+                console.error('Erro ao validar assinatura:', err.message);
+                // Em produção, você pode querer lançar erro ou apenas logar
+            }
         }
 
-        const pagamento = await this.consultarPix(id);
-
-        if (pagamento.error) {
-            return res.status(500).json({ error: pagamento.error || 'Erro ao consultar pagamento.' });
+        if (type === 'payment' && data && data.id) {
+            try {
+                const paymentInfo = await this.consultarPix(data.id);
+                console.log(`Pagamento ${data.id} processado via webhook. Status: ${paymentInfo.status}`);
+                return paymentInfo;
+            } catch (error) {
+                console.error('Erro ao processar webhook de pagamento:', error);
+                throw error;
+            }
         }
 
-        return res.json(pagamento);
+        return { message: 'Evento ignorado' };
     }
 
 }

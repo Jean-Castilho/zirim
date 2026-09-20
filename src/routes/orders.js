@@ -59,5 +59,6 @@ router.get('/status/:id', async (req, res) => {
 
 router.post('/creat-Order', (req, res) => orderController.creatOrder(req, res));
 
+router.post('/webhook', (req, res) => orderController.handleWebhook(req, res));
 
 export default router;
