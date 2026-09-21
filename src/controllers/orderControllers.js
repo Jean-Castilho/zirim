@@ -17,6 +17,16 @@ export default class OrderController {
         return await this.repository.creatOrder(req, res);
     }
 
+    async cancelOrder(req, res) {
+        try {
+            const { id } = req.params;
+            const result = await this.repository.updateOrderStatus(id, 'cancelled');
+            return res.status(200).json(result);
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
     async handleWebhook(req, res) {
         try {
             await this.repository.handleWebhook(req);

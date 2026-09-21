@@ -99,6 +99,26 @@ export default class OrderRepository extends BaseRepository {
         }
     }
 
+    /**
+     * Atualiza o status do pedido manualmente (ex: cancelamento via API)
+     * @param {string} orderId 
+     * @param {string} mpStatus Status bruto do Mercado Pago (ex: 'cancelled')
+     */
+    async updateOrderStatus(orderId, mpStatus) {
+        const order = await this.findById(orderId);
+        if (!order) {
+            return { error: 'Pedido não encontrado.' };
+        }
+
+        const paymentId = order.payment?.id;
+        if (!paymentId) {
+            return { error: 'Pagamento não associado a este pedido.' };
+        }
+
+        await this.sincronizarStatusPedido(paymentId, mpStatus);
+        return { success: true, status: this.mapStatus(mpStatus) };
+    }
+
     async sincronizarStatusPedido(paymentId, mpStatus) {
         const order = await this.getCollection().findOne({
             $or: [
@@ -141,9 +161,15 @@ export default class OrderRepository extends BaseRepository {
                 ? { $or: [{ _id: new ObjectId(order.user._id) }, { _id: String(order.user._id) }] }
                 : { _id: String(order.user._id) };
 
+            // Garante a correspondência do ID do pedido independentemente de ser String ou ObjectId
+            const orderIdVariants = ObjectId.isValid(order._id)
+                ? [new ObjectId(order._id), String(order._id)]
+                : [String(order._id)];
+
             await usersCollection.updateOne(
-                { ...userQuery, "orderns._id": order._id },
-                { $set: { "orderns.$.status": novoStatus } }
+                userQuery,
+                { $set: { "orderns.$[elem].status": novoStatus } },
+                { arrayFilters: [{ "elem._id": { $in: orderIdVariants } }] }
             );
         }
 
@@ -163,7 +189,8 @@ export default class OrderRepository extends BaseRepository {
                     "variacoes": {
                         $elemMatch: {
                             cores: item.cor || '',
-                            tamanhos: item.tamanho || ''
+                            tamanhos: item.tamanho || '',
+                            estoque: { $gte: Number(item.quantidade || 0) }
                         }
                     }
                 },
@@ -258,7 +285,7 @@ export default class OrderRepository extends BaseRepository {
                 }
             } catch (err) {
                 console.error('Erro ao validar assinatura:', err.message);
-                // Em produção, você pode querer lançar erro ou apenas logar
+                throw err; // Evita o processamento de payloads maliciosos caso a assinatura falhe
             }
         }
 

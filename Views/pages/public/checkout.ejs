@@ -76,6 +76,14 @@
     .status-pending { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
     .status-approved { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     
+    .status-cancelled { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .error-cross {
+        font-size: 5rem;
+        color: #dc3545;
+        margin-bottom: 20px;
+        animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
     .status-heading {
         font-size: 1.6rem;
         color: #1a1a1a;
@@ -158,6 +166,18 @@
                     </span>
                 </span>
             </div>
+        <% } else if (order.statusInterno === 'cancelado' || ['rejected', 'cancelled', 'refunded', 'charged_back'].includes(order.payment?.status)) { %>
+            <div class="error-cross material-icons">cancel</div>
+            <h2 class="status-heading">Pagamento Cancelado</h2>
+            <p style="color: #6c757d; font-size: 0.95rem;">Este pedido foi cancelado ou o tempo para pagamento expirou.</p>
+            <div id="status-container">
+                <span class="status-badge status-cancelled">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons">cancel</span>
+                        O pedido não pode mais ser pago.
+                    </span>
+                </span>
+            </div>
         <% } else { %>
             <h2 class="status-heading" id="checkout-title">Aguardando Pagamento PIX</h2>
             <p style="color: #6c757d; font-size: 0.95rem;">Utilize o código abaixo no app do seu banco para confirmar o pedido.</p>
@@ -221,12 +241,13 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const paymentId = "<%= order.payment.id %>";
+        const paymentId = "<%= order.payment?.id %>";
         const btnCopy = document.getElementById('btn-copy-pix');
         const pixCodeText = document.getElementById('pix-code-text') ? document.getElementById('pix-code-text').innerText : '';
         const statusBadge = document.getElementById('payment-status-badge');
         const pixPaymentArea = document.getElementById('pix-payment-area');
         const checkoutTitle = document.getElementById('checkout-title');
+        let statusInterval;
 
         if (btnCopy) {
             btnCopy.addEventListener('click', () => {
@@ -270,15 +291,33 @@
                             document.getElementById('payment-card').prepend(successIcon);
                         }, 300);
                     }
+                } else if (['rejected', 'cancelled', 'refunded', 'charged_back'].includes(data.status)) {
+                    clearInterval(statusInterval);
+                    
+                    if (checkoutTitle) checkoutTitle.innerText = "Pagamento Cancelado";
+                    if (pixPaymentArea) {
+                        pixPaymentArea.style.opacity = '0';
+                        setTimeout(() => {
+                            pixPaymentArea.style.display = 'none';
+                            
+                            statusBadge.className = "status-badge status-cancelled";
+                            statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">cancel</span> O pagamento foi cancelado ou recusado.</span>';
+                            
+                            const errorIcon = document.createElement('div');
+                            errorIcon.className = 'error-cross material-icons';
+                            errorIcon.innerText = 'cancel';
+                            document.getElementById('payment-card').prepend(errorIcon);
+                        }, 300);
+                    }
                 }
             } catch (error) {
                 console.error('Erro na sincronização:', error);
             }
         }
 
-        const isAlreadyPaid = "<%= (order.statusInterno === 'pago' || order.payment.status === 'approved') %>" === "true";
-        if (!isAlreadyPaid) {
-            const statusInterval = setInterval(checkPaymentStatus, 8000);
+        const isFinished = "<%= (order.statusInterno === 'pago' || order.statusInterno === 'cancelado' || order.payment?.status === 'approved' || ['rejected', 'cancelled'].includes(order.payment?.status)) %>" === "true";
+        if (!isFinished && paymentId) {
+            statusInterval = setInterval(checkPaymentStatus, 8000);
         }
     });
 </script>
