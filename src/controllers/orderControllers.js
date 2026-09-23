@@ -17,13 +17,13 @@ export default class OrderController {
         return await this.repository.creatOrder(req, res);
     }
 
-    async cancelOrder(req, res) {
+    async cancelOrder(req, res, next) {
         try {
             const { id } = req.params;
             const result = await this.repository.updateOrderStatus(id, 'cancelled');
             return res.status(200).json(result);
         } catch (error) {
-            return res.status(500).json({ error: error.message });
+            next(error);
         }
     }
 

@@ -1,0 +1,208 @@
+<link rel="stylesheet" href="/css/pages/add-product.css">
+
+<style>
+  .edit-container { padding: 40px 20px; max-width: 900px; margin: 0 auto; }
+  .form-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--cor-texto-escuro); }
+  .form-control { width: 100%; padding: 12px; border: 1px solid var(--cor-borda); border-radius: 4px; }
+  .variation-card { 
+    border: 1px solid #eee; 
+    padding: 20px; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    background: #f9f9f9;
+  }
+  .variation-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+  }
+  .image-preview-list { display: flex; gap: 10px; margin-top: 10px; }
+  .image-preview-item { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+  .btn-submit { background: var(--cor-primaria); color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+  .btn-back { color: #666; text-decoration: none; margin-left: 15px; }
+  .btn-danger { background-color: #d32f2f; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+  .image-upload-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer; margin-top: 10px; border-radius: 4px; }
+  .image-preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .btn-add-variation {
+    width: 100%;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    color: #4a5568;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 25px;
+  }
+  .btn-add-variation:hover {
+    background-color: #edf2f7;
+    border-color: var(--cor-primaria);
+    color: var(--cor-primaria);
+  }
+</style>
+
+<div class="edit-container">
+  <header class="admin-header">
+    <h1 class="admin-title"><%= titulo %></h1>
+    <p><%= message %></p>
+  </header>
+
+  <div class="form-card">
+    <!-- O endpoint de API para atualização usa PUT via HTMX -->
+    <form hx-put="/api/products/<%= product._id %>" 
+          hx-encoding="multipart/form-data" 
+          hx-headers='{"x-csrf-token": "<%= csrfToken %>"}'
+          hx-target="#form-feedback"
+          hx-swap="innerHTML">
+      
+      <div class="form-group">
+        <label for="nome">Nome do Produto</label>
+        <input type="text" id="nome" name="nome" class="form-control" value="<%= product.nome %>" required>
+      </div>
+
+      <div class="form-group">
+        <label for="categoria">Categoria</label>
+        <select id="categoria" name="categoria" class="form-control">
+          <option value="feminino" <%= product.categoria === 'feminino' ? 'selected' : '' %>>Moda Feminina</option>
+          <option value="masculino" <%= product.categoria === 'masculino' ? 'selected' : '' %>>Moda Masculina</option>
+          <option value="calcados" <%= product.categoria === 'calcados' ? 'selected' : '' %>>Calçados</option>
+          <option value="acessorios" <%= product.categoria === 'acessorios' ? 'selected' : '' %>>Acessórios</option>
+          <option value="unissex" <%= product.categoria === 'unissex' ? 'selected' : '' %>>Unissex</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao" rows="4" class="form-control"><%= product.descricao %></textarea>
+      </div>
+
+      <h3 class="form-section-title">Variações</h3>
+      
+      <div id="variations-container"></div>
+      <button type="button" id="add-variation-btn" class="btn-add-variation">
+        <i class="material-icons">add_circle_outline</i>
+        Adicionar Variação
+      </button>
+
+      <div id="form-feedback"></div>
+
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+        <button type="submit" class="btn-submit">
+          <i class="material-icons" style="vertical-align: middle; font-size: 18px;">save</i>
+          Salvar Alterações
+        </button>
+        <a href="/inventory" class="btn-back">Cancelar e Voltar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let variationIndex = 0;
+
+  function addVariationBlock(data = {}) {
+    const container = document.getElementById('variations-container');
+    const variationBlock = document.createElement('div');
+    variationBlock.classList.add('variation-card');
+    variationBlock.dataset.index = variationIndex;
+
+    variationBlock.innerHTML = `
+      <div class="variation-header">
+        <h4>Variação #${variationIndex + 1}</h4>
+        <button type="button" class="btn-danger" onclick="removeVariationBlock(this)">Remover</button>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label>Cores</label>
+          <input type="text" name="variacoes[${variationIndex}][cores]" class="form-control" value="${data.cores ? data.cores.join(', ') : ''}" placeholder="Ex: Preto, Azul">
+        </div>
+        <div class="form-group">
+          <label>SKU</label>
+          <input type="text" name="variacoes[${variationIndex}][sku]" class="form-control" value="${data.sku || ''}">
+        </div>
+        <div class="form-group">
+          <label>Tamanhos</label>
+          <input type="text" name="variacoes[${variationIndex}][tamanhos]" class="form-control" value="${data.tamanhos ? data.tamanhos.join(', ') : ''}" placeholder="Ex: P, M, G">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label>Preço (R$) *</label>
+          <input type="number" step="0.01" name="variacoes[${variationIndex}][preco]" class="form-control" value="${data.preco || ''}" required>
+        </div>
+        <div class="form-group">
+          <label>Estoque *</label>
+          <input type="number" name="variacoes[${variationIndex}][estoque]" class="form-control" value="${data.estoque || ''}" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Imagens</label>
+        <div class="image-upload-zone" onclick="document.getElementById('file_${variationIndex}').click()">
+          <span>Clique para selecionar novas imagens (substituirá as atuais se enviado)</span>
+          <input type="file" id="file_${variationIndex}" name="variacoes[${variationIndex}][imagens]" multiple style="display:none" onchange="previewImages(this, ${variationIndex})">
+        </div>
+        <div id="preview-${variationIndex}" class="image-preview-container">
+          ${(data.imagens || []).map(img => `<img src="/image/${img}" class="image-preview-item">`).join('')}
+        </div>
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" name="variacoes[${variationIndex}][ativo]" value="true" ${data.ativo !== false ? 'checked' : ''}> Ativo</label>
+      </div>
+    `;
+    container.appendChild(variationBlock);
+    variationIndex++;
+  }
+
+  function removeVariationBlock(button) {
+    button.closest('.variation-card').remove();
+    updateVariationIndexes();
+  }
+
+  function updateVariationIndexes() {
+    const blocks = document.querySelectorAll('.variation-card');
+    blocks.forEach((block, idx) => {
+      block.dataset.index = idx;
+      block.querySelector('h4').textContent = `Variação #${idx + 1}`;
+      block.querySelectorAll('[name^="variacoes["]').forEach(input => {
+        const property = input.name.match(/\[(\w+)\]$/)[1];
+        input.name = `variacoes[${idx}][${property}]`;
+      });
+    });
+    variationIndex = blocks.length;
+  }
+
+  function previewImages(input, index) {
+    const container = document.getElementById(`preview-${index}`);
+    container.innerHTML = '';
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'image-preview-item';
+        container.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const initialData = <%- JSON.stringify(product.variacoes || []) %>;
+    if (initialData.length > 0) {
+      initialData.forEach(v => addVariationBlock(v));
+    } else {
+      addVariationBlock();
+    }
+    document.getElementById('add-variation-btn').addEventListener('click', () => addVariationBlock());
+  });
+</script>

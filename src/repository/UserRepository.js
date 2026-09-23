@@ -70,7 +70,6 @@ export default class UserRepository extends BaseRepository {
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
-      orderns: [],
       cart: [],
       favorites: [],
     };

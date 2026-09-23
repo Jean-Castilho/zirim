@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import ProductControllers from "../controllers/productControllers.js";
+import { ValidationError } from "../utils/handleResponse.js";
 
 const productControllers = new ProductControllers();
 
@@ -45,15 +46,23 @@ export const validateCartItems = async (items) => {
 
   const productMap = new Map(selectedProducts.map((p) => [p._id.toString(), p]));
 
-  return normalizedItems.map((cartItem) => {
+  return normalizedItems.map((cartItem) => { // Usar 'return' aqui para garantir que o map retorne o array
     const product = productMap.get(cartItem.id);
     
     // Busca a variação correspondente por cor e tamanho para obter o preço correto
     const variation = product.variacoes?.find((v) => {
-      const matchColor = !cartItem.cor || v.cores?.map(c => c.trim()).includes(cartItem.cor);
-      const matchSize = !cartItem.tamanho || v.tamanhos?.map(s => String(s).trim()).includes(cartItem.tamanho);
+      const matchColor = !cartItem.cor || (v.cores && v.cores.map(c => c.trim()).includes(cartItem.cor));
+      const matchSize = !cartItem.tamanho || (v.tamanhos && v.tamanhos.map(s => String(s).trim()).includes(cartItem.tamanho));
       return matchColor && matchSize;
     });
+
+    if (!variation) {
+      throw new ValidationError(`Variação do produto ${product.nome} (Cor: ${cartItem.cor || 'N/A'}, Tamanho: ${cartItem.tamanho || 'N/A'}) não encontrada.`);
+    }
+
+    if (variation.estoque < cartItem.quantity) {
+      throw new ValidationError(`Estoque insuficiente para o produto ${product.nome} (Cor: ${cartItem.cor || 'N/A'}, Tamanho: ${cartItem.tamanho || 'N/A'}). Disponível: ${variation.estoque}, Solicitado: ${cartItem.quantity}.`);
+    }
 
     const preco = variation ? variation.preco : (product.preco || product.variacoes?.[0]?.preco || 0);
     

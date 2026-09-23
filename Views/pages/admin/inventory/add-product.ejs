@@ -12,6 +12,7 @@
 
   <div class="admin-form-wrapper">
     <form action="/products" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
       <!-- Informações Básicas -->
       <h3 class="form-section-title">Informações Básicas</h3>
@@ -19,7 +20,7 @@
       <div class="form-grid">
         <div class="form-group grid-group">
           <label for="name" class="form-label">Nome do Produto *</label>
-          <input type="text" id="name" name="name" required class="form-control">
+          <input type="text" id="name" name="nome" required class="form-control">
         </div>
 
         <div class="form-group grid-group">
@@ -43,8 +44,10 @@
       <!-- Variações -->
       <h3 class="form-section-title">Variações</h3>
       <div id="variations-container"></div>
-      <button type="button" id="add-variation-btn" class="btn btn-secondary" style="margin-bottom: 20px;">Adicionar
-        Variação</button>
+      <button type="button" id="add-variation-btn" class="btn-add-variation">
+        <i class="material-icons">add_circle_outline</i>
+        Adicionar Variação
+      </button>
 
       <!-- Ações -->
       <div class="form-actions">
@@ -60,8 +63,7 @@
   .variation-block {
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
-    padding: var(--espacamento-medio);
-    margin-bottom: var(--espacamento-grande);
+    padding: 20px;
     background-color: var(--cor-fundo-claro);
   }
 
@@ -107,6 +109,29 @@
     height: 80px;
   }
 
+  .btn-add-variation {
+    width: 100%;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    color: #4a5568;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 25px;
+  }
+
+  .btn-add-variation:hover {
+    background-color: #edf2f7;
+    border-color: var(--cor-primaria);
+    color: var(--cor-primaria);
+  }
+
   .preview-image {
     width: 100%;
     height: 100%;
@@ -131,31 +156,31 @@
       </div>
       <div class="form-grid">
         <div class="form-group grid-group">
-          <label for="variations[${variationIndex}][cores]" class="form-label">Cores Disponíveis</label>
-          <input type="text" id="variations[${variationIndex}][cores]" name="variations[${variationIndex}][cores]" class="form-control" placeholder="Ex: Preto, Branco" value="${cores}">
+          <label for="variacoes[${variationIndex}][cores]" class="form-label">Cores Disponíveis</label>
+          <input type="text" id="variacoes[${variationIndex}][cores]" name="variacoes[${variationIndex}][cores]" class="form-control" placeholder="Ex: Preto, Branco" value="${cores}">
           <small class="form-text-muted"></small>
         </div>
 
         <div class="form-group grid-group">
-          <label for="variations[${variationIndex}][sku]" class="form-label">SKU</label>
-          <input type="text" id="variations[${variationIndex}][sku]" name="variations[${variationIndex}][sku]" class="form-control" value="${sku}">
+          <label for="variacoes[${variationIndex}][sku]" class="form-label">SKU</label>
+          <input type="text" id="variacoes[${variationIndex}][sku]" name="variacoes[${variationIndex}][sku]" class="form-control" value="${sku}">
         </div>
         
         <div class="form-group grid-group">
-          <label for="variations[${variationIndex}][tamanhos]" class="form-label">Tamanhos Disponíveis</label>
-          <input type="text" id="variations[${variationIndex}][tamanhos]" name="variations[${variationIndex}][tamanhos]" class="form-control" placeholder="Ex: P, M, G" value="${tamanhos}">
+          <label for="variacoes[${variationIndex}][tamanhos]" class="form-label">Tamanhos Disponíveis</label>
+          <input type="text" id="variacoes[${variationIndex}][tamanhos]" name="variacoes[${variationIndex}][tamanhos]" class="form-control" placeholder="Ex: P, M, G" value="${tamanhos}">
           <small class="form-text-muted"></small>
         </div>
       </div>
       <div class="form-grid" style="margin-bottom: 20px;">
         <div class="form-group grid-group">
-          <label for="variations[${variationIndex}][preco]" class="form-label">Preço (R$) *</label>
-          <input type="number" id="variations[${variationIndex}][preco]" name="variations[${variationIndex}][preco]" step="0.01" min="0" required class="form-control" placeholder="0.00" value="${preco}">
+          <label for="variacoes[${variationIndex}][preco]" class="form-label">Preço (R$) *</label>
+          <input type="number" id="variacoes[${variationIndex}][preco]" name="variacoes[${variationIndex}][preco]" step="0.01" min="0" required class="form-control" placeholder="0.00" value="${preco}">
         </div>
         
         <div class="form-group grid-group">
-          <label for="variations[${variationIndex}][estoque]" class="form-label">Estoque Inicial *</label>
-          <input type="number" id="variations[${variationIndex}][estoque]" name="variations[${variationIndex}][estoque]" min="0" required class="form-control" placeholder="0" value="${estoque}">
+          <label for="variacoes[${variationIndex}][estoque]" class="form-label">Estoque Inicial *</label>
+          <input type="number" id="variacoes[${variationIndex}][estoque]" name="variacoes[${variationIndex}][estoque]" min="0" required class="form-control" placeholder="0" value="${estoque}">
         </div>
       </div>
       <div class="form-group">
@@ -165,14 +190,14 @@
           <div class="image-upload-icon">📸</div>
           <p class="image-upload-title">Clique para selecionar imagens</p>
           <p class="image-upload-subtitle">Até 5 imagens (JPG, PNG, WEBP)</p>
-          <input type="file" id="variationImageFile_${variationIndex}" name="variations[${variationIndex}][imagens]" accept="image/*" multiple style="display: none;" data-variation-index="${variationIndex}" onchange="previewImages(this)">
+          <input type="file" id="variationImageFile_${variationIndex}" name="variacoes[${variationIndex}][imagens]" accept="image/*" multiple style="display: none;" data-variation-index="${variationIndex}" onchange="previewImages(this)">
         <div id="variation-image-preview-${variationIndex}" class="image-preview-container"></div>
 
           </div>
       </div>
       <div class="form-group grid-group checkbox-group">
-        <input type="checkbox" id="variations[${variationIndex}][ativo]" name="variations[${variationIndex}][ativo]" value="true" ${ativo ? 'checked' : ''}>
-        <label for="variations[${variationIndex}][ativo]" class="form-label">Ativo</label>
+        <input type="checkbox" id="variacoes[${variationIndex}][ativo]" name="variacoes[${variationIndex}][ativo]" value="true" ${ativo ? 'checked' : ''}>
+        <label for="variacoes[${variationIndex}][ativo]" class="form-label">Ativo</label>
       </div>
       <hr>
     `;
@@ -194,12 +219,12 @@
       block.dataset.index = newIndex;
       block.querySelector('h4').textContent = `Variação #${newIndex + 1}`;
 
-      // Atualiza name e id de todos os inputs, incluindo o checkbox e os files
-      block.querySelectorAll('[name^="variations["]').forEach(input => {
+      // Atualiza name e id para variacoes
+      block.querySelectorAll('[name^="variations["], [name^="variacoes["]').forEach(input => {
         const oldName = input.name;
         const propertyName = oldName.match(/\[(\w+)\]$/)[1];
-        input.name = `variations[${newIndex}][${propertyName}]`;
-        input.id = propertyName === 'imagens' ? `variationImageFile_${newIndex}` : `variations[${newIndex}][${propertyName}]`;
+        input.name = `variacoes[${newIndex}][${propertyName}]`;
+        input.id = propertyName === 'imagens' ? `variationImageFile_${newIndex}` : `variacoes[${newIndex}][${propertyName}]`;
 
         // Se for o input de arquivo, atualiza o data-attribute e o onclick do parent
         if (propertyName === 'imagens') {

@@ -36,7 +36,7 @@ app.use(session({
     secure: isProd,
     httpOnly: true,
     sameSite: isProd ? 'none' : 'lax',
-    maxAge: 1000 * 60 * 60 * 24,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // Estendido para 7 dias
   }
 }));
 
