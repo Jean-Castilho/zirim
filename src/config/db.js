@@ -46,6 +46,15 @@ export const connectDataBase = async () => {
       console.warn("Aviso ao criar índices de usuários:", err.message);
     }
 
+    // Gerenciamento de índices de pedidos
+    const ordersCollection = db.collection("orders");
+    try {
+      await ordersCollection.createIndex({ "user._id": 1 }, { name: "OrderUserIndex" });
+      console.log("Índices de pedidos configurados com sucesso.");
+    } catch (err) {
+      console.warn("Aviso ao criar índices de pedidos:", err.message);
+    }
+
     // Gerenciamento de índice de texto para busca nativa
     const productsCollection = db.collection("products");
     

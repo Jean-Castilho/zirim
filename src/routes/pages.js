@@ -13,10 +13,13 @@ import {
   Cart,
   VerifyOtp,
   Profile,
+  Users,
   Dashboard,
   Delivery,
+  Logistica,
   Inventory,
   AddProduct,
+  EditProduct,
   Checkout,
 } from "../controllers/pagesControllers.js";
 
@@ -46,9 +49,15 @@ router.get("/checkout/:id", Checkout);
 
 router.get("/profile", Profile);
 router.get("/dashboard", Dashboard);
+
+router.get("/users", generateCsrfToken, Users);
+
 router.get("/delivery", Delivery);
+router.get("/logistica", Logistica);
+
 router.get("/inventory", Inventory);
-router.get("/inventory/add", AddProduct);
+router.get("/inventory/add", generateCsrfToken, AddProduct);
+router.get("/inventory/edit/:id", generateCsrfToken, EditProduct);
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {

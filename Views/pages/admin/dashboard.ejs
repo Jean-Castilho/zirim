@@ -291,19 +291,18 @@
         <div class="stat-card">
             <div class="stat-header">
                 <div class="icon-box success"><i data-lucide="shopping-cart"></i></div>
-                <span class="badge-trend">+8%</span>
             </div>
-            <div class="stat-label">Vendas Mensais</div>
-            <div class="stat-value">R$ 45.280</div>
+            <div class="stat-label">Vendas Mensais (30d)</div>
+            <div class="stat-value">R$ <%= monthlySales.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %></div>
         </div>
 
         <div class="stat-card">
             <div class="stat-header">
                 <div class="icon-box warning"><i data-lucide="truck"></i></div>
-                <span class="badge-trend warning">5 pendentes</span>
+                <span class="badge-trend warning"><%= activeDeliveries %> pendentes</span>
             </div>
             <div class="stat-label">Entregas Ativas</div>
-            <div class="stat-value">24</div>
+            <div class="stat-value"><%= activeDeliveries %></div>
         </div>
 
         <div class="stat-card">
@@ -325,7 +324,7 @@
                     <span>Inventário</span>
                     <i data-lucide="chevron-right"></i>
                 </a>
-                <a href="/delivery" class="nav-item">
+                <a href="/logistica" class="nav-item">
                     <span>Logística</span>
                     <i data-lucide="chevron-right"></i>
                 </a>

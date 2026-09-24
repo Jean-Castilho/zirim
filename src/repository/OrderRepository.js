@@ -31,11 +31,16 @@ export default class OrderRepository extends BaseRepository {
         const valorInteiro = parseFloat(valor).toFixed(2);
         const [firstName, ...lastNameParts] = (userData.name || 'Cliente').split(' ');
         
+        // Define a expiração do PIX para 60 minutos a partir de agora
+        const expirationDate = new Date();
+        expirationDate.setMinutes(expirationDate.getMinutes() + 60);
+
         const payment_data = {
             transaction_amount: parseFloat(valorInteiro),
             description: 'Pagamento PIX - Zirim Store',
-            payment_method_id: 'pix',
-            notification_url: 'https://zirim.onrender.com/orders/webhook',
+            payment_method_id: 'pix', // Always PIX for this function
+            notification_url: process.env.MERCADOPAGO_WEBHOOK_URL || 'https://zirim.onrender.com/orders/webhook', // Use env var for webhook URL
+            date_of_expiration: expirationDate.toISOString(),
             payer: {
                 email: userData.email?.endereco || userData.email || "contato@zirim.com",
                 first_name: firstName,
@@ -96,51 +101,70 @@ export default class OrderRepository extends BaseRepository {
         }
     }
 
+    /**
+     * Atualiza o status do pedido manualmente (ex: cancelamento via API)
+     * @param {string} orderId 
+     * @param {string} mpStatus Status bruto do Mercado Pago (ex: 'cancelled')
+     */
+    async updateOrderStatus(orderId, mpStatus) {
+        const order = await this.findById(orderId);
+        if (!order) {
+            return { error: 'Pedido não encontrado.' };
+        }
+
+        const paymentId = order.payment?.id;
+        if (!paymentId) {
+            return { error: 'Pagamento não associado a este pedido.' };
+        }
+
+        await this.sincronizarStatusPedido(paymentId, mpStatus);
+        return { success: true, status: this.mapStatus(mpStatus) };
+    }
+
     async sincronizarStatusPedido(paymentId, mpStatus) {
-        const order = await this.getCollection().findOne({
+        let order = await this.getCollection().findOne({ // Use let to reassign if needed
             $or: [
                 { "payment.id": paymentId },
                 { "payment.id": Number(paymentId) }
             ]
         });
         if (!order) return;
-        const novoStatus = this.mapStatus(mpStatus);
-        // Evita processamento redundante se o status não mudou
-        if (order.payment && order.payment.status === mpStatus && order.statusInterno === novoStatus) {
-             // Se for aprovado, garantimos que a baixa de estoque foi feita (pode ter falhado antes)
-             if (mpStatus === 'approved') {
-                 await this.executarBaixaEstoque(order);
-             }
-             return;
-        }
-        // 1. Atualiza status do pedido
-        await this.getCollection().updateOne(
-            { _id: order._id },
-            { 
-                $set: { 
-                    "payment.status": mpStatus, 
-                    "statusInterno": novoStatus,
-                    "updatedAt": new Date() 
-                } 
-            }
-        );
-        // 2. Atualiza status no perfil do usuário
-        if (order.user && order.user._id) {
-            const usersCollection = this.db.collection("users");
+        try {
+            const novoStatus = this.mapStatus(mpStatus);
             
-            // Query flexível para ID do usuário (string ou ObjectId)
-            const userQuery = ObjectId.isValid(order.user._id)
-                ? { $or: [{ _id: new ObjectId(order.user._id) }, { _id: String(order.user._id) }] }
-                : { _id: String(order.user._id) };
+            // Evita processamento redundante se o status não mudou
+            const statusInalterado = order.payment?.status === mpStatus && order.statusInterno === novoStatus;
+            if (statusInalterado) {
+                if (mpStatus === 'approved' && !order.inventoryProcessed) {
+                    console.log(`[sincronizarStatusPedido] Re-executando baixa de estoque para pedido ${order._id} (status já aprovado, mas estoque não processado).`);
+                    await this.executarBaixaEstoque(order);
+                }
+                return;
+            }
 
-            await usersCollection.updateOne(
-                { ...userQuery, "orderns._id": order._id },
-                { $set: { "orderns.$.status": novoStatus } }
+            console.log(`[sincronizarStatusPedido] Atualizando status do pedido ${order._id} de ${order.statusInterno} para ${novoStatus} (MP: ${mpStatus}).`);
+
+            // 1. Atualiza status do pedido
+            await this.getCollection().updateOne(
+                { _id: order._id },
+                { 
+                    $set: { 
+                        "payment.status": mpStatus, 
+                        "statusInterno": novoStatus,
+                        "updatedAt": new Date() 
+                    } 
+                }
             );
-        }
-        // 3. Se aprovado, processa baixa de estoque
-        if (mpStatus === 'approved') {
-            await this.executarBaixaEstoque(order);
+
+            // 3. Se aprovado, processa baixa de estoque
+            if (mpStatus === 'approved' && !order.inventoryProcessed) {
+                console.log(`[sincronizarStatusPedido] Executando baixa de estoque para pedido ${order._id}.`);
+                await this.executarBaixaEstoque(order);
+            }
+        } catch (error) {
+            console.error(`[sincronizarStatusPedido] Erro ao sincronizar status do pedido ${order._id} (paymentId: ${paymentId}):`, error);
+            // Dependendo da política de erro, pode-se relançar, registrar em um sistema de monitoramento, etc.
+            throw error; 
         }
     }
 
@@ -153,8 +177,11 @@ export default class OrderRepository extends BaseRepository {
                     _id: new ObjectId(item.id),
                     "variacoes": {
                         $elemMatch: {
-                            cores: item.cor || '',
-                            tamanhos: item.tamanho || ''
+                            // Assumindo que 'cores' e 'tamanhos' nas variações do produto são arrays de strings
+                            // e que item.cor/item.tamanho são strings únicas selecionadas.
+                            cores: { $in: [item.cor] }, 
+                            tamanhos: { $in: [item.tamanho] },
+                            estoque: { $gte: Number(item.quantidade || 0) }
                         }
                     }
                 },
@@ -164,7 +191,20 @@ export default class OrderRepository extends BaseRepository {
             }
         }));
         if (bulkOps.length > 0) {
-            await productsCollection.bulkWrite(bulkOps);
+            const bulkResult = await productsCollection.bulkWrite(bulkOps);
+            
+            if (bulkResult.writeErrors && bulkResult.writeErrors.length > 0) {
+                console.error(`[executarBaixaEstoque] Erros durante bulkWrite para pedido ${order._id}:`, bulkResult.writeErrors);
+                // Considerar como lidar com erros parciais: reverter estoque, marcar pedido como problemático, etc.
+                // Por enquanto, apenas logamos e continuamos para marcar o pedido como processado.
+                // Uma abordagem mais robusta poderia lançar um erro aqui e impedir o inventoryProcessed.
+            }
+
+            // Marca o pedido como processado para evitar múltiplas baixas de estoque
+            await this.getCollection().updateOne(
+                { _id: order._id },
+                { $set: { inventoryProcessed: true } }
+            );
         }
     }
 
@@ -176,6 +216,7 @@ export default class OrderRepository extends BaseRepository {
             }
             const validatedItems = await validateCartItems(req.body.items);
             const totalPrice = validatedItems.reduce((acc, item) => acc + item.preco * Number(item.quantidade), 0);
+
             const paymentResult = await this.gerarPix(totalPrice, user);
 
             if (paymentResult.error) {
@@ -184,37 +225,41 @@ export default class OrderRepository extends BaseRepository {
 
             const payloadOrder = {
                 user: { _id: user._id, phone: user.phone },
-                payment: paymentResult,
                 items: validatedItems,
-                statusInterno: this.mapStatus(paymentResult.status),
-                createdAt: new Date()
+                statusInterno: 'pendente', // Inicia como pendente
+                createdAt: new Date(),
+                inventoryProcessed: false, // Garante que o estoque não foi baixado
+                payment: {} // Objeto de pagamento vazio inicialmente
             };
 
-            const orderCreat = await this.getCollection().insertOne(payloadOrder);
+            const orderInsertResult = await this.getCollection().insertOne(payloadOrder);
+            const orderId = orderInsertResult.insertedId;
 
-            // Atualiza o perfil do usuário vinculando a nova ordem
-            const usersCollection = this.db.collection("users");
-            
-            // Query flexível para ID do usuário (string ou ObjectId)
-            const userQuery = ObjectId.isValid(user._id)
-                ? { $or: [{ _id: new ObjectId(user._id) }, { _id: String(user._id) }] }
-                : { _id: String(user._id) };
+            // 2. Gera o PIX para o pedido recém-criado
+            const paymentResult = await this.gerarPix(totalPrice, user);
 
-            await usersCollection.updateOne(
-                userQuery,
-                { 
-                    $push: { 
-                        orderns: {
-                            _id: orderCreat.insertedId,
-                            status: payloadOrder.statusInterno,
-                            total: totalPrice,
-                            createdAt: payloadOrder.createdAt
-                        }
+            if (paymentResult.error) {
+                // Se o pagamento falhar, atualiza o status do pedido para cancelado/falha e lança erro
+                await this.getCollection().updateOne(
+                    { _id: orderId },
+                    { $set: { statusInterno: 'pagamento_falhou', "payment.error": paymentResult.error, updatedAt: new Date() } }
+                );
+                throw new Error(`Erro ao gerar PIX: ${paymentResult.error}`);
+            }
+
+            // 3. Atualiza o pedido com os detalhes do pagamento e o status inicial do MP
+            await this.getCollection().updateOne(
+                { _id: orderId },
+                {
+                    $set: {
+                        "payment": paymentResult,
+                        "statusInterno": this.mapStatus(paymentResult.status),
+                        "updatedAt": new Date()
                     }
                 }
             );
 
-            return res.redirect(`/checkout/${orderCreat.insertedId.toString()}`);
+            return res.redirect(`/checkout/${orderId.toString()}`);
         } catch (error) {
             console.error('Erro ao criar pedido:', error);
             return res.status(500).send('Erro ao criar pedido: ' + error.message);
@@ -246,7 +291,7 @@ export default class OrderRepository extends BaseRepository {
                 }
             } catch (err) {
                 console.error('Erro ao validar assinatura:', err.message);
-                // Em produção, você pode querer lançar erro ou apenas logar
+                throw err; // Evita o processamento de payloads maliciosos caso a assinatura falhe
             }
         }
 

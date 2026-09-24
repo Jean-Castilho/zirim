@@ -13,7 +13,7 @@ export function createToken(payload) {
   if (!secret) {
     throw new Error("JWT_SECRET não está definido no arquivo .env.");
   }
-  const expiresIn = process.env.JWT_EXPIRATION || "1h";
+  const expiresIn = process.env.JWT_EXPIRATION || "7d";
   return jwt.sign(payload, secret, { expiresIn });
 }
 

@@ -1,0 +1,239 @@
+<style>
+    :root {
+        --bg-main: var(--cor-fundo-site, #f8f9fa);
+        --bg-card: var(--cor-fundo-claro, #ffffff);
+        --border-color: var(--cor-borda, #e9ecef);
+        --text-primary: var(--cor-texto-escuro, #212529);
+        --text-secondary: var(--cor-texto-medio, #495057);
+        --accent-color: var(--cor-secundaria, #e10732);
+        --success: var(--cor-sucesso, #2b8a3e);
+        --warning: var(--cor-alerta, #e67e22);
+        --danger: var(--cor-erro, #c92a2a);
+        --info: #0ea5e9;
+    }
+
+    .logistica-container {
+        padding: 2rem;
+        background-color: var(--bg-main);
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .logistica-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logistica-header h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-card .label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .stat-card.accent { border-left: 4px solid var(--accent-color); }
+    .stat-card.success { border-left: 4px solid var(--success); }
+    .stat-card.warning { border-left: 4px solid var(--warning); }
+    .stat-card.info { border-left: 4px solid var(--info); }
+
+    .orders-panel {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .panel-header h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .orders-table th {
+        background: var(--cor-fundo-neutro, #f8f9fa);
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+
+    .orders-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.875rem;
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-pago { background: rgba(43, 138, 62, 0.1); color: var(--success); }
+    .status-pendente { background: rgba(230, 126, 34, 0.1); color: var(--warning); }
+    .status-cancelado { background: rgba(201, 42, 42, 0.1); color: var(--danger); }
+
+    .btn-action {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        text-decoration: none;
+        color: white;
+        background: var(--accent-color);
+    }
+
+    .btn-action:hover {
+        opacity: 0.9;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-weight: 500;
+        margin-top: 2rem;
+    }
+</style>
+
+<div class="logistica-container">
+    <header class="logistica-header">
+        <div>
+            <h1><%= titulo %></h1>
+            <p style="color: var(--text-secondary);"><%= message %></p>
+        </div>
+        <a href="/delivery" class="btn-action" style="display: flex; align-items: center; gap: 5px; background: var(--info);">
+            <i data-lucide="map"></i> Ver Mapa de Entregas
+        </a>
+    </header>
+
+    <section class="stats-grid">
+        <div class="stat-card info">
+            <span class="label">Total de Pedidos</span>
+            <span class="value"><%= stats.total %></span>
+        </div>
+        <div class="stat-card warning">
+            <span class="label">Aguardando Pagamento</span>
+            <span class="value"><%= stats.pendente %></span>
+        </div>
+        <div class="stat-card success">
+            <span class="label">Pagos / Em Rota</span>
+            <span class="value"><%= stats.pago %></span>
+        </div>
+        <div class="stat-card accent">
+            <span class="label">Faturamento Confirmado</span>
+            <span class="value">R$ <%= stats.faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %></span>
+        </div>
+    </section>
+
+    <main class="orders-panel">
+        <div class="panel-header">
+            <h2>Pedidos Recentes</h2>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                Mostrando <%= orders.length %> registros
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (orders && orders.length > 0) { %>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td style="font-weight: 600;">#<%= order._id.toString().slice(-6).toUpperCase() %></td>
+                                <td><%= order.createdAt ? new Date(order.createdAt).toLocaleDateString('pt-BR') : 'N/A' %></td>
+                                <td>
+                                    <div style="font-weight: 500;"><%= order.user?.name || 'Cliente Zirim' %></div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);"><%= order.user?.phone || '' %></div>
+                                </td>
+                                <td style="font-weight: 600; color: var(--accent-color);">
+                                    R$ <%= (order.payment?.transaction_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-<%= order.statusInterno %>">
+                                        <%= order.statusInterno === 'pago' ? 'Confirmado' : (order.statusInterno === 'cancelado' ? 'Cancelado' : 'Pendente') %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="/checkout/<%= order._id %>" class="btn-action">Ver Detalhes</a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" style="padding: 3rem; text-align: center; color: var(--text-secondary);">
+                                <i data-lucide="package-x" style="width: 40px; height: 40px; display: block; margin: 0 auto 10px;"></i>
+                                Nenhum pedido registrado até o momento.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <a href="/dashboard" class="back-link">
+        <i data-lucide="arrow-left"></i> Voltar ao Painel Geral
+    </a>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+</script>

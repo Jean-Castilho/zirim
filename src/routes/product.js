@@ -25,8 +25,7 @@ router.post("/", upload.any(), async (req, res, next) => {
   try {
     // Controller atualizado espera apenas 'req'
     const productNew = await productController.uploadProductAndImage(req);
-    console.log(productNew);
-    res.redirect("/admin/inventory");
+    res.redirect("/inventory");
   } catch (error) {
     next(error);
   }
