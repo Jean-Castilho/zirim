@@ -103,18 +103,13 @@ export default class UserController {
     }
 
     async forgotPassword(req, res, next) {
-        
         try {
-
             const email = req.body.email?.trim();
-
             if (!email) {
                 throw new ValidationError("O e-mail é obrigatório para recuperar a senha.");
             }
-
             // Logica de negócio: aqui você chamaria o service para enviar o e-mail;
             // Ex: await authService.requestPasswordReset(email);
-            
             // Retorna um fragmento HTML para o HTMX injetar no #feedback-msg;
             return res.status(200).send(`
                 <div class="p-3 mb-4 text-sm text-green-400 bg-green-950/30 rounded-xl border border-green-800/50">
@@ -123,9 +118,7 @@ export default class UserController {
             `);
         
         } catch (error) {
-        
             next(error);
-        
         }
 
     }

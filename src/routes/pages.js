@@ -34,22 +34,21 @@ router.get("/product/:id", ProductDetails);
 
 router.get("/contact", Contact);
 
-router.get("/register", generateCsrfToken, Register);
-router.get("/login", generateCsrfToken, Login);
+router.get("/register", generateCsrfToken, Register); 
+router.get("/login", generateCsrfToken, Login); // verificar otp e-mail
 router.get("/reset-password", generateCsrfToken, ResetPassword);
+
 router.get("/verify-otp", generateCsrfToken, VerifyOtp);
 
+router.get("/favorites", Favorites);
 router.get("/cart", Cart);
 router.get("/checkout/:id", Checkout);
-
-router.get("/favorites", Favorites);
 
 router.get("/profile", Profile);
 router.get("/dashboard", Dashboard);
 router.get("/delivery", Delivery);
 router.get("/inventory", Inventory);
 router.get("/inventory/add", AddProduct);
-router.get("/checkout/:id", Checkout);
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {

@@ -84,14 +84,11 @@ export default class OrderRepository extends BaseRepository {
         if (!id) {
             return { error: 'O campo "id" é obrigatório.' };
         }
-
         try {
             const paymentInfo = await paymentClient.get({ id });
-
             if (paymentInfo) {
                 await this.sincronizarStatusPedido(id, paymentInfo.status);
             }
-
             return paymentInfo;
         } catch (error) {
             console.error('Erro ao consultar PIX:', error);
@@ -106,11 +103,8 @@ export default class OrderRepository extends BaseRepository {
                 { "payment.id": Number(paymentId) }
             ]
         });
-
         if (!order) return;
-
         const novoStatus = this.mapStatus(mpStatus);
-        
         // Evita processamento redundante se o status não mudou
         if (order.payment && order.payment.status === mpStatus && order.statusInterno === novoStatus) {
              // Se for aprovado, garantimos que a baixa de estoque foi feita (pode ter falhado antes)
@@ -119,7 +113,6 @@ export default class OrderRepository extends BaseRepository {
              }
              return;
         }
-
         // 1. Atualiza status do pedido
         await this.getCollection().updateOne(
             { _id: order._id },
@@ -131,7 +124,6 @@ export default class OrderRepository extends BaseRepository {
                 } 
             }
         );
-
         // 2. Atualiza status no perfil do usuário
         if (order.user && order.user._id) {
             const usersCollection = this.db.collection("users");
@@ -146,7 +138,6 @@ export default class OrderRepository extends BaseRepository {
                 { $set: { "orderns.$.status": novoStatus } }
             );
         }
-
         // 3. Se aprovado, processa baixa de estoque
         if (mpStatus === 'approved') {
             await this.executarBaixaEstoque(order);
@@ -172,7 +163,6 @@ export default class OrderRepository extends BaseRepository {
                 }
             }
         }));
-
         if (bulkOps.length > 0) {
             await productsCollection.bulkWrite(bulkOps);
         }
@@ -184,10 +174,8 @@ export default class OrderRepository extends BaseRepository {
             if (!user) {
                 return res.status(401).send('Usuário não autenticado');
             }
-
             const validatedItems = await validateCartItems(req.body.items);
             const totalPrice = validatedItems.reduce((acc, item) => acc + item.preco * Number(item.quantidade), 0);
-
             const paymentResult = await this.gerarPix(totalPrice, user);
 
             if (paymentResult.error) {
@@ -275,5 +263,4 @@ export default class OrderRepository extends BaseRepository {
 
         return { message: 'Evento ignorado' };
     }
-
 }

@@ -23,19 +23,15 @@ export default class ProductService {
             },
             sort: { _id: -1 }
         };
-
         if (q) {
             filter.$text = { $search: q };
             options.projection.score = { $meta: "textScore" };
             options.sort = { score: { $meta: "textScore" } };
         }
-
         if (category && category !== 'Todos') {
             filter.categoria = category;
         }
-
         return await this.repository.findAll(filter, options);
     }
-
     // Métodos de imagem e CRUD delegados ao repositório ou com lógica adicional aqui
 }

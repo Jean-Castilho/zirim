@@ -9,8 +9,6 @@ router.post('/', async (req, res) => {
 
   const pagamento = await orderController.gerarPix(valor);
 
-  console.log(pagamento);
-
   if (pagamento.error || pagamento.mensagem) {
     return res.render('pagamento-result', {
       title: 'Erro no Pagamento',

@@ -173,6 +173,5 @@ export default class ProductRepository extends BaseRepository {
 
   getImageStream(filename) {
     return this.bucket.openDownloadStreamByName(filename);
-
   }
 }
