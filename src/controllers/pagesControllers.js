@@ -13,7 +13,7 @@ const orderRepository = new OrderRepository();
 export const Home = async (req, res, next) => {
   try {
     const products = await productService.listProductsForHome();
-    
+
     renderPage(req, res, "../pages/public/home", {
       titulo: "Zirim - Moda e Calçados",
       message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
@@ -31,7 +31,7 @@ export const Products = async (req, res, next) => {
       titulo: "Produtos",
       message: "Confira nossos produtos!",
       products: products,
-    });       
+    });
   } catch (error) {
     next(error);
   }
@@ -51,7 +51,7 @@ export const ProductDetails = async (req, res, next) => {
 
     // Verificamos apenas a existência do produto.
     const product = await productService.repository.findById(id, { projection: { _id: 1 } });
-    
+
     if (!product) {
       return res.status(404).render("../pages/partials/Error", {
         titulo: "Produto não encontrado",
@@ -59,7 +59,7 @@ export const ProductDetails = async (req, res, next) => {
         errorMessage: "O produto que você está procurando não existe ou foi removido.",
       });
     }
-         
+
     renderPage(req, res, "../pages/public/product-details", {
       titulo: "Carregando Produto...",
       product: { _id: product._id },
@@ -108,19 +108,19 @@ export const ResetPassword = (req, res) => {
 export const VerifyOtp = async (req, res, next) => {
   try {
     const userEmail = req.session?.user?.email?.endereco;
-    
+
     if (!userEmail) {
       return res.redirect('/login');
     }
 
     const normalized = String(userEmail).trim().toLowerCase();
-    
+
     renderPage(req, res, "../pages/auth/verify-otp", {
       titulo: "Verificar E-mail",
       message: `Enviamos um código de verificação para ${normalized}.`,
       email: normalized
     });
-    
+
     sendEmailOtp(normalized).catch(err => {
       console.error("Falha ao enviar e-mail de OTP em segundo plano:", err);
     });
@@ -155,43 +155,43 @@ export const Profile = async (req, res, next) => {
     }
 
     const userProfile = await userService.repository.findById(userId);
-    
+
     // Busca pedidos diretamente da coleção orders como fonte da verdade definitiva
     const orders = await orderRepository.collection.find({
-        $or: [
-            { "user._id": userId },
-            { "user._id": String(userId) },
-            { "user._id": new ObjectId(userId) }
-        ]
+      $or: [
+        { "user._id": userId },
+        { "user._id": String(userId) },
+        { "user._id": new ObjectId(userId) }
+      ]
     }).sort({ createdAt: -1 }).toArray();
-    
+
     // Sincroniza o array de pedidos do objeto user para compatibilidade com o template
     userProfile.orderns = orders.map(o => {
-        let status = o.statusInterno || 'pendente';
+      let status = o.statusInterno || 'pendente';
 
-        // Verifica se o pedido pendente expirou (mais de 60 minutos desde a criação)
-        if (status === 'pendente' && o.createdAt) {
-            const sessentaMinutos = 60 * 60 * 1000;
-            if (new Date() - new Date(o.createdAt) > sessentaMinutos) {
-                status = 'cancelado';
-                // Atualiza o banco de dados em background para manter a performance da resposta
-                orderRepository.collection.updateOne(
-                    { _id: o._id },
-                    { $set: { statusInterno: 'cancelado', updatedAt: new Date() } }
-                ).catch(err => console.error(`Erro ao cancelar pedido expirado ${o._id}:`, err));
-            }
+      // Verifica se o pedido pendente expirou (mais de 60 minutos desde a criação)
+      if (status === 'pendente' && o.createdAt) {
+        const sessentaMinutos = 60 * 60 * 1000;
+        if (new Date() - new Date(o.createdAt) > sessentaMinutos) {
+          status = 'cancelado';
+          // Atualiza o banco de dados em background para manter a performance da resposta
+          orderRepository.collection.updateOne(
+            { _id: o._id },
+            { $set: { statusInterno: 'cancelado', updatedAt: new Date() } }
+          ).catch(err => console.error(`Erro ao cancelar pedido expirado ${o._id}:`, err));
         }
+      }
 
-        return {
-            _id: o._id,
-            status: status,
-            total: o.payment?.transaction_amount || 0,
-            createdAt: o.createdAt
-        };
+      return {
+        _id: o._id,
+        status: status,
+        total: o.payment?.transaction_amount || 0,
+        createdAt: o.createdAt
+      };
     });
 
     res.locals.user = userProfile;
-    
+
     renderPage(req, res, "../pages/auth/profile", {
       titulo: "Meu Perfil",
       message: "Gerencie suas informações de perfil!",
@@ -270,6 +270,7 @@ export const Dashboard = async (req, res, next) => {
   }
 };
 
+
 export const Delivery = async (req, res, next) => {
   try {
     // Busca pedidos que não foram cancelados nem concluídos (ex: pendentes e pagos)
@@ -295,7 +296,7 @@ export const Delivery = async (req, res, next) => {
 export const Inventory = async (req, res, next) => {
   try {
     const products = await productService.repository.findAll();
-         
+
     renderPage(req, res, "../pages/admin/inventory/tabela-product", {
       titulo: "Gerenciamento de Inventário",
       message: "Controle de estoque e produtos",
@@ -309,7 +310,7 @@ export const Inventory = async (req, res, next) => {
 export const Logistica = async (req, res, next) => {
   try {
     const allOrders = await orderRepository.collection.find({}).sort({ createdAt: -1 }).toArray();
-    
+
     const stats = {
       total: allOrders.length,
       pendente: allOrders.filter(o => o.statusInterno === 'pendente').length,
@@ -368,7 +369,7 @@ export const EditProduct = async (req, res, next) => {
     }
 
     const product = await productService.repository.findById(id);
-    
+
     if (!product) return next(new NotFoundError("Produto não encontrado.", id));
 
     renderPage(req, res, "../pages/admin/inventory/edit-product", {
@@ -379,4 +380,13 @@ export const EditProduct = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const EditPageHome = async (req, res) => {
+
+  renderPage(req, res, "../pages/admin/inventory/edit-home", {
+    titulo: "Adicionar Produto",
+    message: "Cadastre um novo produto no inventário",
+  });
+
 };

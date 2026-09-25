@@ -21,6 +21,7 @@ import {
   AddProduct,
   EditProduct,
   Checkout,
+  EditPageHome
 } from "../controllers/pagesControllers.js";
 
 import ProductController from "../controllers/productControllers.js";
@@ -49,6 +50,7 @@ router.get("/checkout/:id", Checkout);
 
 router.get("/profile", Profile);
 router.get("/dashboard", Dashboard);
+router.get("/edit/home", EditPageHome);
 
 router.get("/users", generateCsrfToken, Users);
 

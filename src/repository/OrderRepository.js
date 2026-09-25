@@ -217,12 +217,6 @@ export default class OrderRepository extends BaseRepository {
             const validatedItems = await validateCartItems(req.body.items);
             const totalPrice = validatedItems.reduce((acc, item) => acc + item.preco * Number(item.quantidade), 0);
 
-            const paymentResult = await this.gerarPix(totalPrice, user);
-
-            if (paymentResult.error) {
-                throw new Error(paymentResult.error);
-            }
-
             const payloadOrder = {
                 user: { _id: user._id, phone: user.phone },
                 items: validatedItems,
