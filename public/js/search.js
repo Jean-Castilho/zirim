@@ -3,74 +3,73 @@
  * Melhora a UX e reduz carga no servidor.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+let debounceTimer;
+
+const performSearch = (searchInput) => {
+    if (!searchInput) return;
+
+    const searchQuery = searchInput.value.trim();
+    const url = `/products?q=${encodeURIComponent(searchQuery)}`;
+
+    console.log(`[Search] Iniciando busca para: "${searchQuery}"`);
+
+    const grid = document.querySelector('.products-grid');
+    if (grid) grid.style.opacity = '0.5';
+
+    fetch(url, {
+        headers: { 'hx-request': 'true' }
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newGrid = doc.querySelector('.products-grid');
+
+        if (newGrid && grid) {
+            grid.innerHTML = newGrid.innerHTML;
+            document.body.dispatchEvent(new CustomEvent('htmx:afterSwap', { 
+                detail: { target: grid } 
+            }));
+        }
+    })
+    .catch(error => console.error('[Search] Erro na busca:', error))
+    .finally(() => {
+        if (grid) grid.style.opacity = '1';
+    });
+};
+
+const initializeSearch = () => {
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
-    let debounceTimer;
-
-    // Função que dispara a busca (reutilizando a lógica global se disponível ou implementando a necessária)
-    const performSearch = () => {
-        if (!searchInput) return;
-        
-        const searchQuery = searchInput.value.trim();
-        const url = `/products?q=${encodeURIComponent(searchQuery)}`;
-        
-        // Dispara o evento de atualização (o products.ejs escuta e processa o fetch)
-        // Se a função updateProducts estiver no escopo global ou puder ser disparada via evento:
-        console.log(`[Search] Iniciando busca para: "${searchQuery}"`);
-        
-        // Tentamos encontrar o container de produtos para dar feedback visual
-        const grid = document.querySelector('.products-grid');
-        if (grid) grid.style.opacity = '0.5';
-
-        // Fazemos o fetch similar ao que está no EJS, mas centralizado
-        fetch(url, {
-            headers: { 'hx-request': 'true' }
-        })
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newGrid = doc.querySelector('.products-grid');
-            
-            if (newGrid && grid) {
-                grid.innerHTML = newGrid.innerHTML;
-                // Dispara evento para outros scripts (ex: favorited.js) saberem que o DOM mudou
-                document.body.dispatchEvent(new CustomEvent('htmx:afterSwap', { 
-                    detail: { target: grid } 
-                }));
-            }
-        })
-        .catch(error => console.error('[Search] Erro na busca:', error))
-        .finally(() => {
-            if (grid) grid.style.opacity = '1';
-        });
-    };
 
     if (searchInput) {
-        // Evento de digitação com Debounce de 500ms
+        if (searchInput.dataset.searchInitialized) return;
+        searchInput.dataset.searchInitialized = 'true';
+
         searchInput.addEventListener('input', () => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                performSearch();
+                performSearch(searchInput);
             }, 500);
         });
 
-        // Evento de tecla Enter (imediato)
         searchInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 clearTimeout(debounceTimer);
-                performSearch();
+                performSearch(searchInput);
             }
         });
     }
 
-    if (searchButton) {
-        // Evento de clique no botão (imediato)
+    if (searchButton && !searchButton.dataset.searchInitialized) {
+        searchButton.dataset.searchInitialized = 'true';
         searchButton.addEventListener('click', () => {
             clearTimeout(debounceTimer);
-            performSearch();
+            performSearch(searchInput);
         });
     }
-});
+};
+
+document.addEventListener('DOMContentLoaded', initializeSearch);
+document.body.addEventListener('htmx:afterSwap', initializeSearch);

@@ -2,6 +2,7 @@ import { sendEmailOtp } from "../services/contactService.js";
 import { renderPage } from "../utils/handleResponse.js";
 import ProductService from "../services/ProductService.js";
 import UserService from "../services/UserService.js";
+
 import { NotFoundError } from "../utils/handleResponse.js";
 import OrderRepository from "../repository/OrderRepository.js";
 import { ObjectId } from "mongodb";
@@ -13,7 +14,7 @@ const orderRepository = new OrderRepository();
 export const Home = async (req, res, next) => {
   try {
     const products = await productService.listProductsForHome();
-
+    
     renderPage(req, res, "../pages/public/home", {
       titulo: "Zirim - Moda e Calçados",
       message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
@@ -382,11 +383,27 @@ export const EditProduct = async (req, res, next) => {
   }
 };
 
-export const EditPageHome = async (req, res) => {
+export const EditPageHome = async (req, res, next) => {
+  try {
+    const db = DataBase();
+    const homePageData = await db.collection("settings").findOne({ _id: "homepage" });
+    const banner = homePageData?.banner || {
+      tag: "COLEÇÃO EXCLUSIVA",
+      title: "Estilo que Define Você.",
+      subtitle: "Explore os novos calçados e roupas com descontos exclusivos de temporada.",
+      imageUrl: "/images/default-banner.jpg",
+      btnText: "Comprar Agora",
+      btnLink: "products",
+      visible: true,
+      alignment: "left"
+    };
 
-  renderPage(req, res, "../pages/admin/inventory/edit-home", {
-    titulo: "Adicionar Produto",
-    message: "Cadastre um novo produto no inventário",
-  });
-
+    renderPage(req, res, "../pages/admin/edit-home", {
+      titulo: "Editar Página Inicial",
+      message: "Personalize o banner principal e os destaques em tempo real.",
+      banner,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

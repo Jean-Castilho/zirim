@@ -8,7 +8,8 @@
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
-<style>
+
+    <style>
         #notification-container {
             position: fixed;
             top: 50px;
@@ -42,20 +43,15 @@
             border-left: 5px solid #D32F2F;
         }
     </style>
+
 </head>
 
 <body hx-boost="true" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">
-
     <div id="notification-container"></div>
-
-    <%- include('../pages/partials/header') %>
-
+        <%- include('../pages/partials/header') %>
     <main id="main-content">
         <%- include(page) %>
     </main>
-
 </body>
-
 <script src="/js/main.js"></script>
-
 </html>

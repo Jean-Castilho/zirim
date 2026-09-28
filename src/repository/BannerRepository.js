@@ -1,11 +1,9 @@
-
 import BaseRepository from "./BaseRepository.js";
-
 
 export default class OrderRepository extends BaseRepository {
   
     constructor() {
-        super("orders");
+        super("banners");
     }
 
     get db() {

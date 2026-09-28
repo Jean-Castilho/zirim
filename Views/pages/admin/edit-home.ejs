@@ -1,0 +1,366 @@
+<style>
+    :root {
+        /* Mapeamento para a paleta clara padrão do arquivo variables.css */
+        --bg-main: var(--cor-fundo-site, #f8f9fa);
+        --bg-card: var(--cor-fundo-claro, #ffffff);
+        --bg-card-hover: var(--cor-fundo-neutro, #f1f3f5);
+        --border-color: var(--cor-borda, #e9ecef);
+        --text-primary: var(--cor-texto-escuro, #212529);
+        --text-secondary: var(--cor-texto-medio, #495057);
+        
+        /* Cores de Identidade da Zirim (Vermelho Cereja e Destaque) */
+        --accent-color: var(--cor-secundaria, #e10732);
+        --accent-hover: var(--cor-destaque, #cd1d0d);
+        
+        /* Cores Semânticas */
+        --success: var(--cor-sucesso, #2b8a3e);
+        --warning: var(--cor-alerta, #e67e22);
+        --danger: var(--cor-erro, #c92a2a);
+
+        /* Variáveis de sombra e raio de borda */
+        --sombra-suave: 0 2px 4px rgba(0,0,0,0.05);
+        --raio-padrao: 8px;
+        --raio-grande: 16px;
+        --fonte-principal: 'Inter', sans-serif;
+        --fonte-titulo: sans-serif;
+    }
+
+    .edit-home-container {
+        min-height: 100vh;
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        padding: 1rem;
+        font-family: var(--fonte-principal);
+    }
+
+    .edit-home-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .edit-home-header h1 {
+        color: var(--text-primary);
+        font-family: var(--fonte-titulo);
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        margin: 0;
+    }
+
+    .edit-home-header p {
+        color: var(--text-secondary);
+        margin: 0.25rem 0 0 0;
+    }
+
+    .panel {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--raio-grande);
+        overflow: hidden;
+        box-shadow: var(--sombra-suave);
+        margin-bottom: 2rem;
+    }
+
+    .panel-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .panel-header h2 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .panel-body {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--raio-padrao);
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-group input[type="file"] {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px dashed var(--border-color);
+        border-radius: var(--raio-padrao);
+        background-color: var(--bg-card-hover);
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-group input[type="file"]::file-selector-button {
+        background-color: var(--accent-color);
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        margin-right: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .form-group input[type="file"]::file-selector-button:hover {
+        background-color: var(--accent-hover);
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 225, 7, 50), 0.2);
+        outline: none;
+    }
+
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* Réplica do layout original .hero do public/home.ejs */
+    .hero-preview {
+        background-size: cover;
+        background-position: center;
+        color: white;
+        text-align: center;
+        padding: 80px 20px;
+        border-radius: var(--raio-padrao);
+        position: relative;
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.45);
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+
+    .hero-preview.no-image {
+        background-color: #2b2b2b;
+        border: 2px dashed var(--border-color);
+        box-shadow: none;
+    }
+
+    .hero-preview h1 {
+        font-size: 2.5rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+        margin: 0;
+        color: #ffffff;
+    }
+
+    .hero-preview p {
+        font-size: 1.15rem;
+        margin-top: 10px;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+        color: #f1f3f5;
+        max-width: 600px;
+    }
+
+    .hero-preview .btn {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #D2042D;
+        color: white;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: background-color 0.2s;
+    }
+
+    .preview-warning {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.75);
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--raio-padrao);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: #e67e22;
+        border: 1px solid rgba(230, 126, 34, 0.3);
+    }
+
+    .btn-submit {
+        background-color: var(--accent-color);
+        color: var(--cor-fundo-claro, #ffffff);
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: var(--raio-padrao);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-submit:hover {
+        background-color: var(--accent-hover);
+        box-shadow: var(--sombra-suave);
+    }
+
+    /* Media Queries */
+    @media (min-width: 500px) {
+        .edit-home-container {
+            padding: 1.5rem;
+        }
+        .edit-home-header {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+
+    @media (min-width: 751px) {
+        .edit-home-container {
+            padding: 2rem;
+        }
+        .edit-home-header h1 {
+            font-size: 1.875rem;
+        }
+    }
+</style>
+
+<div class="edit-home-container">
+    <header class="edit-home-header">
+        <div class="header-info">
+            <h1><%= titulo %></h1>
+            <p><%= message %></p>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="panel">
+            <div class="panel-header">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.5rem;">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    Editar Banner Principal
+                </h2>
+            </div>
+            <div class="panel-body">
+                <form action="/admin/home/banner" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="form-group">
+                        <label for="bannerTitle">Título do Banner</label>
+                        <input type="text" id="bannerTitle" name="title" placeholder="Título chamativo para o banner" value="<%= (locals.homePageData && locals.homePageData.banner) ? locals.homePageData.banner.title || '' : '' %>">
+                    </div>
+                    <div class="form-group">
+                        <label for="bannerDescription">Descrição do Banner</label>
+                        <textarea id="bannerDescription" name="description" placeholder="Uma breve descrição para o banner"><%= (locals.homePageData && locals.homePageData.banner) ? locals.homePageData.banner.description || '' : '' %></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="bannerImage">Imagem do Banner</label>
+                        <input type="file" id="bannerImage" name="bannerImage" accept="image/*">
+                        <% 
+                          let hasImage = (locals.homePageData && locals.homePageData.banner && locals.homePageData.banner.imageUrl);
+                          let bgUrl = hasImage ? '/image/' + locals.homePageData.banner.imageUrl : '';
+                          let bannerTitleVal = (locals.homePageData && locals.homePageData.banner) ? locals.homePageData.banner.title || '' : '';
+                          let bannerDescVal = (locals.homePageData && locals.homePageData.banner) ? locals.homePageData.banner.description || '' : '';
+                        %>
+                        <div id="bannerHeroPreview" class="hero-preview <%= hasImage ? '' : 'no-image' %>" style="<%= hasImage ? 'background-image: url(' + bgUrl + ');' : '' %>">
+                            <div id="noImageWarning" class="preview-warning" style="<%= hasImage ? 'display: none;' : 'display: flex;' %>">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning, #e67e22)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                                    <line x1="12" y1="9" x2="12" y2="13"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                <span>Sem imagem de fundo</span>
+                            </div>
+                            
+                            <h1 id="previewTitle"><%= bannerTitleVal || 'Título do Banner' %></h1>
+                            <p id="previewDescription"><%= bannerDescVal || 'Descrição do Banner' %></p>
+                            <a href="/products" class="btn" onclick="event.preventDefault()">Ver Coleção</a>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">Salvar Alterações</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Adicionar mais seções de edição aqui, como categorias em destaque, etc. -->
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const bannerTitleInput = document.getElementById('bannerTitle');
+        const bannerDescriptionInput = document.getElementById('bannerDescription');
+        const bannerImageInput = document.getElementById('bannerImage');
+        
+        const previewTitle = document.getElementById('previewTitle');
+        const previewDescription = document.getElementById('previewDescription');
+        const bannerHeroPreview = document.getElementById('bannerHeroPreview');
+        const noImageWarning = document.getElementById('noImageWarning');
+
+        // Listener para atualização instantânea de títulos no design real
+        if (bannerTitleInput && previewTitle) {
+            bannerTitleInput.addEventListener('input', (e) => {
+                previewTitle.textContent = e.target.value.trim() || 'Título do Banner';
+            });
+        }
+
+        // Listener para atualização instantânea de descrições no design real
+        if (bannerDescriptionInput && previewDescription) {
+            bannerDescriptionInput.addEventListener('input', (e) => {
+                previewDescription.textContent = e.target.value.trim() || 'Descrição do Banner';
+            });
+        }
+
+        if (bannerImageInput && bannerHeroPreview) {
+            bannerImageInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        bannerHeroPreview.style.backgroundImage = `url('${e.target.result}')`;
+                        bannerHeroPreview.classList.remove('no-image');
+                        if (noImageWarning) noImageWarning.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    bannerHeroPreview.style.backgroundImage = '';
+                    bannerHeroPreview.classList.add('no-image');
+                    if (noImageWarning) noImageWarning.style.display = 'flex';
+                }
+            });
+        }
+    });
+</script>

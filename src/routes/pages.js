@@ -2,7 +2,7 @@ import express from "express";
 import { generateCsrfToken } from "../middleware/authMiddleware.js";
 
 import {
-  Home, 
+  Home,
   Products,
   ProductDetails, 
   Register, 
@@ -33,6 +33,7 @@ const router = express.Router();
 router.get('/image/:filename', (req, res) => productController.getImage(req, res));
 router.get("/", Home);
 
+
 router.get("/products", Products);
 router.get("/product/:id", ProductDetails);
 
@@ -50,7 +51,7 @@ router.get("/checkout/:id", Checkout);
 
 router.get("/profile", Profile);
 router.get("/dashboard", Dashboard);
-router.get("/edit/home", EditPageHome);
+router.get("/edit/home", generateCsrfToken, EditPageHome);
 
 router.get("/users", generateCsrfToken, Users);
 

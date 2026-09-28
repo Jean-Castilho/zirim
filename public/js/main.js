@@ -38,3 +38,28 @@ function showNotification(message, type = 'success') {
         }, { once: true });
     }, 3000);
 }
+
+// Mantém as classes ativas do nav-menu atualizadas dinamicamente nas transições do HTMX
+function updateActiveNavigation() {
+    const currentPath = window.location.pathname;
+    // Seleciona todos os links do menu principal e submenus de navegação
+    const navLinks = document.querySelectorAll('header nav a, .nav-menu a, .filter-links a');
+
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href) return;
+
+        // Verifica correspondência exata de rota ou sub-rotas (ex: /products)
+        const isExactMatch = currentPath === href;
+        const isSubRoute = href !== '/' && currentPath.startsWith(href);
+
+        if (isExactMatch || isSubRoute) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', updateActiveNavigation);
+document.body.addEventListener('htmx:afterSwap', updateActiveNavigation);

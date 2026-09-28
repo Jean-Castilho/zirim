@@ -69,6 +69,27 @@
         background-color: var(--accent-hover);
     }
 
+    .btn-secondary {
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 0.6rem 1.2rem;
+        border-radius: var(--raio-padrao, 8px);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        box-shadow: var(--sombra-suave, 0 2px 4px rgba(0,0,0,0.05));
+    }
+
+    .btn-secondary:hover {
+        background-color: var(--bg-card-hover);
+        border-color: var(--text-secondary);
+    }
+
     .stats-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -273,18 +294,16 @@
             <p><%= message %></p>
         </div>
 
-
-        <div>
-            
-        <a href="/inventory/add" class="btn-primary">
-            <i data-lucide="plus-circle"></i>
-            Novo Produto
-        </a>
-        <a href="/edit/home" class="btn-primary">
-            <i data-lucide="">homePage</i>
-        </a>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="/inventory/add" class="btn-primary">
+                <i data-lucide="plus-circle"></i>
+                Novo Produto
+            </a>
+            <a href="/edit/home" class="btn-secondary">
+                <i data-lucide="home"></i>
+                Editar Home
+            </a>
         </div>
-
     </header>
 
     <section class="stats-grid">
