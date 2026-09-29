@@ -224,12 +224,40 @@
         border-radius: var(--raio-padrao);
         font-weight: 600;
         cursor: pointer;
-        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     }
 
-    .btn-submit:hover {
+    .btn-submit:hover:not(:disabled) {
         background-color: var(--accent-hover);
         box-shadow: var(--sombra-suave);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .btn-spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .htmx-request.btn-spinner,
+    .htmx-request .btn-spinner {
+        display: inline-block;
     }
 
     /* Media Queries */
@@ -275,24 +303,52 @@
                 </h2>
             </div>
             <div class="panel-body">
-                <form action="/admin/home/banner" method="POST" enctype="multipart/form-data">
+                <form 
+                    id="formUpdateBanner"
+                    action="/updateBannerHome" 
+                    method="POST" 
+                    enctype="multipart/form-data"
+                    hx-post="/updateBannerHome"
+                    hx-encoding="multipart/form-data"
+                    hx-swap="none"
+                    hx-disabled-elt="find .btn-submit"
+                    hx-indicator="#bannerSpinner"
+                >
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="form-group">
                         <label for="bannerTitle">Título do Banner</label>
-                        <input type="text" id="bannerTitle" name="title" placeholder="Título chamativo para o banner" value="<%= (locals.homePageData && locals.homePageData.banner) ? locals.homePageData.banner.title || '' : '' %>">
+                        <input type="text" id="bannerTitle" name="title" placeholder="Título chamativo para o banner" value="<%= locals.homePageData?.banner?.title || '' %>">
                     </div>
                     <div class="form-group">
                         <label for="bannerDescription">Descrição do Banner</label>
-                        <textarea id="bannerDescription" name="description" placeholder="Uma breve descrição para o banner"><%= (locals.homePageData && locals.homePageData.banner) ? locals.homePageData.banner.description || '' : '' %></textarea>
+                        <textarea id="bannerDescription" name="description" placeholder="Uma breve descrição para o banner"><%= locals.homePageData?.banner?.description || '' %></textarea>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <% 
+                          const isButtonEnabled = locals.homePageData?.banner?.exibirBotao !== false;
+                        %>
+                        <input type="checkbox" id="bannerExibirBotao" name="exibirBotao" value="true" <%= isButtonEnabled ? 'checked' : '' %>>
+                        <label for="bannerExibirBotao" style="margin-bottom: 0; cursor: pointer; font-weight: 500;">
+                            Habilitar botão principal no banner
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="bannerButtonText">Texto do Botão</label>
+                        <input type="text" id="bannerButtonText" name="textoBotao" placeholder="Ex: Ver Coleção" value="<%= locals.homePageData?.banner?.textoBotao || '' %>">
+                    </div>
+                    <div class="form-group">
+                        <label for="bannerLink">Link do Botão (URL de Destino)</label>
+                        <input type="text" id="bannerLink" name="link" placeholder="Ex: /products ou /products?category=calcados" value="<%= locals.homePageData?.banner?.link || '' %>">
                     </div>
                     <div class="form-group">
                         <label for="bannerImage">Imagem do Banner</label>
                         <input type="file" id="bannerImage" name="bannerImage" accept="image/*">
                         <% 
-                          let hasImage = (locals.homePageData && locals.homePageData.banner && locals.homePageData.banner.imageUrl);
+                          let hasImage = Boolean(locals.homePageData?.banner?.imageUrl);
                           let bgUrl = hasImage ? '/image/' + locals.homePageData.banner.imageUrl : '';
-                          let bannerTitleVal = (locals.homePageData && locals.homePageData.banner) ? locals.homePageData.banner.title || '' : '';
-                          let bannerDescVal = (locals.homePageData && locals.homePageData.banner) ? locals.homePageData.banner.description || '' : '';
+                          let bannerTitleVal = locals.homePageData?.banner?.title || '';
+                          let bannerDescVal = locals.homePageData?.banner?.description || '';
+                          let bannerBtnVal = locals.homePageData?.banner?.textoBotao || 'Ver Coleção';
                         %>
                         <div id="bannerHeroPreview" class="hero-preview <%= hasImage ? '' : 'no-image' %>" style="<%= hasImage ? 'background-image: url(' + bgUrl + ');' : '' %>">
                             <div id="noImageWarning" class="preview-warning" style="<%= hasImage ? 'display: none;' : 'display: flex;' %>">
@@ -304,12 +360,15 @@
                                 <span>Sem imagem de fundo</span>
                             </div>
                             
-                            <h1 id="previewTitle"><%= bannerTitleVal || 'Título do Banner' %></h1>
-                            <p id="previewDescription"><%= bannerDescVal || 'Descrição do Banner' %></p>
-                            <a href="/products" class="btn" onclick="event.preventDefault()">Ver Coleção</a>
+                            <h1 id="previewTitle"><%= bannerTitleVal %></h1>
+                            <p id="previewDescription"><%= bannerDescVal %></p>
+                            <a href="/products" id="previewButton" class="btn" onclick="event.preventDefault()" style="<%= isButtonEnabled ? '' : 'display: none;' %>"><%= bannerBtnVal %></a>
                         </div>
                     </div>
-                    <button type="submit" class="btn-submit">Salvar Alterações</button>
+                    <button type="submit" class="btn-submit">
+                        <span class="btn-text">Salvar Alterações</span>
+                        <span id="bannerSpinner" class="btn-spinner" aria-hidden="true"></span>
+                    </button>
                 </form>
             </div>
         </div>
@@ -323,24 +382,41 @@
     document.addEventListener('DOMContentLoaded', () => {
         const bannerTitleInput = document.getElementById('bannerTitle');
         const bannerDescriptionInput = document.getElementById('bannerDescription');
+        const bannerExibirBotaoInput = document.getElementById('bannerExibirBotao');
+        const bannerButtonTextInput = document.getElementById('bannerButtonText');
         const bannerImageInput = document.getElementById('bannerImage');
         
         const previewTitle = document.getElementById('previewTitle');
         const previewDescription = document.getElementById('previewDescription');
+        const previewButton = document.getElementById('previewButton');
         const bannerHeroPreview = document.getElementById('bannerHeroPreview');
         const noImageWarning = document.getElementById('noImageWarning');
 
         // Listener para atualização instantânea de títulos no design real
         if (bannerTitleInput && previewTitle) {
             bannerTitleInput.addEventListener('input', (e) => {
-                previewTitle.textContent = e.target.value.trim() || 'Título do Banner';
+                previewTitle.textContent = e.target.value.trim() || '';
             });
         }
 
         // Listener para atualização instantânea de descrições no design real
         if (bannerDescriptionInput && previewDescription) {
             bannerDescriptionInput.addEventListener('input', (e) => {
-                previewDescription.textContent = e.target.value.trim() || 'Descrição do Banner';
+                previewDescription.textContent = e.target.value.trim() || '';
+            });
+        }
+
+        // Alterna visibilidade do botão no preview ao marcar/desmarcar o checkbox
+        if (bannerExibirBotaoInput && previewButton) {
+            bannerExibirBotaoInput.addEventListener('change', (e) => {
+                previewButton.style.display = e.target.checked ? 'inline-block' : 'none';
+            });
+        }
+
+        // Listener para atualização instantânea do texto do botão
+        if (bannerButtonTextInput && previewButton) {
+            bannerButtonTextInput.addEventListener('input', (e) => {
+                previewButton.textContent = e.target.value.trim() || 'Ver Coleção';
             });
         }
 
@@ -362,5 +438,71 @@
                 }
             });
         }
+
+        // Integração com evento HX-Trigger para executar showNotification padrão
+        document.body.addEventListener('showNotification', function(e) {
+            const data = e.detail?.value || e.detail;
+            if (typeof showNotification === 'function' && data) {
+                showNotification(data.message || data, data.type || 'success');
+            }
+            // Limpa o arquivo selecionado após persistência concluída
+            if (bannerImageInput) {
+                bannerImageInput.value = '';
+            }
+        });
+
+        // Fallback resiliente: impede recarregamento mesmo se o HTMX não estiver ativo
+        const formUpdateBanner = document.getElementById('formUpdateBanner');
+        if (formUpdateBanner) {
+            formUpdateBanner.addEventListener('submit', async function(e) {
+                if (window.htmx) return; // HTMX gerencia a requisição se estiver disponível
+
+                e.preventDefault();
+                const submitBtn = formUpdateBanner.querySelector('.btn-submit');
+                const spinner = submitBtn?.querySelector('.btn-spinner');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    if (spinner) spinner.style.display = 'inline-block';
+                }
+
+                try {
+                    const formData = new FormData(formUpdateBanner);
+                    const response = await fetch('/updateBannerHome', {
+                        method: 'POST',
+                        headers: { 'HX-Request': 'true' },
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        if (typeof showNotification === 'function') {
+                            showNotification('Banner principal atualizado com sucesso!', 'success');
+                            if (bannerImageInput) {
+                                bannerImageInput.value = '';
+                            }
+                        }
+                    } else {
+                        const errData = await response.json().catch(() => ({}));
+                        const errMsg = errData.message || errData.error || 'Erro ao atualizar o banner.';
+                        if (typeof showNotification === 'function') {
+                            showNotification(errMsg, 'error');
+                        }
+                    }
+                } catch (err) {
+                    console.error('Erro na requisição do banner:', err);
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        if (spinner) spinner.style.display = '';
+                    }
+                }
+            });
+        }
+
+        // Captura erros de resposta HTTP vindos do HTMX sem recarregar a tela
+        document.body.addEventListener('htmx:responseError', function(event) {
+            if (typeof showNotification === 'function') {
+                showNotification('Falha ao atualizar o banner. Verifique os dados.', 'error');
+            }
+        });
     });
 </script>

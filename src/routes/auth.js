@@ -1,10 +1,15 @@
 import express from "express";
+import multer from "multer";
 import { validateCsrfToken, requireAuth, requireAdmin } from "../middleware/authMiddleware.js"; 
 
 // Separação de domínios em controllers distintos
 import UserController from "../controllers/userControllers.js";
+import BannerControllers from "../controllers/bannerControllers.js";
 
 const userController = new UserController();
+const bannerController = new BannerControllers();
+const upload = multer({ storage: multer.memoryStorage() });
+
 const router = express.Router();
 
 router.post("/login", validateCsrfToken, (req, res, next) => userController.login(req, res, next));
@@ -17,5 +22,14 @@ router.post("/verify-otp", validateCsrfToken, (req, res, next) => userController
 
 router.post("/deleteUser/:id", requireAuth, (req, res, next) => userController.deleteUser(req, res, next));
 router.post("/updateProfile", requireAuth, (req, res, next) => userController.updateProfile(req, res, next));
+
+router.post(
+    "/updateBannerHome",
+    requireAuth,
+    requireAdmin,
+    upload.single("bannerImage"),
+    validateCsrfToken,
+    (req, res, next) => bannerController.updateBannerHome(req, res, next)
+);
 
 export default router;

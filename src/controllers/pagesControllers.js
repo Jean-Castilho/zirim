@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 import { sendEmailOtp } from "../services/contactService.js";
 import { renderPage } from "../utils/handleResponse.js";
 import ProductService from "../services/ProductService.js";
@@ -5,20 +7,26 @@ import UserService from "../services/UserService.js";
 
 import { NotFoundError } from "../utils/handleResponse.js";
 import OrderRepository from "../repository/OrderRepository.js";
-import { ObjectId } from "mongodb";
+import BannerControllers from "../controllers/bannerControllers.js";
 
 const productService = new ProductService();
 const userService = new UserService();
+
+const bannerControllers = new BannerControllers();
 const orderRepository = new OrderRepository();
 
 export const Home = async (req, res, next) => {
   try {
-    const products = await productService.listProductsForHome();
+    const [products, homePageData] = await Promise.all([
+      productService.listProductsForHome(),
+      bannerControllers.getBannerPageEditHome()
+    ]);
     
     renderPage(req, res, "../pages/public/home", {
       titulo: "Zirim - Moda e Calçados",
       message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
       products,
+      banner: homePageData?.banner || null
     });
   } catch (error) {
     next(error);
@@ -271,7 +279,6 @@ export const Dashboard = async (req, res, next) => {
   }
 };
 
-
 export const Delivery = async (req, res, next) => {
   try {
     // Busca pedidos que não foram cancelados nem concluídos (ex: pendentes e pagos)
@@ -385,24 +392,14 @@ export const EditProduct = async (req, res, next) => {
 
 export const EditPageHome = async (req, res, next) => {
   try {
-    const db = DataBase();
-    const homePageData = await db.collection("settings").findOne({ _id: "homepage" });
-    const banner = homePageData?.banner || {
-      tag: "COLEÇÃO EXCLUSIVA",
-      title: "Estilo que Define Você.",
-      subtitle: "Explore os novos calçados e roupas com descontos exclusivos de temporada.",
-      imageUrl: "/images/default-banner.jpg",
-      btnText: "Comprar Agora",
-      btnLink: "products",
-      visible: true,
-      alignment: "left"
-    };
+    const homePageData = await bannerControllers.getBannerPageEditHome();
 
     renderPage(req, res, "../pages/admin/edit-home", {
       titulo: "Editar Página Inicial",
       message: "Personalize o banner principal e os destaques em tempo real.",
-      banner,
+      homePageData
     });
+
   } catch (error) {
     next(error);
   }

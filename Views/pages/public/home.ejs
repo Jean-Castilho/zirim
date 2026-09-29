@@ -1,260 +1,93 @@
-<style>
-  /* Base Sections */
-  .hero {
-    background-image: url('https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
-    background-size: cover;
-    background-position: center;
-    color: white;
-    text-align: center;
-    padding: 100px 20px;
-  }
+<link rel="stylesheet" href="/css/pages/home.css">
 
-  .categories,
-  .featured-products {
-    padding: 1.2rem 0.8rem;
-  }
+<% const currentBanner=(typeof banner !=='undefined' && banner) ? banner : null; const isBannerActive=!currentBanner ||
+  currentBanner.ativo !==false; const isButtonEnabled=!currentBanner || currentBanner.exibirBotao !==false; const
+  bannerImage=currentBanner?.imageUrl; const
+  defaultBg='https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80'
+  ; const heroBg=bannerImage ? ('/image/' + bannerImage) : defaultBg; const bannerTitle=currentBanner?.title || '' ;
+  const bannerDesc=currentBanner?.description || '' ; const hasText=Boolean(bannerTitle.trim() || bannerDesc.trim());
+  const btnLink=currentBanner?.link || '/products' ; const btnText=currentBanner?.textoBotao || 'Ver Coleção' ; %>
 
-  .categories {
-    text-align: center;
-  }
+  <div class="home-container">
 
-  .featured-products {
-    background-color: #f9f9f9;
-  }
+    <% if (isBannerActive) { %>
+      <section class="hero <%= (hasText || isButtonEnabled) ? 'hero-with-overlay' : '' %>"
+        style="background-image: url('<%= heroBg %>');">
+        <% if (bannerTitle.trim()) { %>
+          <h1>
+            <%= bannerTitle %>
+          </h1>
+          <% } %>
 
-  /* Typography */
-  .hero h1 {
-    font-size: 3rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  }
+            <% if (bannerDesc.trim()) { %>
+              <p>
+                <%= bannerDesc %>
+              </p>
+              <% } %>
 
-  .hero p {
-    font-size: 1.2rem;
-    margin-top: 10px;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-  }
+                <% if (isButtonEnabled) { %>
+                  <a href="<%= btnLink %>" class="btn">
+                    <%= btnText %>
+                  </a>
+                  <% } else if (btnLink) { %>
+                    <a href="<%= btnLink %>" class="hero-link-overlay" aria-label="Acessar link do banner"></a>
+                    <% } %>
+      </section>
+      <% } %>
 
-  .featured-products h2 {
-    text-align: center;
-    margin: 0.8rem 1rem;
-  }
+        <section class="categories">
+          <h2>Compre por Categoria</h2>
 
-  /* Wrappers */
-  .categories-wrapper,
-  .featured-products-wrapper {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
+          <div class="categories-wrapper">
 
-  .categories-wrapper {
-    margin-top: 20px;
-  }
+            <div class="category-card">
 
-  .category-card,
-  .product-card {
-    border-radius: 8px;
-    background: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
+              <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
+                alt="Roupas Femininas">
+              <div class="category-card-content">
+                <h3>Moda</h3>
+                <a href="/products?category=todos">Explorar</a>
+              </div>
+            </div>
 
-  .category-card {
-    border: 1px solid #ddd;
-    overflow: hidden;
-  }
+            <div class="category-card">
+              <img
+                src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                alt="Calçados">
+              <div class="category-card-content">
+                <h3>Calçados</h3>
+                <a href="/products?category=calcados">Explorar</a>
+              </div>
+            </div>
 
-  .product-card {
-    padding: 0px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Card Images */
-  .category-card img,
-  .product-card img {
-    width: 100%;
-    object-fit: cover;
-  }
-
-  .category-card img {
-    height: 200px;
-  }
-
-  .product-card img {
-    height: 180px;
-    border-radius: 4px;
-  }
-
-  /* Card Content */
-  .category-card-content {
-    padding: 15px;
-  }
-
-  .category-card-content h3 {
-    margin: 0 0 10px 0;
-  }
-
-  .category-card-content a {
-    color: #D2042D;
-    text-decoration: none;
-    font-weight: bold;
-  }
-
-  .category-card-content a:hover {
-    text-decoration: underline;
-  }
-
-  .product-card h3 {
-    font-size: 1.1rem;
-    color: #333;
-    padding: 10px 0;
-    margin: 0;
-  }
-
-  .product-card-price {
-    color: #555;
-    font-weight: bold;
-    margin: 0;
-  }
-
-  /* Buttons */
-  .hero .btn {
-    display: inline-block;
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #D2042D;
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    border-radius: 5px;
-    transition: background-color 0.2s;
-  }
-
-  .hero .btn:hover {
-    background-color: #b00326;
-  }
-
-  .view-details-btn {
-    display: inline-block;
-    margin-bottom: 20px;
-    width: 65%;
-    padding: 10px;
-    background-color: transparent;
-    color: #D2042D;
-    border: 1px solid #D2042D;
-    border-radius: 4px;
-    font-weight: bold;
-    text-decoration: none;
-    transition: background-color 0.2s, color 0.2s;
-  }
-
-  .view-details-btn:hover {
-    background-color: #D2042D;
-    color: #fff;
-  }
-
-  /* Utils */
-  .no-products-msg {
-    text-align: center;
-    color: #777;
-  }
-
-  @media (min-width: 768px) {
-  
-    
-  .product-card {
-    width: 250px;
-  }
-
-  }
-
-  @media (max-width: 600px) {
-
-    .featured-products-wrapper {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      justify-items: stretch;
-    }
-
-    .categories-wrapper div {
-      width: 100%;
-    }
-    .category-card-content{
-      padding: 10px 0px;
-    }
-
-    .featured-products {
-      padding: 0.8rem;
-    }
-
-    .view-details-btn {
-      padding: 5px;
-    }
-  }
-</style>
-
-<div class="home-container">
-
-  <section class="hero">
-    <a href="/products" class="btn">Ver Coleção</a>
-  </section>
-
-  <section class="categories">
-    <h2>Compre por Categoria</h2>
-
-    <div class="categories-wrapper">
-
-      <div class="category-card">
-
-        <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
-          alt="Roupas Femininas">
-        <div class="category-card-content">
-          <h3>Moda</h3>
-          <a href="/products?category=todos">Explorar</a>
-        </div>
-      </div>
-
-      <div class="category-card">
-        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
-          alt="Calçados">
-        <div class="category-card-content">
-          <h3>Calçados</h3>
-          <a href="/products?category=calcados">Explorar</a>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <section class="featured-products">
-    <h2>Destaque</h2>
-
-    <% if (products && products.length> 0) { %>
-      <div class="featured-products-wrapper">
-        <% products.forEach(product=> { %>
-          <div class="product-card">
-            <% let imgSrc='https://via.placeholder.com/400x400' ; if (Array.isArray(product.variacoes[0].imagens) &&
-              product.variacoes[0].imagens.length> 0) {
-
-              imgSrc = '/image/' + product.variacoes[0].imagens[0];
-
-              }
-
-              %>
-              <img src="<%= imgSrc %>" alt="<%= product.nome %>">
-              <h3>
-                <%= product.nome %>
-              </h3>
-              <a href="/product/<%= product._id %>" class="view-details-btn">Detalhes</a>
           </div>
-          <% }) %>
-      </div>
-      <% } else { %>
-        <p class="no-products-msg">Novidades chegando em breve!</p>
-        <% } %>
+        </section>
 
-  </section>
+        <section class="featured-products">
+          <h2>Destaque</h2>
 
-</div>
+          <% if (products && products.length> 0) { %>
+            <div class="featured-products-wrapper">
+              <% products.forEach(product=> { %>
+                <div class="product-card">
+                  <% let imgSrc='https://via.placeholder.com/400x400' ; if (Array.isArray(product.variacoes?.[0]?.imagens)
+                    && product.variacoes[0].imagens.length > 0) {
+
+                    imgSrc = '/image/' + product.variacoes[0].imagens[0];
+
+                    }
+
+                    %>
+                    <img src="<%= imgSrc %>" alt="<%= product.nome %>">
+                    <h3>
+                      <%= product.nome %>
+                    </h3>
+                    <a href="/product/<%= product._id %>" class="view-details-btn">Detalhes</a>
+                </div>
+                <% }) %>
+            </div>
+            <% } else { %>
+              <p class="no-products-msg">Novidades chegando em breve!</p>
+              <% } %>
+        </section>
+  </div>
