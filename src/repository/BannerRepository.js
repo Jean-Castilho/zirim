@@ -16,6 +16,25 @@ export default class BannerRepository extends BaseRepository {
         }
     }
 
+    #normalizeBanner(banner) {
+        if (!banner) return null;
+
+        return {
+            _id: banner._id,
+            title: banner.title || banner.titulo || "",
+            description: banner.description || banner.subtitulo || "",
+            imageUrl: banner.imageUrl || banner.imagem || null,
+            link: banner.link || "/products",
+            textoBotao: banner.textoBotao || "Ver Coleção",
+            exibirBotao: banner.exibirBotao !== false,
+            ativo: banner.ativo !== false,
+            tipo: banner.tipo || "principal",
+            local: banner.local || "hero",
+            ...(banner.createdAt && { createdAt: banner.createdAt }),
+            ...(banner.updatedAt && { updatedAt: banner.updatedAt })
+        };
+    }
+
     async getBannerPrincipal() {
         const banner = await this.collection.findOne({
             $or: [
@@ -26,19 +45,7 @@ export default class BannerRepository extends BaseRepository {
             ]
         }) || await this.collection.findOne({}, { sort: { _id: 1 } });
 
-        if (!banner) return null;
-
-        // Retorna schema unificado e normalizado
-        return {
-            ...banner,
-            title: banner.title ?? banner.titulo ?? "",
-            description: banner.description ?? banner.subtitulo ?? "",
-            imageUrl: banner.imageUrl ?? banner.imagem ?? null,
-            link: banner.link || "/products",
-            textoBotao: banner.textoBotao || "Ver Coleção",
-            exibirBotao: banner.exibirBotao !== false,
-            ativo: banner.ativo !== false
-        };
+        return this.#normalizeBanner(banner);
     }
 
     async uploadImageToGridFS(file) {
@@ -89,6 +96,8 @@ export default class BannerRepository extends BaseRepository {
     }
 
     async upsertBannerPrincipal(data) {
+        if (!data) return null;
+
         const filter = {
             $or: [
                 { tipo: "principal" },
@@ -100,8 +109,8 @@ export default class BannerRepository extends BaseRepository {
 
         const update = {
             $set: {
-                title: data.title ?? "",
-                description: data.description ?? "",
+                title: data.title || "",
+                description: data.description || "",
                 imageUrl: data.imageUrl,
                 link: data.link || "/products",
                 textoBotao: data.textoBotao || "Ver Coleção",
@@ -120,7 +129,14 @@ export default class BannerRepository extends BaseRepository {
             $setOnInsert: { createdAt: new Date() }
         };
 
-        return await this.collection.findOneAndUpdate(filter, update, { upsert: true, returnDocument: 'after' });
+        const result = await this.collection.findOneAndUpdate(filter, update, { upsert: true, returnDocument: 'after' });
+        const updatedDoc = result?.value ?? result;
+        return this.#normalizeBanner(updatedDoc);
     }
 
+    async upsertCategoryProduct(data) {
+
+        console.log(data);
+
+    }
 };

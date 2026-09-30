@@ -22,11 +22,13 @@ export const Home = async (req, res, next) => {
       bannerControllers.getBannerPageEditHome()
     ]);
     
+    console.log(homePageData);
+
     renderPage(req, res, "../pages/public/home", {
       titulo: "Zirim - Moda e Calçados",
       message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
       products,
-      banner: homePageData?.banner || null
+      banner: homePageData?.banner,
     });
   } catch (error) {
     next(error);

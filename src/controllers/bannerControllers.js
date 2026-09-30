@@ -89,5 +89,90 @@ export default class BannerControllers {
             next(error);
         }
     }
+
+    async updateCategoryHome(req, res, next) {
+        let uploadedFilename = null;
+        try {
+            if (!req.file) {
+                throw new ValidationError("A imagem da categoria é obrigatória.");
+            }
+
+            const rawTitle = req.body.title;
+            const rawLink = req.body.link;
+
+            if (!rawTitle || !rawTitle.trim()) {
+                throw new ValidationError("O título da categoria é obrigatório.");
+            }
+
+            uploadedFilename = await this.repository.uploadImageToGridFS(req.file);
+
+            const categoryItem = {
+                id: Date.now().toString(),
+                title: rawTitle.trim(),
+                link: typeof rawLink === "string" && rawLink.trim() ? rawLink.trim() : "/products",
+                imageUrl: uploadedFilename
+            };
+
+            const currentBanner = await this.repository.getBannerPrincipal();
+
+            if (this.repository.collection) {
+                await this.repository.collection.updateOne(
+                    currentBanner?._id ? { _id: currentBanner._id } : {},
+                    { $push: { categories: categoryItem } },
+                    { upsert: true }
+                );
+            }
+
+            const isHtmx = req.headers['hx-request'] === 'true';
+            if (isHtmx) {
+                res.setHeader('HX-Trigger', JSON.stringify({
+                    showNotification: {
+                        message: "Categoria adicionada com sucesso!",
+                        type: "success"
+                    }
+                }));
+                res.setHeader('HX-Refresh', 'true');
+                return res.status(200).send("");
+            }
+
+            return res.redirect("/edit/home?success=true");
+            return this.#respondSuccess(req, res, {
+                message: "Categoria adicionada com sucesso!",
+                redirectUrl: "/edit/home?refresh=true"
+            });
+        } catch (error) {
+            if (uploadedFilename) {
+                await this.repository.deleteImageFromGridFS(uploadedFilename).catch(err => {
+                    console.error("Falha na limpeza de imagem órfã após erro:", err);
+                });
+            }
+            next(error);
+        }
+    }
+
+    async deleteCategoryHome(req, res, next) {
+        try {
+            const { id } = req.params;
+            const currentBanner = await this.repository.getBannerPrincipal();
+            const categoryToDelete = currentBanner?.categories?.find(c => c.id === id);
+
+            if (this.repository.collection) {
+                await this.repository.collection.updateOne(
+                    currentBanner?._id ? { _id: currentBanner._id } : {},
+                    { $pull: { categories: { id } } }
+                );
+            }
+
+            if (categoryToDelete?.imageUrl) {
+                this.repository.deleteImageFromGridFS(categoryToDelete.imageUrl).catch(err => {
+                    console.error("Falha ao remover imagem da categoria excluída:", err);
+                });
+            }
+
+            return res.redirect("/edit/home");
+        } catch (error) {
+            next(error);
+        }
+    }
     
 }

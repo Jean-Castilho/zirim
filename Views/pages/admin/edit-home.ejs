@@ -260,6 +260,142 @@
         display: inline-block;
     }
 
+    /* Réplica do layout da seção .categories do public/home.ejs */
+    .category-preview-card {
+        max-width: 360px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--raio-padrao);
+        overflow: hidden;
+        background-color: var(--bg-card);
+        margin-top: 1rem;
+        box-shadow: var(--sombra-suave);
+    }
+
+    .category-preview-card img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .category-preview-card .category-card-content {
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: var(--bg-card);
+    }
+
+    .category-preview-card h3 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-primary);
+    }
+
+    .form-group-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-group-checkbox label {
+        margin-bottom: 0;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .btn-preview-action {
+        padding: 0.4rem 0.9rem;
+        font-size: 0.875rem;
+        text-decoration: none;
+    }
+
+    .categories-list-section {
+        margin-top: 2rem;
+        border-top: 1px solid var(--border-color);
+        padding-top: 1.5rem;
+    }
+
+    .categories-list-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+    }
+
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .category-card-item {
+        margin-top: 0;
+        max-width: 100%;
+    }
+
+    .category-card-item img {
+        height: 140px;
+    }
+
+    .category-card-item .category-card-content {
+        padding: 0.75rem;
+    }
+
+    .category-card-details h3 {
+        font-size: 0.95rem;
+    }
+
+    .category-card-details small {
+        color: var(--text-secondary);
+        word-break: break-all;
+    }
+
+    .category-delete-form {
+        margin: 0;
+    }
+
+    .btn-delete-category {
+        background: none;
+        border: none;
+        color: var(--danger);
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+    }
+
+    .card-add-category {
+        border: 2px dashed var(--border-color);
+        border-radius: var(--raio-padrao);
+        min-height: 195px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        background-color: var(--bg-card-hover);
+        transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .card-add-category:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+        background-color: var(--bg-card);
+    }
+
+    .card-add-category svg {
+        transition: transform 0.2s ease;
+    }
+
+    .card-add-category:hover svg {
+        transform: scale(1.15);
+    }
+
     /* Media Queries */
     @media (min-width: 500px) {
         .edit-home-container {
@@ -324,11 +460,13 @@
                         <textarea id="bannerDescription" name="description" placeholder="Uma breve descrição para o banner"><%= locals.homePageData?.banner?.description || '' %></textarea>
                     </div>
                     <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div class="form-group form-group-checkbox">
                         <% 
                           const isButtonEnabled = locals.homePageData?.banner?.exibirBotao !== false;
                         %>
                         <input type="checkbox" id="bannerExibirBotao" name="exibirBotao" value="true" <%= isButtonEnabled ? 'checked' : '' %>>
                         <label for="bannerExibirBotao" style="margin-bottom: 0; cursor: pointer; font-weight: 500;">
+                        <label for="bannerExibirBotao">
                             Habilitar botão principal no banner
                         </label>
                     </div>
@@ -373,7 +511,115 @@
             </div>
         </div>
 
-        <!-- Adicionar mais seções de edição aqui, como categorias em destaque, etc. -->
+        <!-- Painel de Gerenciamento do Banner de Categoria -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.5rem;">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Adicionar Banner / Card de Categoria
+                </h2>
+            </div>
+            <div class="panel-body">
+                <form 
+                    id="formUpdateCategory"
+                    action="/updateCategoryHome" 
+                    method="POST" 
+                    enctype="multipart/form-data"
+                    hx-post="/updateCategoryHome"
+                    hx-encoding="multipart/form-data"
+                    hx-swap="none"
+                    hx-disabled-elt="find .btn-submit"
+                    hx-indicator="#categorySpinner"
+                >
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="form-group">
+                        <label for="categoryTitle">Nome da Categoria</label>
+                        <input type="text" id="categoryTitle" name="title" placeholder="Ex: Moda, Calçados, Acessórios..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryLink">Link de Destino</label>
+                        <input type="text" id="categoryLink" name="link" placeholder="Ex: /products?category=calcados" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryImage">Imagem da Categoria</label>
+                        <input type="file" id="categoryImage" name="categoryImage" accept="image/*" required>
+                        
+                        <div class="category-preview-card" id="categoryPreviewCard">
+                            <img id="categoryPreviewImg" src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80" alt="Prévia da categoria">
+                            <div class="category-card-content">
+                                <h3 id="categoryPreviewTitle">Moda</h3>
+                                <a href="#" class="btn-submit" style="padding: 0.4rem 0.9rem; font-size: 0.875rem;" onclick="event.preventDefault()">Explorar</a>
+                                <a href="#" class="btn-submit btn-preview-action" onclick="event.preventDefault()">Explorar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span class="btn-text">Adicionar Categoria ao Array</span>
+                        <span id="categorySpinner" class="btn-spinner" aria-hidden="true"></span>
+                    </button>
+                </form>
+
+                <% 
+                  const savedCategories = locals.homePageData?.banner?.categories || [];
+                %>
+                <% if (savedCategories.length > 0) { %>
+                    <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Categorias Cadastradas no Array (<%= savedCategories.length %>)</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+                    <div class="categories-list-section">
+                        <h3 class="categories-list-title">Categorias Cadastradas no Array (<%= savedCategories.length %>)</h3>
+                        <div class="categories-grid">
+                            <% savedCategories.forEach(cat => { 
+                                const catImg = cat.imageUrl?.startsWith('http') ? cat.imageUrl : ('/image/' + cat.imageUrl);
+                            %>
+                                <div class="category-preview-card" style="margin-top: 0; max-width: 100%;">
+                                    <img src="<%= catImg %>" alt="<%= cat.title %>" style="height: 140px;">
+                                    <div class="category-card-content" style="padding: 0.75rem;">
+                                        <div>
+                                            <h3 style="font-size: 0.95rem;"><%= cat.title %></h3>
+                                            <small style="color: var(--text-secondary); word-break: break-all;"><%= cat.link %></small>
+                                <div class="category-preview-card category-card-item">
+                                    <img src="<%= catImg %>" alt="<%= cat.title %>">
+                                    <div class="category-card-content">
+                                        <div class="category-card-details">
+                                            <h3><%= cat.title %></h3>
+                                            <small><%= cat.link %></small>
+                                        </div>
+                                        <form action="/deleteCategoryHome/<%= cat.id %>" method="POST" style="margin: 0;" onsubmit="return confirm('Remover esta categoria do array?');">
+                                        <form action="/deleteCategoryHome/<%= cat.id %>" method="POST" class="category-delete-form" onsubmit="return confirm('Remover esta categoria do array?');">
+                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                            <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer; padding: 4px;" title="Remover">
+                                            <button type="submit" class="btn-delete-category" title="Remover">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            <% }) %>
+                            <a href="#formUpdateCategory" class="card-add-category" onclick="document.getElementById('categoryTitle')?.focus();">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span style="font-size: 0.9rem; font-weight: 600;">Adicionar Novo Card</span>
+                            </a>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
 
     </div>
 </div>
@@ -439,6 +685,31 @@
             });
         }
 
+        // Interatividade e Live Preview para o Banner de Categoria
+        const categoryTitleInput = document.getElementById('categoryTitle');
+        const categoryPreviewTitle = document.getElementById('categoryPreviewTitle');
+        const categoryImageInput = document.getElementById('categoryImage');
+        const categoryPreviewImg = document.getElementById('categoryPreviewImg');
+
+        if (categoryTitleInput && categoryPreviewTitle) {
+            categoryTitleInput.addEventListener('input', (e) => {
+                categoryPreviewTitle.textContent = e.target.value.trim() || 'Nome da Categoria';
+            });
+        }
+
+        if (categoryImageInput && categoryPreviewImg) {
+            categoryImageInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        categoryPreviewImg.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
         // Integração com evento HX-Trigger para executar showNotification padrão
         document.body.addEventListener('showNotification', function(e) {
             const data = e.detail?.value || e.detail;
@@ -448,6 +719,9 @@
             // Limpa o arquivo selecionado após persistência concluída
             if (bannerImageInput) {
                 bannerImageInput.value = '';
+            }
+            if (categoryImageInput) {
+                categoryImageInput.value = '';
             }
         });
 

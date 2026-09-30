@@ -32,4 +32,21 @@ router.post(
     (req, res, next) => bannerController.updateBannerHome(req, res, next)
 );
 
+router.post(
+    "/updateCategoryHome",
+    requireAuth,
+    requireAdmin,
+    upload.single("categoryImage"),
+    validateCsrfToken,
+    (req, res, next) => bannerController.updateCategoryHome(req, res, next)
+);
+
+router.post(
+    "/deleteCategoryHome/:id",
+    requireAuth,
+    requireAdmin,
+    validateCsrfToken,
+    (req, res, next) => bannerController.deleteCategoryHome(req, res, next)
+);
+
 export default router;
