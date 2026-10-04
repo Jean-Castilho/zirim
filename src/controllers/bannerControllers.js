@@ -113,17 +113,13 @@ export default class BannerControllers {
                 imageUrl: uploadedFilename
             };
 
-            const currentBanner = await this.repository.getBannerPrincipal();
-
-            if (this.repository.collection) {
-                await this.repository.collection.updateOne(
-                    currentBanner?._id ? { _id: currentBanner._id } : {},
-                    { $push: { categories: categoryItem } },
-                    { upsert: true }
-                );
-            }
+            await this.repository.addCategory(categoryItem);
 
             const isHtmx = req.headers['hx-request'] === 'true';
+            const isJsonOrHtmx = req.xhr || 
+                isHtmx || 
+                (req.headers.accept && req.headers.accept.includes('application/json'));
+
             if (isHtmx) {
                 res.setHeader('HX-Trigger', JSON.stringify({
                     showNotification: {
@@ -135,10 +131,13 @@ export default class BannerControllers {
                 return res.status(200).send("");
             }
 
-            return res.redirect("/edit/home?success=true");
-            return this.#respondSuccess(req, res, {
+            if (!isJsonOrHtmx) {
+                return res.redirect("/edit/home?success=true");
+            }
+            return res.status(200).json({
+                success: true,
                 message: "Categoria adicionada com sucesso!",
-                redirectUrl: "/edit/home?refresh=true"
+                category: categoryItem
             });
         } catch (error) {
             if (uploadedFilename) {
@@ -156,12 +155,7 @@ export default class BannerControllers {
             const currentBanner = await this.repository.getBannerPrincipal();
             const categoryToDelete = currentBanner?.categories?.find(c => c.id === id);
 
-            if (this.repository.collection) {
-                await this.repository.collection.updateOne(
-                    currentBanner?._id ? { _id: currentBanner._id } : {},
-                    { $pull: { categories: { id } } }
-                );
-            }
+            await this.repository.removeCategory(id);
 
             if (categoryToDelete?.imageUrl) {
                 this.repository.deleteImageFromGridFS(categoryToDelete.imageUrl).catch(err => {

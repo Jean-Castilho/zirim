@@ -7,18 +7,18 @@
         --border-color: var(--cor-borda, #e9ecef);
         --text-primary: var(--cor-texto-escuro, #212529);
         --text-secondary: var(--cor-texto-medio, #495057);
-        
+
         /* Cores de Identidade da Zirim (Vermelho Cereja e Destaque) */
         --accent-color: var(--cor-secundaria, #e10732);
         --accent-hover: var(--cor-destaque, #cd1d0d);
-        
+
         /* Cores Semânticas */
         --success: var(--cor-sucesso, #2b8a3e);
         --warning: var(--cor-alerta, #e67e22);
         --danger: var(--cor-erro, #c92a2a);
 
         /* Variáveis de sombra e raio de borda */
-        --sombra-suave: 0 2px 4px rgba(0,0,0,0.05);
+        --sombra-suave: 0 2px 4px rgba(0, 0, 0, 0.05);
         --raio-padrao: 8px;
         --raio-grande: 16px;
         --fonte-principal: 'Inter', sans-serif;
@@ -98,7 +98,7 @@
 
     .form-group input[type="text"],
     .form-group textarea {
-        width: 100%;
+        width: 95%;
         padding: 0.75rem 1rem;
         border: 1px solid var(--border-color);
         border-radius: var(--raio-padrao);
@@ -150,64 +150,105 @@
 
     /* Réplica do layout original .hero do public/home.ejs */
     .hero-preview {
+        position: relative;
         background-size: cover;
         background-position: center;
+        background-repeat: no-repeat;
         color: white;
         text-align: center;
-        padding: 80px 20px;
-        border-radius: var(--raio-padrao);
-        position: relative;
-        min-height: 250px;
+        padding: 4.5rem 1.5rem;
+        border-radius: var(--raio-grande, 16px);
+        min-height: 290px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.45);
-        transition: all 0.3s ease;
+        overflow: hidden;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+        transition: background-image 0.3s ease, border-color 0.3s ease;
         margin-top: 1rem;
     }
 
+    .hero-preview::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.65) 100%);
+        z-index: 1;
+        pointer-events: none;
+    }
+
     .hero-preview.no-image {
-        background-color: #2b2b2b;
+        background: radial-gradient(circle at center, #2e3440 0%, #1e222a 100%);
         border: 2px dashed var(--border-color);
         box-shadow: none;
     }
 
-    .hero-preview h1 {
-        font-size: 2.5rem;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+    .hero-preview.no-image::before {
+        display: none;
+    }
+
+    .hero-preview-content {
+        position: relative;
+        z-index: 2;
+        max-width: 680px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .hero-preview-content h1 {
+        font-size: 2.25rem;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        line-height: 1.2;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
         margin: 0;
         color: #ffffff;
     }
 
-    .hero-preview p {
-        font-size: 1.15rem;
-        margin-top: 10px;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
-        color: #f1f3f5;
-        max-width: 600px;
+    .hero-preview-content p {
+        font-size: 1.05rem;
+        line-height: 1.5;
+        margin: 0;
+        text-shadow: 0 1px 5px rgba(0, 0, 0, 0.7);
+        color: rgba(255, 255, 255, 0.92);
+        max-width: 560px;
     }
 
-    .hero-preview .btn {
-        display: inline-block;
-        margin-top: 20px;
-        padding: 10px 20px;
-        background-color: #D2042D;
-        color: white;
+    .hero-preview-content .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 0.5rem;
+        padding: 0.7rem 1.75rem;
+        background-color: var(--accent-color, #e10732);
+        color: #ffffff;
         text-decoration: none;
-        font-weight: bold;
-        border-radius: 5px;
-        font-size: 1rem;
-        transition: background-color 0.2s;
+        font-weight: 600;
+        border-radius: 50px;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 14px rgba(225, 7, 50, 0.4);
+        transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .hero-preview-content .btn:hover {
+        background-color: var(--accent-hover, #cd1d0d);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(225, 7, 50, 0.5);
     }
 
     .preview-warning {
         position: absolute;
-        top: 10px;
-        right: 10px;
-        background-color: rgba(0, 0, 0, 0.75);
-        padding: 0.5rem 0.75rem;
-        border-radius: var(--raio-padrao);
+        top: 14px;
+        right: 14px;
+        z-index: 3;
+        background-color: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -252,7 +293,9 @@
     }
 
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .htmx-request.btn-spinner,
@@ -262,6 +305,7 @@
 
     /* Réplica do layout da seção .categories do public/home.ejs */
     .category-preview-card {
+        position: relative;
         max-width: 360px;
         border: 1px solid var(--border-color);
         border-radius: var(--raio-padrao);
@@ -401,6 +445,7 @@
         .edit-home-container {
             padding: 1.5rem;
         }
+
         .edit-home-header {
             flex-direction: row;
             justify-content: space-between;
@@ -412,6 +457,7 @@
         .edit-home-container {
             padding: 2rem;
         }
+
         .edit-home-header h1 {
             font-size: 1.875rem;
         }
@@ -421,8 +467,12 @@
 <div class="edit-home-container">
     <header class="edit-home-header">
         <div class="header-info">
-            <h1><%= titulo %></h1>
-            <p><%= message %></p>
+            <h1>
+                <%= titulo %>
+            </h1>
+            <p>
+                <%= message %>
+            </p>
         </div>
     </header>
 
@@ -430,78 +480,89 @@
         <div class="panel">
             <div class="panel-header">
                 <h2>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.5rem;">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="vertical-align: middle; margin-right: 0.5rem;">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
                     </svg>
                     Editar Banner Principal
                 </h2>
             </div>
             <div class="panel-body">
-                <form 
-                    id="formUpdateBanner"
-                    action="/updateBannerHome" 
-                    method="POST" 
-                    enctype="multipart/form-data"
-                    hx-post="/updateBannerHome"
-                    hx-encoding="multipart/form-data"
-                    hx-swap="none"
-                    hx-disabled-elt="find .btn-submit"
-                    hx-indicator="#bannerSpinner"
-                >
+
+                <form id="formUpdateBanner" action="/updateBannerHome" method="POST" enctype="multipart/form-data"
+                    hx-post="/updateBannerHome" hx-encoding="multipart/form-data" hx-swap="none"
+                    hx-disabled-elt="find .btn-submit" hx-indicator="#bannerSpinner">
+
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
                     <div class="form-group">
                         <label for="bannerTitle">Título do Banner</label>
-                        <input type="text" id="bannerTitle" name="title" placeholder="Título chamativo para o banner" value="<%= locals.homePageData?.banner?.title || '' %>">
+                        <input type="text" id="bannerTitle" name="title" placeholder="Título chamativo para o banner"
+                            value="<%= locals.homePageData?.banner?.title || '' %>">
                     </div>
                     <div class="form-group">
                         <label for="bannerDescription">Descrição do Banner</label>
-                        <textarea id="bannerDescription" name="description" placeholder="Uma breve descrição para o banner"><%= locals.homePageData?.banner?.description || '' %></textarea>
+                        <textarea id="bannerDescription" name="description"
+                            placeholder="Uma breve descrição para o banner"><%= locals.homePageData?.banner?.description || '' %></textarea>
                     </div>
-                    <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
                     <div class="form-group form-group-checkbox">
-                        <% 
-                          const isButtonEnabled = locals.homePageData?.banner?.exibirBotao !== false;
-                        %>
-                        <input type="checkbox" id="bannerExibirBotao" name="exibirBotao" value="true" <%= isButtonEnabled ? 'checked' : '' %>>
-                        <label for="bannerExibirBotao" style="margin-bottom: 0; cursor: pointer; font-weight: 500;">
-                        <label for="bannerExibirBotao">
-                            Habilitar botão principal no banner
-                        </label>
+                        <% const isButtonEnabled=locals.homePageData?.banner?.exibirBotao !==false; %>
+                            <input type="checkbox" id="bannerExibirBotao" name="exibirBotao" value="true"
+                                <%=isButtonEnabled ? 'checked' : '' %>>
+                            <label for="bannerExibirBotao">
+                                Habilitar botão principal no banner
+                            </label>
                     </div>
                     <div class="form-group">
                         <label for="bannerButtonText">Texto do Botão</label>
-                        <input type="text" id="bannerButtonText" name="textoBotao" placeholder="Ex: Ver Coleção" value="<%= locals.homePageData?.banner?.textoBotao || '' %>">
+                        <input type="text" id="bannerButtonText" name="textoBotao" placeholder="Ex: Ver Coleção"
+                            value="<%= locals.homePageData?.banner?.textoBotao || '' %>">
                     </div>
                     <div class="form-group">
                         <label for="bannerLink">Link do Botão (URL de Destino)</label>
-                        <input type="text" id="bannerLink" name="link" placeholder="Ex: /products ou /products?category=calcados" value="<%= locals.homePageData?.banner?.link || '' %>">
+                        <input type="text" id="bannerLink" name="link"
+                            placeholder="Ex: /products ou /products?category=calcados"
+                            value="<%= locals.homePageData?.banner?.link || '' %>">
                     </div>
                     <div class="form-group">
                         <label for="bannerImage">Imagem do Banner</label>
                         <input type="file" id="bannerImage" name="bannerImage" accept="image/*">
-                        <% 
-                          let hasImage = Boolean(locals.homePageData?.banner?.imageUrl);
-                          let bgUrl = hasImage ? '/image/' + locals.homePageData.banner.imageUrl : '';
-                          let bannerTitleVal = locals.homePageData?.banner?.title || '';
-                          let bannerDescVal = locals.homePageData?.banner?.description || '';
-                          let bannerBtnVal = locals.homePageData?.banner?.textoBotao || 'Ver Coleção';
-                        %>
-                        <div id="bannerHeroPreview" class="hero-preview <%= hasImage ? '' : 'no-image' %>" style="<%= hasImage ? 'background-image: url(' + bgUrl + ');' : '' %>">
-                            <div id="noImageWarning" class="preview-warning" style="<%= hasImage ? 'display: none;' : 'display: flex;' %>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning, #e67e22)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                                    <line x1="12" y1="9" x2="12" y2="13"/>
-                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                </svg>
-                                <span>Sem imagem de fundo</span>
+                        <% let hasImage=Boolean(locals.homePageData?.banner?.imageUrl); let bgUrl=hasImage ? '/image/' +
+                            locals.homePageData.banner.imageUrl : '' ; let
+                            bannerTitleVal=locals.homePageData?.banner?.title || '' ; let
+                            bannerDescVal=locals.homePageData?.banner?.description || '' ; let
+                            bannerBtnVal=locals.homePageData?.banner?.textoBotao || 'Ver Coleção' ; %>
+                            <div id="bannerHeroPreview" class="hero-preview <%= hasImage ? '' : 'no-image' %>"
+                                style="<%= hasImage ? 'background-image: url(' + bgUrl + ');' : '' %>">
+                                <div id="noImageWarning" class="preview-warning"
+                                    style="<%= hasImage ? 'display: none;' : 'display: flex;' %>">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                        fill="none" stroke="var(--warning, #e67e22)" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path
+                                            d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                                        <line x1="12" y1="9" x2="12" y2="13" />
+                                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                                    </svg>
+                                    <span>Sem imagem de fundo</span>
+                                </div>
+
+                                <div class="hero-preview-content">
+                                    <h1 id="previewTitle">
+                                        <%= bannerTitleVal %>
+                                    </h1>
+                                    <p id="previewDescription">
+                                        <%= bannerDescVal %>
+                                    </p>
+                                    <a href="/products" id="previewButton" class="btn" onclick="event.preventDefault()"
+                                        style="<%= isButtonEnabled ? 'display: inline-flex;' : 'display: none;' %>">
+                                        <%= bannerBtnVal %>
+                                    </a>
+                                </div>
                             </div>
-                            
-                            <h1 id="previewTitle"><%= bannerTitleVal %></h1>
-                            <p id="previewDescription"><%= bannerDescVal %></p>
-                            <a href="/products" id="previewButton" class="btn" onclick="event.preventDefault()" style="<%= isButtonEnabled ? '' : 'display: none;' %>"><%= bannerBtnVal %></a>
-                        </div>
                     </div>
                     <button type="submit" class="btn-submit">
                         <span class="btn-text">Salvar Alterações</span>
@@ -515,7 +576,9 @@
         <div class="panel">
             <div class="panel-header">
                 <h2>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="vertical-align: middle; margin-right: 0.5rem;">
                         <rect x="3" y="3" width="7" height="7"></rect>
                         <rect x="14" y="3" width="7" height="7"></rect>
                         <rect x="14" y="14" width="7" height="7"></rect>
@@ -525,99 +588,118 @@
                 </h2>
             </div>
             <div class="panel-body">
-                <form 
-                    id="formUpdateCategory"
-                    action="/updateCategoryHome" 
-                    method="POST" 
-                    enctype="multipart/form-data"
-                    hx-post="/updateCategoryHome"
-                    hx-encoding="multipart/form-data"
-                    hx-swap="none"
-                    hx-disabled-elt="find .btn-submit"
-                    hx-indicator="#categorySpinner"
-                >
+
+                <form id="formUpdateCategory" action="/updateCategoryHome" method="POST" enctype="multipart/form-data"
+                    hx-post="/updateCategoryHome" hx-encoding="multipart/form-data" hx-swap="none"
+                    hx-disabled-elt="find .btn-submit" hx-indicator="#categorySpinner">
+
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
                     <div class="form-group">
                         <label for="categoryTitle">Nome da Categoria</label>
-                        <input type="text" id="categoryTitle" name="title" placeholder="Ex: Moda, Calçados, Acessórios..." required>
+                        <input type="text" id="categoryTitle" name="title"
+                            placeholder="Ex: Moda, Calçados, Acessórios..." required>
                     </div>
                     <div class="form-group">
                         <label for="categoryLink">Link de Destino</label>
-                        <input type="text" id="categoryLink" name="link" placeholder="Ex: /products?category=calcados" required>
+                        <input type="text" id="categoryLink" name="link" placeholder="Ex: /products?category=calcados"
+                            required>
                     </div>
                     <div class="form-group">
                         <label for="categoryImage">Imagem da Categoria</label>
                         <input type="file" id="categoryImage" name="categoryImage" accept="image/*" required>
-                        
+
                         <div class="category-preview-card" id="categoryPreviewCard">
-                            <img id="categoryPreviewImg" src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80" alt="Prévia da categoria">
+                            <span class="hero-preview-badge">
+                                <span class="live-dot"></span>
+                                Prévia ao vivo
+                            </span>
+                            <div id="noCategoryImageWarning" class="preview-warning" style="display: flex;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="var(--warning, #e67e22)" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                <span>Sem imagem selecionada</span>
+                            </div>
+                            <img id="categoryPreviewImg"
+                                src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
+                                alt="Prévia da categoria">
                             <div class="category-card-content">
-                                <h3 id="categoryPreviewTitle">Moda</h3>
-                                <a href="#" class="btn-submit" style="padding: 0.4rem 0.9rem; font-size: 0.875rem;" onclick="event.preventDefault()">Explorar</a>
-                                <a href="#" class="btn-submit btn-preview-action" onclick="event.preventDefault()">Explorar</a>
+                                <h3 id="categoryPreviewTitle">Nome da Categoria</h3>
+                                <a href="#" id="categoryPreviewLinkBtn" class="btn-submit btn-preview-action"
+                                    onclick="event.preventDefault()">Explorar</a>
                             </div>
                         </div>
                     </div>
+
                     <button type="submit" class="btn-submit">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                         <span class="btn-text">Adicionar Categoria ao Array</span>
                         <span id="categorySpinner" class="btn-spinner" aria-hidden="true"></span>
                     </button>
+
                 </form>
 
-                <% 
-                  const savedCategories = locals.homePageData?.banner?.categories || [];
-                %>
-                <% if (savedCategories.length > 0) { %>
-                    <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Categorias Cadastradas no Array (<%= savedCategories.length %>)</h3>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
-                    <div class="categories-list-section">
-                        <h3 class="categories-list-title">Categorias Cadastradas no Array (<%= savedCategories.length %>)</h3>
-                        <div class="categories-grid">
-                            <% savedCategories.forEach(cat => { 
-                                const catImg = cat.imageUrl?.startsWith('http') ? cat.imageUrl : ('/image/' + cat.imageUrl);
-                            %>
-                                <div class="category-preview-card" style="margin-top: 0; max-width: 100%;">
-                                    <img src="<%= catImg %>" alt="<%= cat.title %>" style="height: 140px;">
-                                    <div class="category-card-content" style="padding: 0.75rem;">
-                                        <div>
-                                            <h3 style="font-size: 0.95rem;"><%= cat.title %></h3>
-                                            <small style="color: var(--text-secondary); word-break: break-all;"><%= cat.link %></small>
-                                <div class="category-preview-card category-card-item">
-                                    <img src="<%= catImg %>" alt="<%= cat.title %>">
-                                    <div class="category-card-content">
-                                        <div class="category-card-details">
-                                            <h3><%= cat.title %></h3>
-                                            <small><%= cat.link %></small>
+                <% const savedCategories=locals.homePageData?.banner?.categories || []; %>
+                    <% if (savedCategories.length> 0) { %>
+                        <div class="categories-list-section">
+                            <h3 class="categories-list-title">Categorias Cadastradas no Array (<%=
+                                    savedCategories.length %>)</h3>
+                            <div class="categories-grid">
+                                <% savedCategories.forEach(cat=> {
+                                    const catImg = cat.imageUrl?.startsWith('http') ? cat.imageUrl : ('/image/' +
+                                    cat.imageUrl);
+                                    %>
+                                    <div class="category-preview-card category-card-item">
+                                        <img src="<%= catImg %>" alt="<%= cat.title %>"
+                                            onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80'">
+                                        <div class="category-card-content">
+                                            <div class="category-card-details">
+                                                <h3>
+                                                    <%= cat.title %>
+                                                </h3>
+                                                <small>
+                                                    <%= cat.link %>
+                                                </small>
+                                            </div>
+                                            <form action="/deleteCategoryHome/<%= cat.id %>" method="POST"
+                                                class="category-delete-form"
+                                                onsubmit="return confirm('Remover esta categoria do array?');">
+                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                <button type="submit" class="btn-delete-category" title="Remover">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                                        </path>
+                                                    </svg>
+                                                </button>
+                                            </form>
                                         </div>
-                                        <form action="/deleteCategoryHome/<%= cat.id %>" method="POST" style="margin: 0;" onsubmit="return confirm('Remover esta categoria do array?');">
-                                        <form action="/deleteCategoryHome/<%= cat.id %>" method="POST" class="category-delete-form" onsubmit="return confirm('Remover esta categoria do array?');">
-                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                            <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer; padding: 4px;" title="Remover">
-                                            <button type="submit" class="btn-delete-category" title="Remover">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                </svg>
-                                            </button>
-                                        </form>
                                     </div>
-                                </div>
-                            <% }) %>
-                            <a href="#formUpdateCategory" class="card-add-category" onclick="document.getElementById('categoryTitle')?.focus();">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span style="font-size: 0.9rem; font-weight: 600;">Adicionar Novo Card</span>
-                            </a>
+                                    <% }) %>
+                                        <a href="#formUpdateCategory" class="card-add-category"
+                                            onclick="document.getElementById('categoryTitle')?.focus();">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
+                                            <span style="font-size: 0.9rem; font-weight: 600;">Adicionar Novo</span>
+                                        </a>
+                            </div>
                         </div>
-                    </div>
-                <% } %>
+                        <% } %>
             </div>
         </div>
 
@@ -631,7 +713,7 @@
         const bannerExibirBotaoInput = document.getElementById('bannerExibirBotao');
         const bannerButtonTextInput = document.getElementById('bannerButtonText');
         const bannerImageInput = document.getElementById('bannerImage');
-        
+
         const previewTitle = document.getElementById('previewTitle');
         const previewDescription = document.getElementById('previewDescription');
         const previewButton = document.getElementById('previewButton');
@@ -655,7 +737,7 @@
         // Alterna visibilidade do botão no preview ao marcar/desmarcar o checkbox
         if (bannerExibirBotaoInput && previewButton) {
             bannerExibirBotaoInput.addEventListener('change', (e) => {
-                previewButton.style.display = e.target.checked ? 'inline-block' : 'none';
+                previewButton.style.display = e.target.checked ? 'inline-flex' : 'none';
             });
         }
 
@@ -667,11 +749,11 @@
         }
 
         if (bannerImageInput && bannerHeroPreview) {
-            bannerImageInput.addEventListener('change', function(event) {
+            bannerImageInput.addEventListener('change', function (event) {
                 const file = event.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
+                    reader.onload = function (e) {
                         bannerHeroPreview.style.backgroundImage = `url('${e.target.result}')`;
                         bannerHeroPreview.classList.remove('no-image');
                         if (noImageWarning) noImageWarning.style.display = 'none';
@@ -688,8 +770,12 @@
         // Interatividade e Live Preview para o Banner de Categoria
         const categoryTitleInput = document.getElementById('categoryTitle');
         const categoryPreviewTitle = document.getElementById('categoryPreviewTitle');
+        const categoryLinkInput = document.getElementById('categoryLink');
+        const categoryPreviewLinkBtn = document.getElementById('categoryPreviewLinkBtn');
         const categoryImageInput = document.getElementById('categoryImage');
         const categoryPreviewImg = document.getElementById('categoryPreviewImg');
+        const noCategoryImageWarning = document.getElementById('noCategoryImageWarning');
+        const defaultCategoryPlaceholder = 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80';
 
         if (categoryTitleInput && categoryPreviewTitle) {
             categoryTitleInput.addEventListener('input', (e) => {
@@ -697,38 +783,64 @@
             });
         }
 
+        if (categoryLinkInput && categoryPreviewLinkBtn) {
+            categoryLinkInput.addEventListener('input', (e) => {
+                const linkVal = e.target.value.trim();
+                categoryPreviewLinkBtn.setAttribute('title', linkVal ? `Destino: ${linkVal}` : 'Explorar');
+            });
+        }
+
         if (categoryImageInput && categoryPreviewImg) {
-            categoryImageInput.addEventListener('change', function(event) {
+            categoryImageInput.addEventListener('change', function (event) {
                 const file = event.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
+                    reader.onload = function (e) {
                         categoryPreviewImg.src = e.target.result;
+                        if (noCategoryImageWarning) noCategoryImageWarning.style.display = 'none';
                     };
                     reader.readAsDataURL(file);
+                } else {
+                    categoryPreviewImg.src = defaultCategoryPlaceholder;
+                    if (noCategoryImageWarning) noCategoryImageWarning.style.display = 'flex';
                 }
             });
         }
 
         // Integração com evento HX-Trigger para executar showNotification padrão
-        document.body.addEventListener('showNotification', function(e) {
+        document.body.addEventListener('showNotification', function (e) {
             const data = e.detail?.value || e.detail;
             if (typeof showNotification === 'function' && data) {
                 showNotification(data.message || data, data.type || 'success');
             }
-            // Limpa o arquivo selecionado após persistência concluída
+            // Limpa o arquivo e campos após persistência concluída
             if (bannerImageInput) {
                 bannerImageInput.value = '';
             }
             if (categoryImageInput) {
                 categoryImageInput.value = '';
             }
+            if (categoryTitleInput) {
+                categoryTitleInput.value = '';
+            }
+            if (categoryLinkInput) {
+                categoryLinkInput.value = '';
+            }
+            if (categoryPreviewTitle) {
+                categoryPreviewTitle.textContent = 'Nome da Categoria';
+            }
+            if (categoryPreviewImg) {
+                categoryPreviewImg.src = defaultCategoryPlaceholder;
+            }
+            if (noCategoryImageWarning) {
+                noCategoryImageWarning.style.display = 'flex';
+            }
         });
 
         // Fallback resiliente: impede recarregamento mesmo se o HTMX não estiver ativo
         const formUpdateBanner = document.getElementById('formUpdateBanner');
         if (formUpdateBanner) {
-            formUpdateBanner.addEventListener('submit', async function(e) {
+            formUpdateBanner.addEventListener('submit', async function (e) {
                 if (window.htmx) return; // HTMX gerencia a requisição se estiver disponível
 
                 e.preventDefault();
@@ -772,11 +884,57 @@
             });
         }
 
+        // Fallback resiliente para o formulário de categoria
+        const formUpdateCategory = document.getElementById('formUpdateCategory');
+        if (formUpdateCategory) {
+            formUpdateCategory.addEventListener('submit', async function (e) {
+                if (window.htmx) return; // HTMX gerencia a requisição se estiver disponível
+
+                e.preventDefault();
+                const submitBtn = formUpdateCategory.querySelector('.btn-submit');
+                const spinner = submitBtn?.querySelector('.btn-spinner');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    if (spinner) spinner.style.display = 'inline-block';
+                }
+
+                try {
+                    const formData = new FormData(formUpdateCategory);
+                    const response = await fetch('/updateCategoryHome', {
+                        method: 'POST',
+                        headers: { 'HX-Request': 'true' },
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        if (typeof showNotification === 'function') {
+                            showNotification('Categoria adicionada com sucesso!', 'success');
+                        }
+                        window.location.reload();
+                    } else {
+                        const errData = await response.json().catch(() => ({}));
+                        const errMsg = errData.message || errData.error || 'Erro ao adicionar a categoria.';
+                        if (typeof showNotification === 'function') {
+                            showNotification(errMsg, 'error');
+                        }
+                    }
+                } catch (err) {
+                    console.error('Erro na requisição da categoria:', err);
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        if (spinner) spinner.style.display = '';
+                    }
+                }
+            });
+        }
+
         // Captura erros de resposta HTTP vindos do HTMX sem recarregar a tela
-        document.body.addEventListener('htmx:responseError', function(event) {
+        document.body.addEventListener('htmx:responseError', function (event) {
             if (typeof showNotification === 'function') {
-                showNotification('Falha ao atualizar o banner. Verifique os dados.', 'error');
+                showNotification('Falha ao processar a requisição. Verifique os dados.', 'error');
             }
         });
     });
+
 </script>

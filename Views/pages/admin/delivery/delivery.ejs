@@ -150,6 +150,12 @@
                             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
                                 Tel: <%= order.user?.phone || 'Não informado' %>
                             </div>
+                            <% if (order.address && (order.address.street || order.address.cep)) { %>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; display: flex; align-items: flex-start; gap: 4px;">
+                                    <i data-lucide="map-pin" style="width: 12px; height: 12px; min-width: 12px; margin-top: 2px;"></i>
+                                    <span><%= order.address.street ? (order.address.street + (order.address.neighborhood ? ', ' + order.address.neighborhood : '')) : '' %> (CEP: <%= order.address.cep %>)</span>
+                                </div>
+                            <% } %>
                         </article>
                     <% }) %>
                 <% } else { %>

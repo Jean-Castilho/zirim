@@ -1,16 +1,19 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
 <style>
     .cart-container {
         max-width: 1200px;
-        margin: 2rem auto;
-        padding: 0 20px;
+        margin: 1.5rem auto;
+        padding: 0 25px;
         display: grid;
         grid-template-columns: 1fr 350px;
-        gap: 20px;
+        gap: 15px;
     }
 
     .cart-container h1 {
         grid-column: 1 / -1;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
         font-size: 2rem;
         color: var(--cor-primaria);
     }
@@ -138,15 +141,13 @@
     }
 
     .cart-summary-container {
-        align-self: flex-start;
+        width: 100%;
     }
 
     .cart-summary {
         background: #f9f9f9;
-        padding: 25px;
+        padding: 20px;
         border-radius: 12px;
-        position: sticky;
-        top: 100px;
     }
 
     .summary-item {
@@ -238,6 +239,10 @@
             grid-template-columns: 1fr;
         }
 
+        .cart-sidebar {
+            position: static;
+        }
+
         .cart-summary {
             position: static;
         }
@@ -258,7 +263,316 @@
             border-top: 1px dashed #eee;
         }
     }
+
+    /* Posicionamento do Grid para itens e sidebar */
+    .cart-items-list {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .cart-sidebar {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 5px;
+        position: sticky;
+        top: 90px;
+    }
+
+    .cart-maps-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        padding: 14px 16px;
+        border: 1px solid #eee;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Cabeçalho do Bloco de CEP e Frete */
+    .cart-cep-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .cart-cep-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--cor-primaria);
+    }
+
+    .cart-cep-title .material-icons {
+        color: var(--cor-secundaria);
+        font-size: 1.2rem;
+    }
+
+    .cep-help-link {
+        font-size: 0.78rem;
+        color: #666;
+        text-decoration: underline;
+        transition: color 0.2s;
+    }
+
+    .cep-help-link:hover {
+        color: var(--cor-secundaria);
+    }
+
+    /* Formulário de Busca por CEP */
+    .cart-cep-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .cep-input-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .cart-cep-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .cart-cep-input:focus {
+        border-color: var(--cor-secundaria);
+        box-shadow: 0 0 0 3px rgba(225, 7, 50, 0.12);
+    }
+
+    .btn-cep-calc {
+        padding: 8px 14px;
+        background: var(--cor-primaria);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: background 0.2s, transform 0.15s;
+    }
+
+    .btn-cep-calc:hover {
+        background: var(--cor-secundaria);
+        transform: translateY(-1px);
+    }
+
+    .btn-cep-calc:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .cart-cep-loading {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        color: #555;
+    }
+
+    .cart-cep-loading .material-icons {
+        color: var(--cor-secundaria);
+        font-size: 1.1rem;
+    }
+
+    .cart-cep-error {
+        font-size: 0.8rem;
+        color: var(--cor-erro, #c92a2a);
+        background: #fff5f5;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border-left: 3px solid var(--cor-erro, #c92a2a);
+    }
+
+    /* Detalhes do Endereço e Opções de Frete */
+    .cart-cep-result {
+        background: #fbfbfb;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .cep-address-info {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .cep-address-info .material-icons {
+        color: var(--cor-secundaria);
+        margin-top: 1px;
+        font-size: 1.1rem;
+    }
+
+    .cep-address-text strong {
+        display: block;
+        color: var(--cor-primaria);
+        font-size: 0.85rem;
+    }
+
+    .cep-address-text span {
+        color: #666;
+        font-size: 0.78rem;
+    }
+
+    .shipping-options {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 2px;
+    }
+
+    .shipping-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 10px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .shipping-option:hover {
+        border-color: #bbb;
+    }
+
+    .shipping-option.selected {
+        border-color: var(--cor-secundaria);
+        background: #fff9f9;
+    }
+
+    .shipping-option-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .shipping-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--cor-primaria);
+    }
+
+    .shipping-deadline {
+        font-size: 0.74rem;
+        color: #777;
+    }
+
+    .shipping-price {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--cor-primaria);
+    }
+
+    .shipping-price.free {
+        color: #2b8a3e;
+    }
+
+    /* Seção do Mini-Mapa */
+    .cart-maps {
+        border-top: 1px solid #eee;
+        padding-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .cart-map-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--cor-primaria);
+    }
+
+    .map-status-badge {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 10px;
+        background: #eee;
+        color: #666;
+    }
+
+    .map-status-badge.active {
+        background: #e8f5e9;
+        color: #2b8a3e;
+    }
+
+    .cart-mini-map {
+        height: 150px;
+        width: 100%;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+        position: relative;
+        background: #f4f4f4;
+        z-index: 1;
+    }
+
+    .cart-mini-map .leaflet-pane {
+        z-index: 10;
+    }
+
+    .cart-mini-map .leaflet-top,
+    .cart-mini-map .leaflet-bottom {
+        z-index: 20;
+    }
+
+    .map-placeholder {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #888;
+        gap: 4px;
+        text-align: center;
+        padding: 10px;
+        background: #fafafa;
+    }
+
+    .map-placeholder .material-icons {
+        font-size: 1.6rem;
+        color: #bbb;
+    }
+
+    .map-placeholder p {
+        font-size: 0.78rem;
+        max-width: 240px;
+        margin: 0;
+    }
+
+    .zirim-map-marker {
+        background: none;
+        border: none;
+    }
 </style>
+
 <div class="cart-container">
     <h1>Meu Carrinho</h1>
     <div id="cart-items" class="cart-items-list">
@@ -268,24 +582,109 @@
         </div>
     </div>
 
-    <div class="cart-summary-container">
-        <div class="cart-summary">
-            <div class="summary-item">
-                <span>Subtotal</span>
-                <span>R$ <span id="cart-subtotal">0,00</span></span>
-            </div>
-            <div class="summary-item">
-                <span>Frete</span>
-                <span class="free-shipping">Grátis</span>
-            </div>
-            <div class="summary-total">
-                <span>Total</span>
-                <span>R$ <span id="cart-total">0,00</span></span>
+    <div class="cart-sidebar">
+        <div class="cart-maps-container" id="cart-maps-container">
+            
+            <div class="cart-cep-header">
+                <div class="cart-cep-title">
+                    <span class="material-icons">local_shipping</span>
+                    <span>Calcular Frete</span>
+                </div>
+                <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" rel="noopener noreferrer" class="cep-help-link">Não sei meu CEP</a>
             </div>
 
-            <button id="checkout-btn" class="btn btn-checkout">Finalizar Compra</button>
+            <div class="cart-cep-form">
+                <div class="cep-input-group">
+                    <input 
+                        type="text" 
+                        id="cart-cep-input" 
+                        class="cart-cep-input" 
+                        placeholder="00000-000" 
+                        maxlength="9" 
+                        inputmode="numeric" 
+                        autocomplete="postal-code"
+                    >
+                    <button type="button" id="cart-cep-btn" class="btn-cep-calc">
+                        <span class="material-icons">search</span>
+                        <span>Calcular</span>
+                    </button>
+                </div>
+                <div id="cart-cep-loading" class="cart-cep-loading" style="display: none;">
+                    <span class="material-icons rotating">sync</span>
+                    <span>Buscando CEP e calculando rotas...</span>
+                </div>
+                <div id="cart-cep-error" class="cart-cep-error" style="display: none;"></div>
+            </div>
 
-            <a href="/products" class="btn-continue-shopping">Continuar Comprando</a>
+            <div id="cart-cep-result" class="cart-cep-result" style="display: none;">
+                <div class="cep-address-info">
+                    <span class="material-icons">place</span>
+                    <div class="cep-address-text">
+                        <strong id="cep-res-street"></strong>
+                        <span id="cep-res-neighborhood"></span>
+                    </div>
+                </div>
+
+                <div class="shipping-options" id="shipping-options">
+                    <label class="shipping-option selected" data-type="padrao" data-cost="0">
+                        <div class="shipping-option-left">
+                            <input type="radio" name="shipping-option" value="padrao" checked>
+                            <div>
+                                <div class="shipping-title">Entrega Normal</div>
+                                <div class="shipping-deadline">Previsão: 3 a 5 dias úteis</div>
+                            </div>
+                        </div>
+                        <span class="shipping-price free">Grátis</span>
+                    </label>
+                    <label class="shipping-option" data-type="expresso" data-cost="14.90">
+                        <div class="shipping-option-left">
+                            <input type="radio" name="shipping-option" value="expresso">
+                            <div>
+                                <div class="shipping-title">Entrega Expressa</div>
+                                <div class="shipping-deadline">Previsão: 1 a 2 dias úteis</div>
+                            </div>
+                        </div>
+                        <span class="shipping-price">R$ 14,90</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="cart-maps"> 
+                <div class="cart-map-title">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span class="material-icons" style="font-size: 1.1rem; color: var(--cor-secundaria);">pin_drop</span>
+                        <span>Mini-Mapa</span>
+                    </div>
+                    <span id="map-status-badge" class="map-status-badge">Aguardando CEP</span>
+                </div>
+                <div id="cart-mini-map" class="cart-mini-map">
+                    <div id="cart-map-placeholder" class="map-placeholder">
+                        <span class="material-icons">explore</span>
+                        <p>Digite o seu CEP para ver o mapa</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-summary-container">
+            <div class="cart-summary">
+                <div class="summary-item">
+                    <span>Subtotal</span>
+                    <span>R$ <span id="cart-subtotal">0,00</span></span>
+                </div>
+                <div class="summary-item">
+                    <span>Frete</span>
+                    <span class="free-shipping" id="cart-shipping">Grátis</span>
+                </div>
+                <div class="summary-total">
+                    <span>Total</span>
+                    <span>R$ <span id="cart-total">0,00</span></span>
+                </div>
+
+                <button id="checkout-btn" class="btn btn-checkout">Finalizar Compra</button>
+
+                <a href="/products" class="btn-continue-shopping">Continuar Comprando</a>
+            </div>
         </div>
     </div>
 </div>
@@ -293,16 +692,49 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const CartPage = {
+            shippingCost: 0,
+            currentSubtotal: 0,
+            mapInstance: null,
+            mapMarker: null,
+
             elements: {
                 itemsContainer: document.getElementById('cart-items'),
                 totalDisplay: document.getElementById('cart-total'),
                 subtotalDisplay: document.getElementById('cart-subtotal'),
-                checkoutBtn: document.getElementById('checkout-btn')
+                checkoutBtn: document.getElementById('checkout-btn'),
+                mapsContainer: document.getElementById('cart-maps-container'),
+                cepInput: document.getElementById('cart-cep-input'),
+                cepBtn: document.getElementById('cart-cep-btn'),
+                cepLoading: document.getElementById('cart-cep-loading'),
+                cepError: document.getElementById('cart-cep-error'),
+                cepResult: document.getElementById('cart-cep-result'),
+                cepStreet: document.getElementById('cep-res-street'),
+                cepNeighborhood: document.getElementById('cep-res-neighborhood'),
+                shippingDisplay: document.getElementById('cart-shipping'),
+                miniMap: document.getElementById('cart-mini-map'),
+                mapPlaceholder: document.getElementById('cart-map-placeholder'),
+                mapStatusBadge: document.getElementById('map-status-badge'),
+                shippingOptionsContainer: document.getElementById('shipping-options')
             },
 
             init() {
                 this.render();
                 this.bindEvents();
+                this.initCep();
+            },
+
+            initCep() {
+                try {
+                    const savedCepData = JSON.parse(localStorage.getItem('cart_cep_data') || 'null');
+                    if (savedCepData && savedCepData.cep) {
+                        if (this.elements.cepInput) {
+                            this.elements.cepInput.value = savedCepData.formattedCep || savedCepData.cep;
+                        }
+                        this.applyCepResult(savedCepData, false);
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar CEP salvo:', e);
+                }
             },
 
             bindEvents() {
@@ -330,6 +762,338 @@
                         this.toggleSelection(checkbox.dataset.index, checkbox.checked);
                     }
                 });
+
+                // Eventos de CEP e Frete
+                if (this.elements.cepInput) {
+                    this.elements.cepInput.addEventListener('input', (e) => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length > 8) val = val.slice(0, 8);
+                        if (val.length > 5) {
+                            e.target.value = val.slice(0, 5) + '-' + val.slice(5);
+                        } else {
+                            e.target.value = val;
+                        }
+                        if (this.elements.cepError) {
+                            this.elements.cepError.style.display = 'none';
+                        }
+                    });
+
+                    this.elements.cepInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.handleCepLookup();
+                        }
+                    });
+                }
+
+                if (this.elements.cepBtn) {
+                    this.elements.cepBtn.addEventListener('click', () => {
+                        this.handleCepLookup();
+                    });
+                }
+
+                if (this.elements.shippingOptionsContainer) {
+                    this.elements.shippingOptionsContainer.addEventListener('change', (e) => {
+                        const radio = e.target.closest('input[type="radio"]');
+                        if (radio) {
+                            const optionLabel = radio.closest('.shipping-option');
+                            const allOptions = this.elements.shippingOptionsContainer.querySelectorAll('.shipping-option');
+                            allOptions.forEach(opt => opt.classList.remove('selected'));
+                            if (optionLabel) optionLabel.classList.add('selected');
+
+                            const cost = parseFloat(optionLabel.dataset.cost || '0');
+                            this.updateShipping(cost);
+                        }
+                    });
+                }
+            },
+
+            updateShipping(cost) {
+                this.shippingCost = cost;
+                if (this.elements.shippingDisplay) {
+                    if (cost === 0) {
+                        this.elements.shippingDisplay.className = 'free-shipping';
+                        this.elements.shippingDisplay.innerText = 'Grátis';
+                    } else {
+                        this.elements.shippingDisplay.className = '';
+                        this.elements.shippingDisplay.innerText = `R$ ${cost.toFixed(2).replace('.', ',')}`;
+                    }
+                }
+                this.updateTotals(this.currentSubtotal);
+            },
+
+            async handleCepLookup() {
+                const rawValue = this.elements.cepInput.value;
+                const cleanCep = rawValue.replace(/\D/g, '');
+
+                if (cleanCep.length !== 8) {
+                    this.showCepError('Por favor, digite um CEP válido com 8 dígitos.');
+                    return;
+                }
+
+                this.showCepLoading(true);
+
+                try {
+                    const data = await this.fetchAddressAndCoords(cleanCep);
+                    data.formattedCep = cleanCep.slice(0, 5) + '-' + cleanCep.slice(5);
+                    data.cep = cleanCep;
+                    localStorage.setItem('cart_cep_data', JSON.stringify(data));
+                    this.applyCepResult(data, true);
+                } catch (error) {
+                    console.error('Erro na consulta do CEP:', error);
+                    this.showCepError(error.message || 'Não foi possível consultar este CEP.');
+                } finally {
+                    this.showCepLoading(false);
+                }
+            },
+
+            async fetchAddressAndCoords(cleanCep) {
+                let result = null;
+
+                // 1. Consulta BrasilAPI v2 (endereço + coordenadas geográficas nativas)
+                try {
+                    const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${cleanCep}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        let lat = null;
+                        let lng = null;
+                        if (data.location && data.location.coordinates) {
+                            lng = parseFloat(data.location.coordinates.longitude);
+                            lat = parseFloat(data.location.coordinates.latitude);
+                        }
+                        result = {
+                            street: data.street || '',
+                            neighborhood: data.neighborhood || '',
+                            city: data.city || '',
+                            state: data.state || '',
+                            lat,
+                            lng
+                        };
+                    }
+                } catch (e) {
+                    console.warn('BrasilAPI indisponível, tentando ViaCEP:', e);
+                }
+
+                // 2. Fallback para ViaCEP se BrasilAPI falhar
+                if (!result) {
+                    const viaRes = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                    if (!viaRes.ok) throw new Error('CEP não encontrado');
+                    const viaData = await viaRes.json();
+                    if (viaData.erro) throw new Error('CEP não encontrado');
+
+                    result = {
+                        street: viaData.logradouro || '',
+                        neighborhood: viaData.bairro || '',
+                        city: viaData.localidade || '',
+                        state: viaData.uf || '',
+                        lat: null,
+                        lng: null
+                    };
+                }
+
+                // 3. Se ainda não temos coordenadas, geocodifica via OpenStreetMap Nominatim
+                if (!result.lat || !result.lng || isNaN(result.lat) || isNaN(result.lng)) {
+                    try {
+                        const searchTerms = [
+                            result.street ? `${result.street}, ${result.neighborhood || ''}, ${result.city}, ${result.state}, Brasil` : null,
+                            result.neighborhood ? `${result.neighborhood}, ${result.city}, ${result.state}, Brasil` : null,
+                            `${result.city}, ${result.state}, Brasil`
+                        ].filter(Boolean);
+
+                        for (const query of searchTerms) {
+                            const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+                            const nomRes = await fetch(nomUrl, {
+                                headers: { 'Accept-Language': 'pt-BR' }
+                            });
+                            if (nomRes.ok) {
+                                const nomList = await nomRes.json();
+                                if (nomList && nomList.length > 0) {
+                                    result.lat = parseFloat(nomList[0].lat);
+                                    result.lng = parseFloat(nomList[0].lon);
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (geoErr) {
+                        console.warn('Geocodificação Nominatim falhou:', geoErr);
+                    }
+                }
+
+                // Coordenadas de contingência caso todas as APIs de geolocalização falhem
+                if (!result.lat || !result.lng || isNaN(result.lat) || isNaN(result.lng)) {
+                    result.lat = -23.5505;
+                    result.lng = -46.6333;
+                }
+
+                return result;
+            },
+
+            applyCepResult(data, isNewSearch = false) {
+                if (this.elements.cepStreet) {
+                    this.elements.cepStreet.innerText = data.street || `${data.city} - ${data.state}`;
+                }
+                if (this.elements.cepNeighborhood) {
+                    const parts = [];
+                    if (data.neighborhood) parts.push(data.neighborhood);
+                    if (data.city) parts.push(data.city);
+                    if (data.state) parts.push(data.state);
+                    this.elements.cepNeighborhood.innerText = parts.join(' - ');
+                }
+
+                if (this.elements.cepResult) {
+                    this.elements.cepResult.style.display = 'flex';
+                }
+
+                if (this.elements.mapStatusBadge) {
+                    this.elements.mapStatusBadge.innerText = 'Localizado';
+                    this.elements.mapStatusBadge.classList.add('active');
+                }
+
+                const popupContent = `
+                    <div style="font-size: 12px; line-height: 1rem;">
+                        <strong style="color: #111;">Entrega em:</strong><br>
+                        ${data.street ? `<span>${data.street}</span><br>` : ''}
+                        <span>${data.neighborhood ? data.neighborhood + ', ' : ''}${data.city}/${data.state}</span><br>
+                        <span style="font-size: 11px; color: #666;">CEP: ${data.formattedCep || data.cep}</span>
+                    </div>
+                `;
+
+                this.renderMiniMap(data.lat, data.lng, popupContent, isNewSearch);
+            },
+
+            showCepLoading(isLoading) {
+                if (this.elements.cepLoading) {
+                    this.elements.cepLoading.style.display = isLoading ? 'flex' : 'none';
+                }
+                if (this.elements.cepBtn) {
+                    this.elements.cepBtn.disabled = isLoading;
+                }
+                if (isLoading && this.elements.cepError) {
+                    this.elements.cepError.style.display = 'none';
+                }
+            },
+
+            showCepError(message) {
+                if (this.elements.cepError) {
+                    this.elements.cepError.innerText = message;
+                    this.elements.cepError.style.display = 'block';
+                }
+                if (this.elements.cepResult) {
+                    this.elements.cepResult.style.display = 'none';
+                }
+                if (this.elements.mapStatusBadge) {
+                    this.elements.mapStatusBadge.innerText = 'CEP não encontrado';
+                    this.elements.mapStatusBadge.classList.remove('active');
+                }
+            },
+
+            renderMiniMap(lat, lng, popupContent, animate = true) {
+                const initMapCode = () => {
+                    if (!window.L) return;
+
+                    if (this.elements.mapPlaceholder) {
+                        this.elements.mapPlaceholder.style.display = 'none';
+                    }
+
+                    const markerIcon = L.divIcon({
+                        className: 'zirim-map-marker',
+                        html: `
+                            <div style="
+                                width: 24px;
+                                height: 24px;
+                                background-color: #e10732;
+                                border: 2px solid #ffffff;
+                                border-radius: 50% 50% 50% 0;
+                                transform: rotate(-45deg);
+                                box-shadow: 0 1px 0.8px rgba(225, 7, 50, 0.4);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">
+                                <span class="material-icons" style="
+                                    color: #ffffff;
+                                    font-size: 12px;
+                                    transform: rotate(45deg);
+                                ">place</span>
+                            </div>
+                        `,
+                        iconSize: [24, 24],
+                        iconAnchor: [13, 26],
+                        popupAnchor: [0, -26]
+                    });
+
+                    if (!this.mapInstance) {
+                        this.mapInstance = L.map('cart-mini-map', {
+                            zoomControl: true,
+                            scrollWheelZoom: false
+                        }).setView([lat, lng], 15);
+
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                            maxZoom: 19,
+                            subdomains: 'abcd'
+                        }).addTo(this.mapInstance);
+
+                        this.mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(this.mapInstance);
+                        if (popupContent) {
+                            this.mapMarker.bindPopup(popupContent).openPopup();
+                        }
+                    } else {
+                        if (animate) {
+                            this.mapInstance.flyTo([lat, lng], 15, { duration: 1.2 });
+                        } else {
+                            this.mapInstance.setView([lat, lng], 15);
+                        }
+
+                        if (this.mapMarker) {
+                            this.mapMarker.setLatLng([lat, lng]);
+                            if (popupContent) {
+                                this.mapMarker.setPopupContent(popupContent).openPopup();
+                            }
+                        } else {
+                            this.mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(this.mapInstance);
+                            if (popupContent) {
+                                this.mapMarker.bindPopup(popupContent).openPopup();
+                            }
+                        }
+                    }
+
+                    setTimeout(() => {
+                        if (this.mapInstance) {
+                            this.mapInstance.invalidateSize();
+                        }
+                    }, 250);
+                };
+
+                if (window.L) {
+                    initMapCode();
+                } else {
+                    this.loadLeaflet(initMapCode);
+                }
+            },
+
+            loadLeaflet(callback) {
+                if (window.L) {
+                    callback();
+                    return;
+                }
+                if (!document.getElementById('leaflet-css')) {
+                    const link = document.createElement('link');
+                    link.id = 'leaflet-css';
+                    link.rel = 'stylesheet';
+                    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                    document.head.appendChild(link);
+                }
+                if (!document.getElementById('leaflet-js')) {
+                    const script = document.createElement('script');
+                    script.id = 'leaflet-js';
+                    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                    script.onload = () => callback();
+                    document.head.appendChild(script);
+                } else {
+                    const existing = document.getElementById('leaflet-js');
+                    existing.addEventListener('load', () => callback());
+                }
             },
 
             toggleSelection(index, isChecked) {
@@ -353,9 +1117,16 @@
                             <a href="/products" class="btn-primary">Explorar Produtos</a>
                         </div>
                     `;
+                    if (this.elements.mapsContainer) {
+                        this.elements.mapsContainer.style.display = 'none';
+                    }
                     this.updateTotals(0);
                     this.elements.checkoutBtn.disabled = true;
                     return;
+                }
+
+                if (this.elements.mapsContainer) {
+                    this.elements.mapsContainer.style.display = 'flex';
                 }
 
                 let html = '';
@@ -406,11 +1177,19 @@
                 this.elements.itemsContainer.innerHTML = html;
                 this.updateTotals(total);
                 this.elements.checkoutBtn.disabled = !hasSelected;
+
+                if (this.mapInstance) {
+                    setTimeout(() => {
+                        this.mapInstance.invalidateSize();
+                    }, 200);
+                }
             },
 
             updateTotals(total) {
-                this.elements.totalDisplay.innerText = total.toFixed(2);
-                this.elements.subtotalDisplay.innerText = total.toFixed(2);
+                this.currentSubtotal = total;
+                const finalTotal = total > 0 ? (total + this.shippingCost) : 0;
+                this.elements.totalDisplay.innerText = finalTotal.toFixed(2).replace('.', ',');
+                this.elements.subtotalDisplay.innerText = total.toFixed(2).replace('.', ',');
             },
 
             removeItem(index) {
@@ -424,9 +1203,9 @@
             updateQuantity(index, change) {
                 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
                 const newQty = cart[index].quantidade + change;
-            const maxQty = cart[index].estoqueMax ?? Infinity;
+                const maxQty = cart[index].estoqueMax ?? Infinity;
 
-            if (newQty >= 1 && newQty <= maxQty) {
+                if (newQty >= 1 && newQty <= maxQty) {
                     cart[index].quantidade = newQty;
                     localStorage.setItem('cart', JSON.stringify(cart));
                     this.render();
@@ -440,8 +1219,23 @@
                 const cart = JSON.parse(localStorage.getItem('cart') || '[]');
                 const selectedItems = cart.filter(item => item.selected !== false);
                 if (selectedItems.length === 0) return;
-                
-                console.log('Itens selecionados:', selectedItems);
+
+                // Valida se o CEP foi informado antes de prosseguir
+                let savedCepData = null;
+                try {
+                    savedCepData = JSON.parse(localStorage.getItem('cart_cep_data') || 'null');
+                } catch (e) {}
+
+                const currentCepDigits = this.elements.cepInput ? this.elements.cepInput.value.replace(/\D/g, '') : '';
+
+                if (!savedCepData || !savedCepData.cep || currentCepDigits.length !== 8) {
+                    if (this.elements.cepInput) {
+                        this.elements.cepInput.focus();
+                        this.elements.cepInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    this.showCepError('Por favor, informe seu CEP para calcular a entrega antes de finalizar a compra.');
+                    return;
+                }
 
                 try {
                     this.elements.checkoutBtn.disabled = true;
@@ -455,14 +1249,35 @@
                         tamanho: item.tamanho || ''
                     }));
 
-                    console.log('Items a serem enviados:', items)
+                    const selectedShippingOption = document.querySelector('input[name="shipping-option"]:checked');
+                    const shippingMethod = selectedShippingOption ? selectedShippingOption.value : 'padrao';
+                    const shippingCost = Number(this.shippingCost || 0);
+
+                    const orderPayload = {
+                        items,
+                        address: {
+                            cep: savedCepData.formattedCep || savedCepData.cep,
+                            street: savedCepData.street || '',
+                            neighborhood: savedCepData.neighborhood || '',
+                            city: savedCepData.city || '',
+                            state: savedCepData.state || '',
+                            lat: savedCepData.lat,
+                            lng: savedCepData.lng
+                        },
+                        shipping: {
+                            method: shippingMethod,
+                            cost: shippingCost
+                        }
+                    };
+
+                    console.log('Payload do pedido a ser enviado:', orderPayload);
                     
                     const response = await fetch('/orders/creat-Order', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ items })
+                        body: JSON.stringify(orderPayload)
                     });
 
                     if (response.redirected) {

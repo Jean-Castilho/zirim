@@ -215,11 +215,40 @@ export default class OrderRepository extends BaseRepository {
                 return res.status(401).send('Usuário não autenticado');
             }
             const validatedItems = await validateCartItems(req.body.items);
-            const totalPrice = validatedItems.reduce((acc, item) => acc + item.preco * Number(item.quantidade), 0);
+            const itemsTotal = validatedItems.reduce((acc, item) => acc + item.preco * Number(item.quantidade), 0);
+
+            const addressData = req.body.address || {};
+            const shippingData = req.body.shipping || {};
+            const shippingCost = Number(shippingData.cost ?? addressData.shippingCost ?? 0);
+            const validShippingCost = (Number.isFinite(shippingCost) && shippingCost > 0) ? shippingCost : 0;
+            const totalPrice = itemsTotal + validShippingCost;
 
             const payloadOrder = {
-                user: { _id: user._id, phone: user.phone },
+                user: { 
+                    _id: user._id, 
+                    name: user.name || 'Cliente Zirim',
+                    phone: user.phone?.number || user.phone || 'Não informado',
+                    email: user.email?.endereco || user.email || ''
+                },
                 items: validatedItems,
+                address: {
+                    cep: addressData.cep || '',
+                    street: addressData.street || '',
+                    neighborhood: addressData.neighborhood || '',
+                    city: addressData.city || '',
+                    state: addressData.state || '',
+                    complement: addressData.complement || ''
+                },
+                location: {
+                    lat: Number(addressData.lat || -23.5505),
+                    lng: Number(addressData.lng || -46.6333)
+                },
+                shipping: {
+                    method: shippingData.method || 'padrao',
+                    cost: validShippingCost
+                },
+                subtotal: itemsTotal,
+                total: totalPrice,
                 statusInterno: 'pendente', // Inicia como pendente
                 createdAt: new Date(),
                 inventoryProcessed: false, // Garante que o estoque não foi baixado

@@ -30,6 +30,7 @@ export default class BannerRepository extends BaseRepository {
             ativo: banner.ativo !== false,
             tipo: banner.tipo || "principal",
             local: banner.local || "hero",
+            categories: Array.isArray(banner.categories) ? banner.categories : [],
             ...(banner.createdAt && { createdAt: banner.createdAt }),
             ...(banner.updatedAt && { updatedAt: banner.updatedAt })
         };
@@ -126,7 +127,7 @@ export default class BannerRepository extends BaseRepository {
                 subtitulo: "",
                 imagem: ""
             },
-            $setOnInsert: { createdAt: new Date() }
+            $setOnInsert: { createdAt: new Date(), categories: [] }
         };
 
         const result = await this.collection.findOneAndUpdate(filter, update, { upsert: true, returnDocument: 'after' });
@@ -134,9 +135,38 @@ export default class BannerRepository extends BaseRepository {
         return this.#normalizeBanner(updatedDoc);
     }
 
-    async upsertCategoryProduct(data) {
+    async addCategory(categoryItem) {
+        const filter = {
+            $or: [
+                { tipo: "principal" },
+                { tipo: "hero" },
+                { tipo: "hero_principal" },
+                { local: "hero" }
+            ]
+        };
+        return await this.collection.updateOne(
+            filter,
+            {
+                $push: { categories: categoryItem },
+                $set: { updatedAt: new Date() },
+                $setOnInsert: { tipo: "principal", local: "hero", createdAt: new Date() }
+            },
+            { upsert: true }
+        );
+    }
 
-        console.log(data);
-
+    async removeCategory(categoryId) {
+        const filter = {
+            $or: [
+                { tipo: "principal" },
+                { tipo: "hero" },
+                { tipo: "hero_principal" },
+                { local: "hero" }
+            ]
+        };
+        return await this.collection.updateOne(filter, {
+            $pull: { categories: { id: categoryId } },
+            $set: { updatedAt: new Date() }
+        });
     }
 };
