@@ -1,3 +1,4 @@
+import { randomInt } from "crypto";
 import { DataBase } from "../config/db.js";
 
 const OTP_LIFETIME_MINUTES = 15;
@@ -8,11 +9,11 @@ const getOtpCollection = () => {
 };
 
 /**
- * Gera um código OTP numérico de 6 dígitos.
+ * Gera um código OTP numérico de 6 dígitos seguro.
  * @returns {string} O código OTP gerado.
  */
 export const generateOtpCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return randomInt(100000, 1000000).toString();
 };
 
 /**
@@ -39,8 +40,6 @@ export const storeOtpCode = async (identifier, otp) => {
   );
 };
 
-export const armazenCodeOtp = storeOtpCode;
-
 /**
  * Verifica se um código OTP é válido e, em caso afirmativo, o invalida para uso futuro.
  * @param {string} identifier - O identificador do usuário (e.g., 'user@example.com').
@@ -65,8 +64,6 @@ export const verifyOtpCode = async (identifier, otp) => {
 
   return otpEntry;
 };
-
-export const verifyCode = verifyOtpCode;
 
 // INSTRUÇÃO PARA OTIMIZAÇÃO DE BANCO DE DADOS (Índice TTL):
 // execute o seguinte comando uma vez no seu shell do MongoDB:

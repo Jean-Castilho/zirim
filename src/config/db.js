@@ -50,6 +50,8 @@ export const connectDataBase = async () => {
     const ordersCollection = db.collection("orders");
     try {
       await ordersCollection.createIndex({ "user._id": 1 }, { name: "OrderUserIndex" });
+      await ordersCollection.createIndex({ "payment.id": 1 }, { name: "OrderPaymentIdIndex" });
+      await ordersCollection.createIndex({ statusInterno: 1, createdAt: -1 }, { name: "OrderStatusCreatedAtIndex" });
       console.log("Índices de pedidos configurados com sucesso.");
     } catch (err) {
       console.warn("Aviso ao criar índices de pedidos:", err.message);

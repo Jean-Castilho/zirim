@@ -15,7 +15,7 @@
 }
 
 .hero.hero-with-overlay {
-  box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.267);
 }
 
 .hero-link-overlay {
@@ -28,7 +28,7 @@
 
 .categories,
 .featured-products {
-  padding: 1.2rem 0.8rem;
+  padding: 0.6rem 0.0rem 0.0rem 0rem;
 }
 
 .categories {

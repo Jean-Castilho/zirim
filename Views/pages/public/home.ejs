@@ -15,8 +15,10 @@
   <div class="home-container">
 
     <% if (isBannerActive) { %>
-      <section class="hero <%= (hasText || isButtonEnabled) ? 'hero-with-overlay' : '' %>"
-        style="background-image: url('<%= heroBg %>');">
+      <section 
+        class="hero <%= (hasText || isButtonEnabled) ? 'hero-with-overlay' : '' %> preload-bg skeleton-loader"
+        data-bg="<%= heroBg %>"
+      >
         <% if (bannerTitle.trim()) { %>
           <h1>
             <%= bannerTitle %>
@@ -42,8 +44,6 @@
         
       
       <section class="categories">
-          <h2>Compre por Categoria</h2>
-
           <div class="categories-wrapper">
             <% 
               const defaultCategories = [
@@ -61,7 +61,14 @@
                   : ('/image/' + category.imageUrl);
             %>
               <div class="category-card">
-                <img src="<%= catImg %>" alt="<%= category.title %>">
+                <img 
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3C/svg%3E" 
+                  data-src="<%= catImg %>" 
+                  alt="<%= category.title %>"
+                  width="400"
+                  height="300"
+                  class="preload-img skeleton-loader"
+                >
                 <div class="category-card-content">
                   <h3><%= category.title %></h3>
                   <a href="<%= category.link || '/products' %>">Explorar</a>
@@ -88,7 +95,14 @@
                     }
 
                     %>
-                    <img src="<%= imgSrc %>" alt="<%= product.nome %>">
+                    <img 
+                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3C/svg%3E" 
+                      data-src="<%= imgSrc %>" 
+                      alt="<%= product.nome %>"
+                      width="400"
+                      height="400"
+                      class="preload-img skeleton-loader"
+                    >
                     <h3>
                       <%= product.nome %>
                     </h3>
@@ -101,3 +115,174 @@
               <% } %>
         </section>
   </div>
+
+  <style>
+    .category-card,
+    .product-card {
+      overflow: hidden;
+    }
+
+    .preload-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      filter: blur(8px);
+      transform: scale(1.02);
+      opacity: 0.85;
+      transition: filter 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.25s ease-out;
+      will-change: filter, transform, opacity;
+    }
+
+    .category-card img.preload-img {
+      aspect-ratio: 4 / 3;
+    }
+
+    .product-card img.preload-img {
+      aspect-ratio: 1 / 1;
+    }
+
+    .preload-img.loaded {
+      filter: blur(0);
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .preload-bg {
+      min-height: 290px;
+      transition: background-image 0.5s ease-in-out;
+    }
+
+    .preload-bg.skeleton-loader,
+    .skeleton-loader {
+      background-color: #f1f5f9;
+      background-image: linear-gradient(
+        135deg,
+        #f1f5f9 0%,
+        #f1f5f9 25%,
+        #e2e8f0 38%,
+        #cbd5e1 50%,
+        #e2e8f0 62%,
+        #f1f5f9 75%,
+        #f1f5f9 100%
+      );
+      background-size: 300% 300%;
+      background-repeat: no-repeat;
+      animation: skeleton-loading-diagonal 2s infinite ease-in-out;
+    }
+
+    @keyframes skeleton-loading-diagonal {
+      0% {
+        background-position: 100% 100%;
+      }
+      100% {
+        background-position: 0% 0%;
+      }
+    }
+  </style>
+
+  <script>
+    (() => {
+      const preloadImageWithFetch = async (img) => {
+        const src = img.getAttribute('data-src');
+        if (!src || img.dataset.loading) return;
+        img.dataset.loading = 'true';
+
+        try {
+          const response = await fetch(src);
+          if (!response.ok) throw new Error(`Status HTTP: ${response.status}`);
+          
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+
+          img.onload = () => {
+            img.classList.remove('skeleton-loader');
+            img.classList.add('loaded');
+          };
+          img.src = objectUrl;
+
+          if (img.complete) {
+            img.classList.remove('skeleton-loader');
+            img.classList.add('loaded');
+          }
+        } catch (error) {
+          console.warn('Falha no pré-carregamento com fetch. Aplicando fallback direto:', error);
+          img.src = src;
+          img.classList.remove('skeleton-loader');
+          img.classList.add('loaded');
+        }
+      };
+
+      const preloadBgWithFetch = async (el) => {
+        const src = el.getAttribute('data-bg');
+        if (!src || el.dataset.loading) return;
+        el.dataset.loading = 'true';
+
+        try {
+          const response = await fetch(src);
+          if (!response.ok) throw new Error(`Status HTTP: ${response.status}`);
+
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+
+          const tempImg = new Image();
+          tempImg.onload = () => {
+            el.style.backgroundImage = `url('${objectUrl}')`;
+            el.classList.remove('skeleton-loader');
+            el.classList.add('loaded');
+          };
+          tempImg.src = objectUrl;
+
+          if (tempImg.complete) {
+            el.style.backgroundImage = `url('${objectUrl}')`;
+            el.classList.remove('skeleton-loader');
+            el.classList.add('loaded');
+          }
+        } catch (error) {
+          console.warn('Falha no pré-carregamento do hero banner. Aplicando fallback direto:', error);
+          el.style.backgroundImage = `url('${src}')`;
+          el.classList.remove('skeleton-loader');
+          el.classList.add('loaded');
+        }
+      };
+
+      const initPreload = () => {
+        const targets = document.querySelectorAll(
+          'img[data-src]:not([data-loading="true"]), [data-bg]:not([data-loading="true"])'
+        );
+
+        const processTarget = (el) => {
+          if (el.tagName === 'IMG') {
+            preloadImageWithFetch(el);
+          } else {
+            preloadBgWithFetch(el);
+          }
+        };
+
+        if ('IntersectionObserver' in window) {
+          const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                obs.unobserve(entry.target);
+                processTarget(entry.target);
+              }
+            });
+          }, { rootMargin: '100px 0px' });
+
+          targets.forEach((target) => observer.observe(target));
+        } else {
+          targets.forEach(processTarget);
+        }
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPreload);
+      } else {
+        initPreload();
+      }
+
+      document.addEventListener('htmx:afterSwap', initPreload);
+    })();
+  </script>

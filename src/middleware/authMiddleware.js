@@ -1,5 +1,8 @@
-import { randomBytes } from "crypto";
+import { randomBytes, timingSafeEqual } from "crypto";
 import { GeneralError } from "../utils/handleResponse.js"; 
+
+const expectsJson = (req) =>
+  Boolean(req.xhr || req.headers.accept?.includes("json") || req.headers["hx-request"]);
 
 /**
  * Gera e expõe um token CSRF para os templates.
@@ -25,10 +28,19 @@ export const generateCsrfToken = (req, res, next) => {
 export const validateCsrfToken = (req, res, next) => {
   // O token pode vir do corpo da requisição (formulários) ou de um cabeçalho (AJAX)
   const receivedToken = req.headers["x-csrf-token"] || (req.body && req.body._csrf);
-  const sessionToken = req.session?.csrfToken;
+  const sessionToken = req.session?.csrfToken || "";
 
-  // Verifica se os tokens existem e são iguais
-  if (!sessionToken || !receivedToken || sessionToken !== receivedToken) {
+  const isValid = Boolean(
+    receivedToken &&
+    sessionToken &&
+    sessionToken.length === receivedToken.length &&
+    timingSafeEqual(
+      Buffer.from(sessionToken),
+      Buffer.from(receivedToken)
+    )
+  );
+
+  if (!isValid) {
     console.warn("Falha na validação do token CSRF.", {
       path: req.path, 
       method: req.method, 
@@ -50,7 +62,7 @@ export const validateCsrfToken = (req, res, next) => {
 export const requireAuth = (req, res, next) => {
   if (!req.session || !req.session.user) {
     // Retorna erro JSON para requisições de API/AJAX, senão redireciona
-    if (req.xhr || (req.headers.accept && req.headers.accept.includes('json'))) {
+    if (expectsJson(req)) {
       return next(new GeneralError("Acesso não autorizado.", 401));
     }
     return res.redirect("/login");
@@ -64,7 +76,7 @@ export const requireAuth = (req, res, next) => {
 export const requireAdmin = (req, res, next) => {
   if (!req.session || !req.session.user || req.session.user.role !== "admin") {
     // Retorna erro JSON para requisições de API/AJAX, senão redireciona
-    if (req.xhr || (req.headers.accept && req.headers.accept.includes('json'))) {
+    if (expectsJson(req)) {
       return next(new GeneralError("Acesso negado. Privilégios insuficientes.", 403));
     }
     return res.redirect("/login");

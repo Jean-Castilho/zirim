@@ -1,10 +1,6 @@
-import dotenv from "dotenv";
-
 const nameRegex = /^[\p{L}\p{M}'\s-]+$/u;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-
-dotenv.config();
 
 export const validateUser = (data) => {
   const errors = [];

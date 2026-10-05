@@ -74,4 +74,20 @@ export default class UserService {
         const passwordHash = await createHashPassword(password);
         return this.repository.resetPasswordWithToken(tokenHash, passwordHash);
     }
+
+    async countUsers() {
+        return await this.repository.collection.countDocuments({});
+    }
+
+    async getAllUsers(options = { projection: { password: 0 } }) {
+        return await this.repository.findAll({}, options);
+    }
+
+    async getUserById(id) {
+        return await this.repository.findById(id);
+    }
+
+    async deleteUser(id) {
+        return await this.repository.delete(id);
+    }
 }

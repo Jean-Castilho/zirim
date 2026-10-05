@@ -1,4 +1,6 @@
 import OrderRepository from "../repository/OrderRepository.js";
+import { processCreateOrder } from "../services/orderService.js";
+import { UnauthorizedError } from "../utils/handleResponse.js";
 
 export default class OrderController {
     constructor() {
@@ -13,8 +15,16 @@ export default class OrderController {
         return await this.repository.consultarPix(id);
     }
 
-    async creatOrder(req, res) {
-        return await this.repository.creatOrder(req, res);
+    async creatOrder(req, res, next) {
+        try {
+            const user = req.session?.user;
+            if (!user) throw new UnauthorizedError("Usuário não autenticado.");
+
+            const result = await processCreateOrder(user, req.body);
+            return res.redirect(`/checkout/${result.orderId}`);
+        } catch (error) {
+            next(error);
+        }
     }
 
     async cancelOrder(req, res, next) {

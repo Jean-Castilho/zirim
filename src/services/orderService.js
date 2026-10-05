@@ -1,8 +1,10 @@
 import { ObjectId } from "mongodb";
-import ProductControllers from "../controllers/productControllers.js";
+import ProductRepository from "../repository/ProductRepository.js";
+import OrderRepository from "../repository/OrderRepository.js";
 import { ValidationError } from "../utils/handleResponse.js";
 
-const productControllers = new ProductControllers();
+const productRepository = new ProductRepository();
+const orderRepository = new OrderRepository();
 
 export const validateCartItems = async (items) => {
   if (!Array.isArray(items) || items.length === 0) {
@@ -29,7 +31,13 @@ export const validateCartItems = async (items) => {
   });
 
   const productIds = normalizedItems.map((item) => item.id);
-  const selectedProducts = await productControllers.getProductsByIds(productIds);
+  const validObjectIds = productIds
+    .filter((id) => ObjectId.isValid(id))
+    .map((id) => new ObjectId(id));
+
+  const selectedProducts = await productRepository.findAll({
+    _id: { $in: validObjectIds }
+  });
 
   if (!Array.isArray(selectedProducts)) {
     throw new Error("Não foi possível validar os produtos do carrinho via API.");
@@ -51,8 +59,8 @@ export const validateCartItems = async (items) => {
     
     // Busca a variação correspondente por cor e tamanho para obter o preço correto
     const variation = product.variacoes?.find((v) => {
-      const matchColor = !cartItem.cor || (v.cores && v.cores.map(c => c.trim()).includes(cartItem.cor));
-      const matchSize = !cartItem.tamanho || (v.tamanhos && v.tamanhos.map(s => String(s).trim()).includes(cartItem.tamanho));
+      const matchColor = !cartItem.cor || (v.cores && v.cores.some(c => c.trim() === cartItem.cor));
+      const matchSize = !cartItem.tamanho || (v.tamanhos && v.tamanhos.some(s => String(s).trim() === cartItem.tamanho));
       return matchColor && matchSize;
     });
 
@@ -82,4 +90,67 @@ export const validateCartItems = async (items) => {
       tamanho: cartItem.tamanho
     };
   });
+};
+
+export const processCreateOrder = async (user, orderData) => {
+  if (!user) {
+    throw new ValidationError("Usuário não autenticado.");
+  }
+
+  const validatedItems = await validateCartItems(orderData.items);
+  const itemsTotal = validatedItems.reduce((acc, item) => acc + item.preco * Number(item.quantidade), 0);
+
+  const addressData = orderData.address || {};
+  const shippingData = orderData.shipping || {};
+  const shippingCost = Number(shippingData.cost ?? addressData.shippingCost ?? 0);
+  const validShippingCost = (Number.isFinite(shippingCost) && shippingCost > 0) ? shippingCost : 0;
+  const totalPrice = itemsTotal + validShippingCost;
+
+  const payloadOrder = {
+    user: {
+      _id: user._id,
+      name: user.name || "Cliente Zirim",
+      phone: user.phone?.number || user.phone || "Não informado",
+      email: user.email?.endereco || user.email || ""
+    },
+    items: validatedItems,
+    address: {
+      cep: addressData.cep || "",
+      street: addressData.street || "",
+      neighborhood: addressData.neighborhood || "",
+      city: addressData.city || "",
+      state: addressData.state || "",
+      complement: addressData.complement || ""
+    },
+    location: {
+      lat: Number(addressData.lat || -23.5505),
+      lng: Number(addressData.lng || -46.6333)
+    },
+    shipping: {
+      method: shippingData.method || "padrao",
+      cost: validShippingCost
+    },
+    subtotal: itemsTotal,
+    total: totalPrice,
+    statusInterno: "pendente",
+    createdAt: new Date(),
+    inventoryProcessed: false,
+    payment: {}
+  };
+
+  const orderId = await orderRepository.create(payloadOrder);
+
+  const paymentResult = await orderRepository.gerarPix(totalPrice, user);
+  if (paymentResult.error) {
+    await orderRepository.updateOrderPayment(orderId, paymentResult, "pagamento_falhou");
+    throw new Error(`Erro ao gerar PIX: ${paymentResult.error}`);
+  }
+
+  await orderRepository.updateOrderPayment(
+    orderId,
+    paymentResult,
+    orderRepository.mapStatus(paymentResult.status)
+  );
+
+  return { orderId: orderId.toString() };
 };

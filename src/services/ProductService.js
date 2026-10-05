@@ -33,5 +33,24 @@ export default class ProductService {
         }
         return await this.repository.findAll(filter, options);
     }
-    // Métodos de imagem e CRUD delegados ao repositório ou com lógica adicional aqui
+
+    async countProducts() {
+        return await this.repository.collection.countDocuments({});
+    }
+
+    async getLatestProducts(limit = 5) {
+        return await this.repository.collection
+            .find({}, { projection: { nome: 1, categoria: 1, variacoes: 1 } })
+            .sort({ _id: -1 })
+            .limit(limit)
+            .toArray();
+    }
+
+    async getProductById(id, options = {}) {
+        return await this.repository.findById(id, options);
+    }
+
+    async getAllProducts(filter = {}, options = {}) {
+        return await this.repository.findAll(filter, options);
+    }
 }

@@ -95,7 +95,7 @@ export default class UserController {
     async deleteUser(req, res, next) {
         try {
             const { id } = req.params;
-            const result = await this.service.repository.delete(id); // Repository ainda acessível via service se necessário;
+            const result = await this.service.deleteUser(id);
             if (!result) throw new NotFoundError("Usuario nao encontrado.");
             return res.status(200).json({ message: "Usuario excluido com sucesso."});
         } catch (error) {

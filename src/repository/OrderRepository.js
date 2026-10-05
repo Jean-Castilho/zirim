@@ -4,7 +4,6 @@ import { MercadoPagoConfig, Payment } from 'mercadopago';
 import crypto from 'crypto';
 
 import BaseRepository from "./BaseRepository.js";
-import { validateCartItems } from "../services/orderService.js";
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN });
 const paymentClient = new Payment(client);
@@ -330,5 +329,78 @@ export default class OrderRepository extends BaseRepository {
         }
 
         return { message: 'Evento ignorado' };
+    }
+
+    async findUserOrders(userId) {
+        return await this.getCollection().find({
+            $or: [
+                { "user._id": userId },
+                { "user._id": String(userId) },
+                { "user._id": new ObjectId(userId) }
+            ]
+        }).sort({ createdAt: -1 }).toArray();
+    }
+
+    async cancelExpiredOrder(orderId) {
+        return await this.getCollection().updateOne(
+            { _id: new ObjectId(orderId) },
+            { $set: { statusInterno: 'cancelado', updatedAt: new Date() } }
+        );
+    }
+
+    async getMonthlySalesVolume(days = 30) {
+        const dateThreshold = new Date();
+        dateThreshold.setDate(dateThreshold.getDate() - days);
+
+        const salesStats = await this.getCollection().aggregate([
+            {
+                $match: {
+                    statusInterno: 'pago',
+                    createdAt: { $gte: dateThreshold }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalVolume: { $sum: "$payment.transaction_amount" }
+                }
+            }
+        ]).toArray();
+
+        return salesStats[0]?.totalVolume || 0;
+    }
+
+    async countByStatus(statusInterno) {
+        return await this.getCollection().countDocuments({ statusInterno });
+    }
+
+    async getPaidOrders() {
+        return await this.getCollection().find({ statusInterno: 'pago' }).sort({ createdAt: -1 }).toArray();
+    }
+
+    async getLogisticsDashboardData() {
+        const allOrders = await this.getCollection().find({}).sort({ createdAt: -1 }).toArray();
+        const stats = {
+            total: allOrders.length,
+            pendente: 0,
+            pago: 0,
+            cancelado: 0,
+            faturamento: 0
+        };
+
+        for (let i = 0; i < allOrders.length; i++) {
+            const order = allOrders[i];
+            const status = order.statusInterno;
+            if (status === 'pendente') {
+                stats.pendente++;
+            } else if (status === 'pago') {
+                stats.pago++;
+                stats.faturamento += Number(order.payment?.transaction_amount || 0);
+            } else if (status === 'cancelado') {
+                stats.cancelado++;
+            }
+        }
+
+        return { orders: allOrders, stats };
     }
 }
