@@ -109,12 +109,31 @@ export const Register = (req, res) => {
   });
 };
 
-export const ResetPassword = (req, res) => {
-  renderPage(req, res, "../pages/auth/reset-password", {
-    titulo: "Recuperando Senha",
-    message: "Encontre sua conta e defina uma nova senha!",
-  });
+
+export const ResetPassword = async (req, res, next) => {
+  try {
+    const token = typeof req.query.token === "string" ? req.query.token : "";
+    const resetMode = token && await userService.isPasswordResetTokenValid(token);
+
+    if (token && !resetMode) {
+      return renderPage(req, res, "../pages/auth/reset-password", {
+        titulo: "Link expirado",
+        message: "Este link não é válido ou já expirou. Solicite uma nova redefinição.",
+        invalidToken: true,
+      });
+    }
+
+    renderPage(req, res, "../pages/auth/reset-password", {
+      titulo: resetMode ? "Definir nova senha" : "Recuperando senha",
+      message: resetMode ? "Escolha uma senha segura para sua conta." : "Informe seu e-mail para receber um link de redefinição.",
+      resetMode: Boolean(resetMode),
+      token,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
+
 
 export const VerifyOtp = async (req, res, next) => {
   try {
@@ -283,11 +302,11 @@ export const Dashboard = async (req, res, next) => {
 
 export const Delivery = async (req, res, next) => {
   try {
-    // Busca pedidos que não foram cancelados nem concluídos (ex: pendentes e pagos)
+    // Exibe apenas pedidos com pagamento confirmado.
     const activeOrders = await orderRepository.collection.aggregate([
       {
         $match: {
-          statusInterno: { $in: ['pendente', 'pago'] }
+          statusInterno: 'pago'
         }
       },
       { $sort: { createdAt: -1 } }

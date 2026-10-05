@@ -15,6 +15,7 @@ const router = express.Router();
 router.post("/login", validateCsrfToken, (req, res, next) => userController.login(req, res, next));
 router.post("/register", validateCsrfToken, (req, res, next) => userController.register(req, res, next));
 router.post("/forgotPassword", validateCsrfToken, (req, res, next) => userController.forgotPassword(req, res, next));
+router.post("/PasswordReset", validateCsrfToken, (req, res, next) => userController.PasswordReset(req, res, next));
 
 router.post("/updatePassword", requireAuth, (req, res, next) => userController.updatePassword(req, res, next));
 

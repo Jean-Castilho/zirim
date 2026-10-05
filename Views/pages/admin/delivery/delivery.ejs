@@ -49,9 +49,16 @@
         backdrop-filter: blur(8px);
         padding: 1rem 1.25rem;
         display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid var(--border-color);
+    }
+
+    .map-overlay h2 {
+        margin: 0;
+        font-size: 1rem;
     }
 
     .orders-sidebar {
@@ -122,9 +129,6 @@
         <section class="map-view">
             <header class="map-overlay">
                 <h2>Visualização em Tempo Real</h2>
-                <button class="status-badge" style="border:1px solid var(--border-color); background: white; cursor: pointer;">
-                    <i data-lucide="filter" style="width: 12px; vertical-align: middle;"></i> Filtros
-                </button>
             </header>
             <div id="map"></div>
         </section>
@@ -137,7 +141,7 @@
             <div class="orders-list">
                 <% if (activeOrders && activeOrders.length > 0) { %>
                     <% activeOrders.forEach(order => { %>
-                        <article class="order-card" onclick="focusDelivery(<%= order.location?.lat || -23.5505 %>, <%= order.location?.lng || -46.6333 %>)">
+                        <article class="order-card" onclick="focusDelivery(<%= order.location?.lat != null && Number.isFinite(Number(order.location.lat)) ? Number(order.location.lat) : 'null' %>, <%= order.location?.lng != null && Number.isFinite(Number(order.location.lng)) ? Number(order.location.lng) : 'null' %>)">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                                 <span style="font-weight: 600; font-size: 0.9rem;">#<%= order._id.toString().slice(-6).toUpperCase() %></span>
                                 <span class="status-badge <%= order.statusInterno === 'pago' ? 'status-transit' : 'status-pending' %>">
@@ -166,50 +170,47 @@
     </div>
 </main>
 
-<!-- Script do Google Maps -->
-<!-- Substitua YOUR_API_KEY pela sua chave real do Google Cloud Console -->
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <script>
     let map;
-    // Converte os dados do EJS para uso no JavaScript cliente
     const activeOrders = <%- JSON.stringify(activeOrders || []) %>;
+    const defaultPosition = [-23.5505, -46.6333];
 
     function initMap() {
-        // Localização padrão (Ex: São Paulo)
-        const defaultPos = { lat: -23.5505, lng: -46.6333 };
-        
-        map = new google.maps.Map(document.getElementById("map"), {
-            zoom: 12,
-            center: defaultPos,
-            styles: [
-                { "featureType": "poi", "stylers": [{ "visibility": "off" }] }
-            ]
+        map = L.map('map').setView(defaultPosition, 12);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 19,
+            subdomains: 'abcd'
+        }).addTo(map);
+
+        const deliveryPoints = [];
+        activeOrders.forEach(order => {
+            const lat = Number(order.location?.lat);
+            const lng = Number(order.location?.lng);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
+
+            const point = [lat, lng];
+            deliveryPoints.push(point);
+            L.marker(point).addTo(map)
+                .bindPopup(`Pedido #${String(order._id).slice(-6).toUpperCase()}`);
         });
 
-        // Plota marcadores para cada pedido (usa posições aleatórias próximas se lat/lng não existir)
-        activeOrders.forEach(order => {
-            const pos = order.location || { 
-                lat: -23.5505 + (Math.random() - 0.5) * 0.05, 
-                lng: -46.6333 + (Math.random() - 0.5) * 0.05 
-            };
-            
-            new google.maps.Marker({
-                position: pos,
-                map: map,
-                title: `Pedido #${order._id}`,
-                icon: order.statusInterno === 'pago' ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png'
-            });
-        });
+        if (deliveryPoints.length) {
+            map.fitBounds(deliveryPoints, { padding: [40, 40], maxZoom: 13 });
+        }
+
     }
 
     function focusDelivery(lat, lng) {
-        if (map) {
-            map.setCenter({ lat, lng });
-            map.setZoom(15);
-        }
+        if (!map || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        map.flyTo([lat, lng], 15);
     }
 
+    initMap();
     lucide.createIcons();
 </script>

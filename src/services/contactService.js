@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
   secure: Number(process.env.EMAIL_PORT || 587) === 465,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS?.replace(/\s+/g, ""),
   },
 });
 
@@ -104,6 +104,16 @@ export const sendEmailOtp = async (email) => {
     console.error("Erro ao enviar OTP por e-mail:", error);
     throw error;
   }
+};
+
+export const sendPasswordResetEmail = async (email, resetUrl) => {
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: "Redefinição de senha",
+    text: `Use este link para redefinir sua senha (válido por 30 minutos): ${resetUrl}`,
+    html: `<p>Recebemos uma solicitação para redefinir sua senha.</p><p><a href="${resetUrl}">Redefinir senha</a></p><p>O link expira em 30 minutos. Se você não solicitou a redefinição, ignore este e-mail.</p>`,
+  });
 };
 
 export const sendFeedbackEmail = async (req, res) => {

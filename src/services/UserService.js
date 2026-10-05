@@ -1,7 +1,11 @@
+import { createHash, randomBytes } from "node:crypto";
 import UserRepository from "../repository/UserRepository.js";
 import { ValidationError, GeneralError } from "../utils/handleResponse.js";
 import { compararPassword, createHashPassword } from "./authServices.js";
 import { validateUser } from "./validationData.js";
+
+const PASSWORD_RESET_LIFETIME_MS = 30 * 60 * 1000;
+const hashResetToken = (token) => createHash("sha256").update(token).digest("hex");
 
 export default class UserService {
     constructor() {
@@ -40,5 +44,34 @@ export default class UserService {
         const updated = await this.repository.updateProfile(userId, { emailVerified: true });
         if (!updated) throw new Error("Falha ao atualizar status de verificação.");
         return await this.repository.findById(userId);
+    }
+
+    async createPasswordResetToken(email) {
+        const user = await this.repository.findByEmail(email);
+        if (!user || user.isActive === false) return null;
+
+        const token = randomBytes(32).toString("hex");
+        const stored = await this.repository.storePasswordResetToken(
+            user._id,
+            hashResetToken(token),
+            new Date(Date.now() + PASSWORD_RESET_LIFETIME_MS)
+        );
+
+        return stored ? token : null;
+    }
+
+    async isPasswordResetTokenValid(token) {
+        if (typeof token !== "string" || !/^[a-f0-9]{64}$/i.test(token)) return false;
+        return this.repository.hasValidPasswordResetToken(hashResetToken(token));
+    }
+
+    async resetPassword(token, password) {
+        if (typeof token !== "string" || !/^[a-f0-9]{64}$/i.test(token)) return false;
+
+        const tokenHash = hashResetToken(token);
+        if (!await this.repository.hasValidPasswordResetToken(tokenHash)) return false;
+
+        const passwordHash = await createHashPassword(password);
+        return this.repository.resetPasswordWithToken(tokenHash, passwordHash);
     }
 }

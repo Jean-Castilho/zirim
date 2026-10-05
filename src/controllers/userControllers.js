@@ -9,6 +9,7 @@ import {
 
 import { createToken } from "../services/authServices.js";
 import { verifyOtpCode } from "../services/otpService.js";
+import { sendPasswordResetEmail } from "../services/contactService.js";
 
 export default class UserController {
     constructor() {
@@ -94,7 +95,7 @@ export default class UserController {
     async deleteUser(req, res, next) {
         try {
             const { id } = req.params;
-            const result = await this.service.repository.delete(id); // Repository ainda acessível via service se necessário
+            const result = await this.service.repository.delete(id); // Repository ainda acessível via service se necessário;
             if (!result) throw new NotFoundError("Usuario nao encontrado.");
             return res.status(200).json({ message: "Usuario excluido com sucesso."});
         } catch (error) {
@@ -104,22 +105,58 @@ export default class UserController {
 
     async forgotPassword(req, res, next) {
         try {
-            const email = req.body.email?.trim();
-            if (!email) {
-                throw new ValidationError("O e-mail é obrigatório para recuperar a senha.");
+            const email = String(req.body.email || "").trim().toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                throw new ValidationError("Informe um endereço de e-mail válido.");
             }
-            // Logica de negócio: aqui você chamaria o service para enviar o e-mail;
-            // Ex: await authService.requestPasswordReset(email);
-            // Retorna um fragmento HTML para o HTMX injetar no #feedback-msg;
-            return res.status(200).send(`
-                <div class="p-3 mb-4 text-sm text-green-400 bg-green-950/30 rounded-xl border border-green-800/50">
-                    Se o e-mail <strong>${email}</strong> estiver em nossa base, você receberá um link em breve.
-                </div>
-            `);
-        
+
+            const token = await this.service.createPasswordResetToken(email);
+            if (token) {
+                void (async () => {
+                    try {
+                        const appUrl = process.env.APP_URL || (process.env.NODE_ENV === "production"
+                            ? null
+                            : `http://localhost:${process.env.PORT || 3090}`);
+                        if (!appUrl) throw new Error("APP_URL deve estar configurado em produção.");
+
+                        const resetUrl = new URL("/reset-password", appUrl);
+                        resetUrl.searchParams.set("token", token);
+                        await sendPasswordResetEmail(email, resetUrl.toString());
+                    } catch (emailError) {
+                        console.error("Falha ao enviar e-mail de redefinição de senha:", emailError);
+                    }
+                })();
+            }
+
+            return res.status(200).json({
+                message: "Se o e-mail informado estiver cadastrado, você receberá um link de redefinição em breve.",
+            });
         } catch (error) {
             next(error);
         }
+    }
 
+    async PasswordReset(req, res, next) {
+        try {
+            const { token, password, confirmPassword } = req.body;
+            if (!token || !password || !confirmPassword) {
+                throw new ValidationError("Preencha todos os campos.");
+            }
+            if (password !== confirmPassword) {
+                throw new ValidationError("As senhas informadas não coincidem.");
+            }
+            if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+                throw new ValidationError("A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, minúscula e número.");
+            }
+
+            const updated = await this.service.resetPassword(token, password);
+            if (!updated) {
+                throw new ValidationError("Este link é inválido ou expirou. Solicite uma nova redefinição.");
+            }
+
+            return res.status(200).json({ message: "Senha redefinida com sucesso.", redirect: "/login" });
+        } catch (error) {
+            next(error);
+        }
     }
 }

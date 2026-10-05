@@ -97,4 +97,44 @@ export default class UserRepository extends BaseRepository {
 
     return await this.update(id, updateFields);
   }
+
+  async storePasswordResetToken(userId, tokenHash, expiresAt) {
+    const result = await this.collection.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          passwordResetTokenHash: tokenHash,
+          passwordResetExpiresAt: expiresAt,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    return result.matchedCount > 0;
+  }
+
+  async hasValidPasswordResetToken(tokenHash) {
+    return Boolean(await this.collection.findOne({
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpiresAt: { $gt: new Date() },
+    }, { projection: { _id: 1 } }));
+  }
+
+  async resetPasswordWithToken(tokenHash, passwordHash) {
+    const result = await this.collection.updateOne(
+      {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: { $gt: new Date() },
+      },
+      {
+        $set: { password: passwordHash, updatedAt: new Date() },
+        $unset: {
+          passwordResetTokenHash: "",
+          passwordResetExpiresAt: "",
+        },
+      }
+    );
+
+    return result.modifiedCount > 0;
+  }
 }
