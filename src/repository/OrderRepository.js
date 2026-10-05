@@ -135,13 +135,10 @@ export default class OrderRepository extends BaseRepository {
             const statusInalterado = order.payment?.status === mpStatus && order.statusInterno === novoStatus;
             if (statusInalterado) {
                 if (mpStatus === 'approved' && !order.inventoryProcessed) {
-                    console.log(`[sincronizarStatusPedido] Re-executando baixa de estoque para pedido ${order._id} (status já aprovado, mas estoque não processado).`);
                     await this.executarBaixaEstoque(order);
                 }
                 return;
             }
-
-            console.log(`[sincronizarStatusPedido] Atualizando status do pedido ${order._id} de ${order.statusInterno} para ${novoStatus} (MP: ${mpStatus}).`);
 
             // 1. Atualiza status do pedido
             await this.getCollection().updateOne(
@@ -157,8 +154,7 @@ export default class OrderRepository extends BaseRepository {
 
             // 3. Se aprovado, processa baixa de estoque
             if (mpStatus === 'approved' && !order.inventoryProcessed) {
-                console.log(`[sincronizarStatusPedido] Executando baixa de estoque para pedido ${order._id}.`);
-                await this.executarBaixaEstoque(order);
+               await this.executarBaixaEstoque(order);
             }
         } catch (error) {
             console.error(`[sincronizarStatusPedido] Erro ao sincronizar status do pedido ${order._id} (paymentId: ${paymentId}):`, error);
@@ -293,8 +289,6 @@ export default class OrderRepository extends BaseRepository {
         const xSignature = req.headers['x-signature'];
         const xRequestId = req.headers['x-request-id'];
 
-        console.log('Webhook recebido:', { type, data, xSignature });
-
         // Validação de Assinatura
         if (xSignature && process.env.MERCADOPAGO_WEBHOOK_SECRET) {
             try {
@@ -320,7 +314,6 @@ export default class OrderRepository extends BaseRepository {
         if (type === 'payment' && data && data.id) {
             try {
                 const paymentInfo = await this.consultarPix(data.id);
-                console.log(`Pagamento ${data.id} processado via webhook. Status: ${paymentInfo.status}`);
                 return paymentInfo;
             } catch (error) {
                 console.error('Erro ao processar webhook de pagamento:', error);

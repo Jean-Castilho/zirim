@@ -1,6 +1,17 @@
 @import url('./base/variables.css');
 @import url('./layout/header.css');
 @import url('./layout/footer.css');
+@import url('./notifications.css');
+@import url('./pages/error.css');
+@import url('./pages/home.css');
+@import url('./pages/products.css');
+@import url('./pages/cart.css');
+@import url('./pages/checkout.css');
+@import url('./pages/delivery.css');
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
 
 * {
     -ms-overflow-style: none;
@@ -32,6 +43,37 @@ button,
     letter-spacing: 0.5px;
     text-transform: uppercase;
     font-size: 0.95rem;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--cor-secundaria);
+    color: var(--cor-texto-claro);
+    border-radius: var(--raio-botao, 8px);
+    border: none;
+    text-decoration: none;
+    transition: var(--transicao-suave);
+}
+
+.btn-primary:hover {
+    background-color: var(--cor-destaque);
+    color: var(--cor-texto-claro);
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--cor-fundo-site);
+    color: var(--cor-texto-escuro);
+    border: 1px solid var(--cor-borda-forte);
+    border-radius: var(--raio-botao, 8px);
+    text-decoration: none;
+    transition: var(--transicao-suave);
 }
 
 ::-webkit-scrollbar {

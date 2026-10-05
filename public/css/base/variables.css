@@ -31,15 +31,20 @@
 
     /* Elevação e Sombras */
     --sombra-suave: 0 2px 4px rgba(0,0,0,0.05);
+    --sombra-padrao: 0 2px 8px rgba(0, 0, 0, 0.08);
     --sombra-media: 0 4px 12px rgba(0,0,0,0.08);
     --sombra-forte: 0 8px 24px rgba(0,0,0,0.12);
     --sombra-hover: 0 12px 32px rgba(225, 7, 50, 0.15);
+
+    /* Dimensões do Layout */
+    --altura-header: 70px;
 
     /* Espaçamento e Bordas */
     --raio-padrao: 8px;
     --raio-grande: 16px;
     --raio-botao: 8px;
     
+    --espacamento-pequeno: 0.5rem;
     --espacamento-xs: 0.25rem;
     --espacamento-sm: 0.5rem;
     --espacamento-md: 1rem;

@@ -21,7 +21,6 @@
         
         const form = e.target;
         const formData = new URLSearchParams(new FormData(form));
-        console.log(formData);
         try {
           const response = await fetch('/verify-otp', {
             method: 'POST',

@@ -11,8 +11,6 @@ const performSearch = (searchInput) => {
     const searchQuery = searchInput.value.trim();
     const url = `/products?q=${encodeURIComponent(searchQuery)}`;
 
-    console.log(`[Search] Iniciando busca para: "${searchQuery}"`);
-
     const grid = document.querySelector('.products-grid');
     if (grid) grid.style.opacity = '0.5';
 

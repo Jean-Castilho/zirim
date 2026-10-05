@@ -1,183 +1,119 @@
-<style>
-    :root {
-        --bg-main: var(--cor-fundo-site, #f8f9fa);
-        --bg-card: var(--cor-fundo-claro, #ffffff);
-        --border-color: var(--cor-borda, #e9ecef);
-        --text-primary: var(--cor-texto-escuro, #212529);
-        --text-secondary: var(--cor-texto-medio, #495057);
-        --accent-color: var(--cor-secundaria, #e10732);
-        --success: var(--cor-sucesso, #2b8a3e);
-        --warning: var(--cor-alerta, #e67e22);
-        --info: #0ea5e9;
-    }
-
-    .delivery-container {
-        background-color: var(--bg-main);
-        font-family: 'Inter', sans-serif;
-        padding: 2rem;
-    }
-
-    .delivery-layout {
-        display: grid;
-        grid-template-columns: 1fr 350px;
-        gap: 2rem;
-        max-width: 1600px;
-        margin: 0 auto;
-    }
-
-    .map-view {
-        background: var(--bg-card);
-        border-radius: 16px;
-        border: 1px solid var(--border-color);
-        height: 600px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    #map {
-        height: 100%;
-        width: 100%;
-    }
-
-    .map-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 10;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        padding: 1rem 1.25rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .map-overlay h2 {
-        margin: 0;
-        font-size: 1rem;
-    }
-
-    .orders-sidebar {
-        background: var(--bg-card);
-        border-radius: 16px;
-        border: 1px solid var(--border-color);
-        display: flex;
-        flex-direction: column;
-        max-height: 600px;
-    }
-
-    .panel-header {
-        padding: 1.25rem;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .panel-header h2 {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin: 0;
-        color: var(--text-primary);
-    }
-
-    .orders-list {
-        overflow-y: auto;
-        padding: 1rem;
-    }
-
-    .order-card {
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        margin-bottom: 0.75rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .order-card:hover {
-        border-color: var(--accent-color);
-        background: var(--cor-fundo-neutro, #f8f9fa);
-    }
-
-    .status-badge {
-        font-size: 0.7rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 999px;
-        text-transform: uppercase;
-        font-weight: 700;
-    }
-
-    .status-transit { background: rgba(14, 165, 233, 0.1); color: var(--info); }
-    .status-pending { background: rgba(230, 126, 34, 0.1); color: var(--warning); }
-
-    @media (max-width: 1024px) {
-        .delivery-layout {
-            grid-template-columns: 1fr;
-        }
-        .map-view { height: 400px; }
-        .delivery-container { padding: 1rem; }
-    }
-</style>
+<link rel="stylesheet" href="/css/pages/delivery.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 
 <main class="delivery-container">
-    <div class="delivery-layout">
-        <section class="map-view">
-            <header class="map-overlay">
-                <h2>Visualização em Tempo Real</h2>
-            </header>
-            <div id="map"></div>
-        </section>
-
-        <aside class="orders-sidebar">
-            <header class="panel-header">
+    <aside class="delivery-sidebar">
+        <header class="panel-header">
+            <div class="panel-header-title">
                 <h2>Entregas Ativas</h2>
-                <i data-lucide="list-filter" style="width: 18px; cursor: pointer;"></i>
-            </header>
-            <div class="orders-list">
-                <% if (activeOrders && activeOrders.length > 0) { %>
-                    <% activeOrders.forEach(order => { %>
-                        <article class="order-card" onclick="focusDelivery(<%= order.location?.lat != null && Number.isFinite(Number(order.location.lat)) ? Number(order.location.lat) : 'null' %>, <%= order.location?.lng != null && Number.isFinite(Number(order.location.lng)) ? Number(order.location.lng) : 'null' %>)">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="font-weight: 600; font-size: 0.9rem;">#<%= order._id.toString().slice(-6).toUpperCase() %></span>
-                                <span class="status-badge <%= order.statusInterno === 'pago' ? 'status-transit' : 'status-pending' %>">
-                                    <%= order.statusInterno === 'pago' ? 'Em Rota' : 'Aguard. Pgto' %>
-                                </span>
-                            </div>
-                            <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                                <i data-lucide="user" style="width: 12px; display: inline;"></i> <%= order.user?.name || 'Cliente Zirim' %>
-                            </div>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
-                                Tel: <%= order.user?.phone || 'Não informado' %>
-                            </div>
-                            <% if (order.address && (order.address.street || order.address.cep)) { %>
-                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; display: flex; align-items: flex-start; gap: 4px;">
-                                    <i data-lucide="map-pin" style="width: 12px; height: 12px; min-width: 12px; margin-top: 2px;"></i>
-                                    <span><%= order.address.street ? (order.address.street + (order.address.neighborhood ? ', ' + order.address.neighborhood : '')) : '' %> (CEP: <%= order.address.cep %>)</span>
-                                </div>
-                            <% } %>
-                        </article>
-                    <% }) %>
-                <% } else { %>
-                    <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Nenhuma entrega ativa encontrada.</div>
-                <% } %>
+                <span class="orders-count-badge" id="orders-count"><%= (activeOrders && activeOrders.length) || 0 %></span>
             </div>
-        </aside>
-    </div>
+            <div class="panel-actions">
+                <button type="button" class="btn-icon" title="Recentralizar entregas" onclick="fitAllDeliveries()">
+                    <i data-lucide="maximize-2" style="width: 16px; height: 16px;"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="sidebar-search">
+            <div class="search-input-wrapper">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="order-search" placeholder="Buscar por cliente, pedido ou rua..." oninput="filterOrders(this.value)">
+            </div>
+        </div>
+
+        <div class="orders-list" id="orders-list">
+            <% if (activeOrders && activeOrders.length > 0) { %>
+                <% activeOrders.forEach(order => { 
+                    const orderShortId = order._id ? order._id.toString().slice(-6).toUpperCase() : '------';
+                    const lat = order.location?.lat != null && Number.isFinite(Number(order.location.lat)) ? Number(order.location.lat) : 'null';
+                    const lng = order.location?.lng != null && Number.isFinite(Number(order.location.lng)) ? Number(order.location.lng) : 'null';
+                    const clientName = order.user?.name || 'Cliente Zirim';
+                    const clientPhone = order.user?.phone || 'Não informado';
+                    const street = order.address?.street || '';
+                    const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
+                    const cep = order.address?.cep ? ` (CEP: ${order.address.cep})` : '';
+                    const fullAddress = street ? `${street}${neighborhood}${cep}` : 'Endereço não informado';
+                %>
+                    <article 
+                        class="order-card" 
+                        id="order-card-<%= order._id %>"
+                        data-search="<%= (orderShortId + ' ' + clientName + ' ' + fullAddress).toLowerCase() %>"
+                        onclick="focusDelivery(<%= lat %>, <%= lng %>, '<%= order._id %>')"
+                    >
+                        <div class="order-card-header">
+                            <div class="order-card-id">
+                                <i data-lucide="package" class="icon-sm"></i>
+                                <span>#<%= orderShortId %></span>
+                            </div>
+                            <span class="status-badge <%= order.statusInterno === 'pago' ? 'status-transit' : 'status-pending' %>">
+                                <span class="status-dot"></span>
+                                <%= order.statusInterno === 'pago' ? 'Em Rota' : 'Aguard. Pgto' %>
+                            </span>
+                        </div>
+
+                        <div class="order-card-body">
+                            <div class="order-info-row">
+                                <i data-lucide="user" class="icon-sm"></i>
+                                <span class="client-name"><%= clientName %></span>
+                            </div>
+                            <div class="order-info-row">
+                                <i data-lucide="phone" class="icon-sm"></i>
+                                <span><%= clientPhone %></span>
+                            </div>
+                            <div class="order-info-row address-row">
+                                <i data-lucide="map-pin" class="icon-sm pin-icon"></i>
+                                <span><%= fullAddress %></span>
+                            </div>
+                        </div>
+                    </article>
+                <% }) %>
+            <% } else { %>
+                <div class="empty-orders-state">
+                    <div class="empty-icon-wrap">
+                        <i data-lucide="package-check" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3>Sem entregas ativas</h3>
+                    <p>Todos os pedidos com entrega pendente ou em rota serão exibidos aqui em tempo real.</p>
+                </div>
+            <% } %>
+        </div>
+    </aside>
+
+    <section class="delivery-map-container delivery-map">
+        <div class="map-live-indicator">
+            <span class="live-dot"></span>
+            <span>Monitoramento em Tempo Real</span>
+        </div>
+        <div id="map"></div>
+    </section>
 </main>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <script>
     let map;
-    const activeOrders = <%- JSON.stringify(activeOrders || []) %>;
+    const markersMap = {};
+    const deliveryPoints = [];
+    const activeOrders = <%- JSON.stringify(activeOrders || []).replace(/</g, '\\u003c') %>;
     const defaultPosition = [-23.5505, -46.6333];
+
+    function createCustomMarkerIcon() {
+        return L.divIcon({
+            className: 'custom-map-marker',
+            html: `<div class="marker-pin"><i data-lucide="truck"></i></div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+    }
 
     function initMap() {
         map = L.map('map').setView(defaultPosition, 12);

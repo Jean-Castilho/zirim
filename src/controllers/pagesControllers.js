@@ -17,11 +17,9 @@ export const Home = async (req, res, next) => {
       productService.listProductsForHome(),
       bannerControllers.getBannerPageEditHome()
     ]);
-    
-    console.log(homePageData);
 
     renderPage(req, res, "../pages/public/home", {
-      titulo: "Zirim - Moda e Calçados",
+      titulo: "Moda e Calçados",
       message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
       products,
       banner: homePageData?.banner,
