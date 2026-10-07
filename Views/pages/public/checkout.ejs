@@ -1,9 +1,82 @@
 <div class="checkout-container">
     <div class="card" id="payment-card">
-        <% if (order.statusInterno === 'pago' || order.payment.status === 'approved') { %>
+        <% if (order.statusInterno === 'entregue') { %>
+            <div class="success-checkmark material-icons">task_alt</div>
+            <h2 class="status-heading">Pedido Entregue!</h2>
+            <p style="color: #6c757d; font-size: 0.95rem;">Seu pacote foi entregue com sucesso. Obrigado por comprar na Zirim!</p>
+            <div id="status-container">
+                <span class="status-badge status-approved">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons">check_circle</span>
+                        Entrega concluída <%= order.delivery?.deliveredAt ? 'em ' + new Date(order.delivery.deliveredAt).toLocaleDateString('pt-BR') : 'com sucesso' %>
+                    </span>
+                </span>
+            </div>
+        <% } else if (order.statusInterno === 'em_rota') { %>
+            <div class="success-checkmark material-icons" style="color: #0284c7;">local_shipping</div>
+            <h2 class="status-heading">Pedido a Caminho!</h2>
+            <p style="color: #6c757d; font-size: 0.95rem;">Seu pedido saiu para entrega e está a caminho do seu endereço.</p>
+            
+            <% if (order.delivery?.courierName) { %>
+                <div>
+                    <span class="courier-info-pill">
+                        <span class="material-icons" style="font-size: 16px; color: #0284c7;">two_wheeler</span>
+                        <span>Entregador: <strong><%= order.delivery.courierName %></strong></span>
+                    </span>
+                </div>
+            <% } %>
+
+            <% if (order.delivery?.confirmationCodePlain) { %>
+                <div class="delivery-pin-card">
+                    <div class="delivery-pin-header">
+                        <span class="material-icons" style="font-size: 16px;">key</span>
+                        <span>Código de Confirmação da Entrega</span>
+                    </div>
+                    <div class="delivery-pin-number"><%= order.delivery.confirmationCodePlain %></div>
+                    <p class="delivery-pin-info">
+                        <strong>Atenção:</strong> Informe este código de 4 dígitos ao entregador no ato do recebimento para confirmar sua entrega.
+                    </p>
+                </div>
+            <% } %>
+
+            <div id="status-container" style="margin-top: 15px;">
+                <span class="status-badge status-transit">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons spinning">autorenew</span>
+                        Em Rota de Entrega
+                    </span>
+                </span>
+            </div>
+        <% } else if (order.statusInterno === 'preparado') { %>
+            <div class="success-checkmark material-icons" style="color: #d97706;">inventory_2</div>
+            <h2 class="status-heading">Pedido Pronto para Envio!</h2>
+            <p style="color: #6c757d; font-size: 0.95rem;">Seu pacote já foi embalado e está aguardando a saída com o entregador.</p>
+
+            <% if (order.delivery?.confirmationCodePlain) { %>
+                <div class="delivery-pin-card">
+                    <div class="delivery-pin-header">
+                        <span class="material-icons" style="font-size: 16px;">key</span>
+                        <span>Código de Confirmação da Entrega</span>
+                    </div>
+                    <div class="delivery-pin-number"><%= order.delivery.confirmationCodePlain %></div>
+                    <p class="delivery-pin-info">
+                        Guarde este código! Ele será solicitado pelo entregador quando o pacote chegar ao seu endereço.
+                    </p>
+                </div>
+            <% } %>
+
+            <div id="status-container" style="margin-top: 15px;">
+                <span class="status-badge status-ready">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons">check_circle</span>
+                        Pronto para Retirada pelo Entregador
+                    </span>
+                </span>
+            </div>
+        <% } else if (order.statusInterno === 'pago' || order.payment.status === 'approved') { %>
             <div class="success-checkmark material-icons">check_circle</div>
             <h2 class="status-heading">Pagamento Confirmado!</h2>
-            <p style="color: #6c757d; font-size: 0.95rem;">Seu pedido está sendo processado e em breve será enviado.</p>
+            <p style="color: #6c757d; font-size: 0.95rem;">Seu pedido está sendo preparado pela equipe e em breve será liberado para entrega.</p>
             <div id="status-container">
                 <span class="status-badge status-approved">
                     <span style="display: flex; align-items: center; gap: 8px;">
@@ -179,7 +252,7 @@
             }
         }
 
-        const isFinished = "<%= (order.statusInterno === 'pago' || order.statusInterno === 'cancelado' || order.payment?.status === 'approved' || ['rejected', 'cancelled'].includes(order.payment?.status)) %>" === "true";
+        const isFinished = "<%= (['pago', 'preparado', 'em_rota', 'entregue', 'cancelado'].includes(order.statusInterno) || ['approved', 'rejected', 'cancelled', 'refunded', 'charged_back'].includes(order.payment?.status)) %>" === "true";
         if (!isFinished && paymentId) {
             statusInterval = setInterval(checkPaymentStatus, 8000);
         }

@@ -2,11 +2,18 @@
 
 <input type="hidden" id="csrf-token" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 <div class="courier-container">
-    <header class="courier-header">
+    <header class="courier-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
             <h1>Painel do Entregador</h1>
-            <p class="courier-subtitle">Entregas em rota: <strong id="deliveries-count"><%= (deliveries && deliveries.length) || 0 %></strong></p>
+            <p class="courier-subtitle">
+                Olá, <strong><%= (typeof user !== 'undefined' && user?.name) || 'Entregador' %></strong> &bull; Entregas em rota: <strong id="deliveries-count"><%= (deliveries && deliveries.length) || 0 %></strong>
+            </p>
         </div>
+        <% if (typeof user !== 'undefined' && user?.role === 'admin') { %>
+            <a href="/delivery" class="btn-route" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 0.85rem;">
+                <i data-lucide="map"></i> Ver Mapa de Entregas
+            </a>
+        <% } %>
     </header>
 
     <section class="available-orders-section" style="margin-bottom: 2rem;">

@@ -368,7 +368,9 @@ export default class OrderRepository extends BaseRepository {
     }
 
     async getPaidOrders() {
-        return await this.getCollection().find({ statusInterno: 'pago' }).sort({ createdAt: -1 }).toArray();
+        return await this.getCollection().find({ 
+            statusInterno: { $in: ['pago', 'preparado', 'em_rota'] } 
+        }).sort({ createdAt: -1 }).toArray();
     }
 
     async getLogisticsDashboardData() {
@@ -377,24 +379,72 @@ export default class OrderRepository extends BaseRepository {
             total: allOrders.length,
             pendente: 0,
             pago: 0,
+            preparado: 0,
+            em_rota: 0,
+            entregue: 0,
             cancelado: 0,
             faturamento: 0
         };
 
         for (let i = 0; i < allOrders.length; i++) {
             const order = allOrders[i];
-            const status = order.statusInterno;
+            const status = order.statusInterno || 'pendente';
             if (status === 'pendente') {
                 stats.pendente++;
             } else if (status === 'pago') {
                 stats.pago++;
-                stats.faturamento += Number(order.payment?.transaction_amount || 0);
+            } else if (status === 'preparado') {
+                stats.preparado++;
+            } else if (status === 'em_rota') {
+                stats.em_rota++;
+            } else if (status === 'entregue') {
+                stats.entregue++;
             } else if (status === 'cancelado') {
                 stats.cancelado++;
+            }
+
+            if (['pago', 'preparado', 'em_rota', 'entregue'].includes(status) || order.payment?.status === 'approved') {
+                stats.faturamento += Number(order.payment?.transaction_amount || 0);
             }
         }
 
         return { orders: allOrders, stats };
+    }
+
+    async prepareOrderForDelivery(orderId) {
+        if (!orderId || !ObjectId.isValid(orderId)) {
+            return { error: "ID de pedido inválido." };
+        }
+
+        const order = await this.getCollection().findOne({ _id: new ObjectId(orderId) });
+        if (!order) {
+            return { error: "Pedido não encontrado." };
+        }
+
+        if (order.statusInterno !== "pago" && order.payment?.status !== "approved") {
+            return { error: "Apenas pedidos pagos podem ser preparados para entrega." };
+        }
+
+        const confirmationCode = order.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
+
+        await this.getCollection().updateOne(
+            { _id: new ObjectId(orderId) },
+            {
+                $set: {
+                    statusInterno: "preparado",
+                    "delivery.confirmationCodePlain": confirmationCode,
+                    "delivery.preparedAt": new Date(),
+                    updatedAt: new Date()
+                }
+            }
+        );
+
+        return {
+            success: true,
+            message: "Pedido preparado e liberado para entrega!",
+            orderId,
+            confirmationCode
+        };
     }
 
     async getCourierDeliveries(courierId) {
@@ -429,7 +479,8 @@ export default class OrderRepository extends BaseRepository {
         }
 
         const courierId = courierUser._id;
-        const confirmationCode = Math.floor(1000 + Math.random() * 9000).toString();
+        const currentOrder = await this.getCollection().findOne({ _id: new ObjectId(orderId) });
+        const confirmationCode = currentOrder?.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
 
         // Operação atômica: garante que o pedido está "preparado" e sem entregador associado
         const updateResult = await this.getCollection().findOneAndUpdate(

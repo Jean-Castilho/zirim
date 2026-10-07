@@ -188,3 +188,74 @@
     display: inline-block;
     animation: rotate 2s linear infinite;
 }
+
+/* Card de Código PIN e Status de Entrega */
+.delivery-pin-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #e6fcf5 100%);
+    border: 2px dashed #20c997;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 440px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(32, 201, 151, 0.1);
+}
+
+.delivery-pin-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #0ca678;
+    margin-bottom: 10px;
+}
+
+.delivery-pin-number {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: 6px;
+    color: #087f5b;
+    font-family: monospace;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-block;
+    border: 1px solid #b2f2bb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.delivery-pin-info {
+    font-size: 0.85rem;
+    color: #495057;
+    margin-top: 10px;
+    line-height: 1.4;
+}
+
+.status-badge.status-ready {
+    background: #fff9db;
+    color: #f08c00;
+    border: 1px solid #ffe066;
+}
+
+.status-badge.status-transit {
+    background: #e7f5ff;
+    color: #1971c2;
+    border: 1px solid #a5d8ff;
+}
+
+.courier-info-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    color: #343a40;
+    margin-top: 10px;
+}

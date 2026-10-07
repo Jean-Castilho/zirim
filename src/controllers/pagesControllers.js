@@ -2,11 +2,13 @@ import { sendEmailOtp } from "../services/contactService.js";
 import { renderPage, NotFoundError } from "../utils/handleResponse.js";
 import ProductService from "../services/ProductService.js";
 import UserService from "../services/UserService.js";
+import DeliveryService from "../services/DeliveryService.js";
 import OrderRepository from "../repository/OrderRepository.js";
 import BannerControllers from "../controllers/bannerControllers.js";
 
 const productService = new ProductService();
 const userService = new UserService();
+const deliveryService = new DeliveryService();
 
 const bannerControllers = new BannerControllers();
 const orderRepository = new OrderRepository();
@@ -187,7 +189,8 @@ export const Profile = async (req, res, next) => {
         _id: o._id,
         status: status,
         total: o.payment?.transaction_amount || 0,
-        createdAt: o.createdAt
+        createdAt: o.createdAt,
+        delivery: o.delivery || null
       };
     });
 
@@ -249,7 +252,7 @@ export const Dashboard = async (req, res, next) => {
 
 export const Delivery = async (req, res, next) => {
   try {
-    const activeOrders = await orderRepository.getPaidOrders();
+    const activeOrders = await deliveryService.getActiveDeliveriesForMap();
 
     renderPage(req, res, "../pages/admin/delivery/delivery", {
       titulo: "Monitoramento de Entregas",
@@ -278,7 +281,7 @@ export const Inventory = async (req, res, next) => {
 
 export const Logistica = async (req, res, next) => {
   try {
-    const { orders, stats } = await orderRepository.getLogisticsDashboardData();
+    const { orders, stats } = await deliveryService.getLogisticsOverview();
     renderPage(req, res, "../pages/admin/logistica/dashboard-logistica", {
       titulo: "Logística & Pedidos",
       message: "Acompanhamento detalhado da operação de vendas",
@@ -356,10 +359,7 @@ export const CourierDashboard = async (req, res, next) => {
       return res.redirect("/login");
     }
 
-    const [deliveries, availableOrders] = await Promise.all([
-      orderRepository.getCourierDeliveries(user._id),
-      orderRepository.getAvailableDeliveries()
-    ]);
+    const { deliveries, availableOrders } = await deliveryService.getCourierDashboardData(user._id);
 
     renderPage(req, res, "../pages/admin/delivery/dashboard", {
       titulo: "Minhas Entregas",
@@ -374,26 +374,8 @@ export const CourierDashboard = async (req, res, next) => {
 
 export const SelectOrderForDelivery = async (req, res, next) => {
   try {
-    const user = req.session?.user;
-    if (!user) {
-      return res.status(401).json({ error: "Sessão expirada. Faça login novamente." });
-    }
-
-    if (user.role !== "entregador" && user.role !== "admin") {
-      return res.status(403).json({ error: "Apenas entregadores têm permissão para aceitar entregas." });
-    }
-
-    const orderId = req.body.orderId || req.params.id;
-    if (!orderId) {
-      return res.status(400).json({ error: "ID do pedido é obrigatório." });
-    }
-
-    const result = await orderRepository.selectOrderForDelivery(orderId, user);
-
-    if (result.error) {
-      return res.status(400).json({ error: result.error });
-    }
-
+    const orderId = req.validated?.orderId || req.body.orderId || req.params.id;
+    const result = await deliveryService.selectOrderForDelivery(orderId, req.session?.user);
     return res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -402,23 +384,19 @@ export const SelectOrderForDelivery = async (req, res, next) => {
 
 export const ConfirmDeliveryCode = async (req, res, next) => {
   try {
-    const user = req.session?.user;
-    if (!user) {
-      return res.status(401).json({ error: "Sessão expirada. Faça login novamente." });
-    }
+    const orderId = req.validated?.orderId || req.body.orderId || req.params.id;
+    const code = req.validated?.code || req.body.code;
+    const result = await deliveryService.confirmDelivery(orderId, req.session?.user?._id, code);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const orderId = req.body.orderId || req.params.id;
-    const { code } = req.body;
-
-    if (!orderId || !code) {
-      return res.status(400).json({ error: "ID do pedido e código PIN são obrigatórios." });
-    }
-
-    const result = await orderRepository.confirmDelivery(orderId, user._id, code);
-
-    if (result.error) {
-      return res.status(400).json({ error: result.error });
-    }
+export const PrepareOrderForDelivery = async (req, res, next) => {
+  try {
+    const orderId = req.validated?.orderId || req.body.orderId || req.params.id;
+    const result = await deliveryService.prepareOrder(orderId, req.session?.user);
     return res.status(200).json(result);
   } catch (error) {
     next(error);

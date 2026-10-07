@@ -116,8 +116,24 @@
     }
 
     .status-pago { background: rgba(43, 138, 62, 0.1); color: var(--success); }
+    .status-preparado { background: rgba(230, 126, 34, 0.15); color: #d97706; }
+    .status-em_rota { background: rgba(14, 165, 233, 0.15); color: #0284c7; }
+    .status-entregue { background: rgba(43, 138, 62, 0.2); color: #166534; }
     .status-pendente { background: rgba(230, 126, 34, 0.1); color: var(--warning); }
     .status-cancelado { background: rgba(201, 42, 42, 0.1); color: var(--danger); }
+
+    .pin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 6px;
+        background: #f1f5f9;
+        border: 1px dashed #94a3b8;
+        border-radius: 4px;
+        font-family: monospace;
+        font-weight: 700;
+        color: #0f172a;
+    }
 
     .btn-action {
         padding: 6px 12px;
@@ -126,10 +142,23 @@
         text-decoration: none;
         color: white;
         background: var(--accent-color);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: none;
+        cursor: pointer;
     }
 
     .btn-action:hover {
         opacity: 0.9;
+    }
+
+    .btn-prepare {
+        background: #d97706 !important;
+    }
+
+    .btn-prepare:hover {
+        background: #b45309 !important;
     }
 
     .back-link {
@@ -143,15 +172,22 @@
     }
 </style>
 
+<input type="hidden" id="csrf-token" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
 <div class="logistica-container">
     <header class="logistica-header">
         <div>
             <h1><%= titulo %></h1>
             <p style="color: var(--text-secondary);"><%= message %></p>
         </div>
-        <a href="/delivery" class="btn-action" style="display: flex; align-items: center; gap: 5px; background: var(--info);">
-            <i data-lucide="map"></i> Ver Mapa de Entregas
-        </a>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="/delivery/courier" class="btn-action" style="background: var(--accent-color);">
+                <i data-lucide="truck"></i> Painel do Entregador
+            </a>
+            <a href="/delivery" class="btn-action" style="background: var(--info);">
+                <i data-lucide="map"></i> Ver Mapa de Entregas
+            </a>
+        </div>
     </header>
 
     <section class="stats-grid">
@@ -163,9 +199,17 @@
             <span class="label">Aguardando Pagamento</span>
             <span class="value"><%= stats.pendente %></span>
         </div>
-        <div class="stat-card success">
-            <span class="label">Pagos / Em Rota</span>
+        <div class="stat-card" style="border-left: 4px solid #d97706;">
+            <span class="label">Pagos (Aguardando Preparo)</span>
             <span class="value"><%= stats.pago %></span>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #0284c7;">
+            <span class="label">Prontos / Em Rota</span>
+            <span class="value"><%= (stats.preparado || 0) + (stats.em_rota || 0) %></span>
+        </div>
+        <div class="stat-card success">
+            <span class="label">Entregues com Sucesso</span>
+            <span class="value"><%= stats.entregue || 0 %></span>
         </div>
         <div class="stat-card accent">
             <span class="label">Faturamento Confirmado</span>
@@ -189,14 +233,20 @@
                         <th>Cliente</th>
                         <th>Total</th>
                         <th>Status</th>
+                        <th>Entregador / PIN</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     <% if (orders && orders.length > 0) { %>
-                        <% orders.forEach(order => { %>
-                            <tr>
-                                <td style="font-weight: 600;">#<%= order._id.toString().slice(-6).toUpperCase() %></td>
+                        <% orders.forEach(order => { 
+                            const shortId = order._id.toString().slice(-6).toUpperCase();
+                            const status = order.statusInterno || 'pendente';
+                            const courierName = order.delivery?.courierName || '';
+                            const pinCode = order.delivery?.confirmationCodePlain || '';
+                        %>
+                            <tr id="order-row-<%= order._id %>">
+                                <td style="font-weight: 600;">#<%= shortId %></td>
                                 <td><%= order.createdAt ? new Date(order.createdAt).toLocaleDateString('pt-BR') : 'N/A' %></td>
                                 <td>
                                     <div style="font-weight: 500;"><%= order.user?.name || 'Cliente Zirim' %></div>
@@ -206,18 +256,61 @@
                                     R$ <%= (order.payment?.transaction_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %>
                                 </td>
                                 <td>
-                                    <span class="status-badge status-<%= order.statusInterno %>">
-                                        <%= order.statusInterno === 'pago' ? 'Confirmado' : (order.statusInterno === 'cancelado' ? 'Cancelado' : 'Pendente') %>
+                                    <span class="status-badge status-<%= status %>" id="status-badge-<%= order._id %>">
+                                        <% if (status === 'pago') { %>
+                                            Pago (Preparar)
+                                        <% } else if (status === 'preparado') { %>
+                                            Pronto p/ Retirada
+                                        <% } else if (status === 'em_rota') { %>
+                                            Em Rota
+                                        <% } else if (status === 'entregue') { %>
+                                            Entregue
+                                        <% } else if (status === 'cancelado') { %>
+                                            Cancelado
+                                        <% } else { %>
+                                            Aguard. Pgto
+                                        <% } %>
                                     </span>
                                 </td>
                                 <td>
-                                    <a href="/checkout/<%= order._id %>" class="btn-action">Ver Detalhes</a>
+                                    <% if (pinCode) { %>
+                                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                                            <span class="pin-badge" title="Código PIN gerado para o cliente">
+                                                <i data-lucide="key" style="width: 12px; height: 12px;"></i> <%= pinCode %>
+                                            </span>
+                                            <% if (courierName) { %>
+                                                <small style="color: var(--text-secondary); font-size: 0.75rem;">
+                                                    <i data-lucide="user-check" style="width: 12px; height: 12px; vertical-align: middle;"></i> <%= courierName %>
+                                                </small>
+                                            <% } %>
+                                        </div>
+                                    <% } else { %>
+                                        <span style="color: var(--text-secondary); font-size: 0.75rem;">-</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 6px; align-items: center;">
+                                        <% if (status === 'pago') { %>
+                                            <button 
+                                                type="button" 
+                                                class="btn-action btn-prepare" 
+                                                id="btn-prepare-<%= order._id %>"
+                                                onclick="prepareOrder('<%= order._id %>')"
+                                                title="Liberar pedido para retirada pelo entregador"
+                                            >
+                                                <i data-lucide="package-check" style="width: 13px; height: 13px;"></i> Preparar
+                                            </button>
+                                        <% } %>
+                                        <a href="/checkout/<%= order._id %>" class="btn-action" style="background: #475569;" title="Ver detalhes do pedido">
+                                            <i data-lucide="eye" style="width: 13px; height: 13px;"></i> Detalhes
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         <% }) %>
                     <% } else { %>
                         <tr>
-                            <td colspan="6" style="padding: 3rem; text-align: center; color: var(--text-secondary);">
+                            <td colspan="7" style="padding: 3rem; text-align: center; color: var(--text-secondary);">
                                 <i data-lucide="package-x" style="width: 40px; height: 40px; display: block; margin: 0 auto 10px;"></i>
                                 Nenhum pedido registrado até o momento.
                             </td>
@@ -236,4 +329,43 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
     lucide.createIcons();
+
+    async function prepareOrder(orderId) {
+        if (!confirm('Deseja marcar este pedido como pronto para envio? Isso gerará o código PIN e liberará o pedido no painel dos entregadores.')) {
+            return;
+        }
+
+        const btn = document.getElementById(`btn-prepare-${orderId}`);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = 'Preparando...';
+        }
+
+        const csrfToken = document.getElementById('csrf-token')?.value;
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) headers['x-csrf-token'] = csrfToken;
+
+        try {
+            const response = await fetch(`/delivery/orders/${orderId}/prepare`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ orderId })
+            });
+
+            const data = await response.json();
+            if (!response.ok || data.error) {
+                throw new Error(data.error || 'Erro ao preparar pedido.');
+            }
+
+            alert(`Pedido preparado com sucesso! Código PIN gerado: ${data.confirmationCode}`);
+            window.location.reload();
+        } catch (err) {
+            alert(err.message);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="package-check" style="width: 13px; height: 13px;"></i> Preparar';
+                lucide.createIcons();
+            }
+        }
+    }
 </script>

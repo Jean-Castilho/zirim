@@ -7,7 +7,10 @@
                 <h2>Entregas Ativas</h2>
                 <span class="orders-count-badge" id="orders-count"><%= (activeOrders && activeOrders.length) || 0 %></span>
             </div>
-            <div class="panel-actions">
+            <div class="panel-actions" style="display: flex; gap: 6px;">
+                <a href="/delivery/courier" class="btn-icon" title="Abrir Painel do Entregador" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: inherit;">
+                    <i data-lucide="truck" style="width: 16px; height: 16px;"></i>
+                </a>
                 <button type="button" class="btn-icon" title="Recentralizar entregas" onclick="fitAllDeliveries()">
                     <i data-lucide="maximize-2" style="width: 16px; height: 16px;"></i>
                 </button>
@@ -34,11 +37,13 @@
                     const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
                     const cep = order.address?.cep ? ` (CEP: ${order.address.cep})` : '';
                     const fullAddress = street ? `${street}${neighborhood}${cep}` : 'Endereço não informado';
+                    const status = order.statusInterno || 'pendente';
+                    const courierName = order.delivery?.courierName || '';
                 %>
                     <article 
                         class="order-card" 
                         id="order-card-<%= order._id %>"
-                        data-search="<%= (orderShortId + ' ' + clientName + ' ' + fullAddress).toLowerCase() %>"
+                        data-search="<%= (orderShortId + ' ' + clientName + ' ' + fullAddress + ' ' + courierName).toLowerCase() %>"
                         onclick="focusDelivery(<%= lat %>, <%= lng %>, '<%= order._id %>')"
                     >
                         <div class="order-card-header">
@@ -46,9 +51,9 @@
                                 <i data-lucide="package" class="icon-sm"></i>
                                 <span>#<%= orderShortId %></span>
                             </div>
-                            <span class="status-badge <%= order.statusInterno === 'pago' ? 'status-transit' : 'status-pending' %>">
+                            <span class="status-badge <%= status === 'em_rota' ? 'status-transit' : (status === 'preparado' ? 'status-pending' : 'status-transit') %>">
                                 <span class="status-dot"></span>
-                                <%= order.statusInterno === 'pago' ? 'Em Rota' : 'Aguard. Pgto' %>
+                                <%= status === 'em_rota' ? 'Em Rota' : (status === 'preparado' ? 'Pronto' : (status === 'pago' ? 'Pago' : 'Aguard. Pgto')) %>
                             </span>
                         </div>
 
@@ -57,6 +62,12 @@
                                 <i data-lucide="user" class="icon-sm"></i>
                                 <span class="client-name"><%= clientName %></span>
                             </div>
+                            <% if (courierName) { %>
+                                <div class="order-info-row" style="color: #0284c7;">
+                                    <i data-lucide="truck" class="icon-sm"></i>
+                                    <span>Entregador: <strong><%= courierName %></strong></span>
+                                </div>
+                            <% } %>
                             <div class="order-info-row">
                                 <i data-lucide="phone" class="icon-sm"></i>
                                 <span><%= clientPhone %></span>
@@ -147,7 +158,10 @@
             const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
             const cep = order.address?.cep ? ` (CEP: ${order.address.cep})` : '';
             const fullAddress = street ? `${street}${neighborhood}${cep}` : 'Endereço não informado';
-            const isPaid = order.statusInterno === 'pago';
+            const orderStatus = order.statusInterno || 'pendente';
+            const courierName = order.delivery?.courierName || '';
+            const statusLabel = orderStatus === 'em_rota' ? 'Em Rota' : (orderStatus === 'preparado' ? 'Pronto' : (orderStatus === 'pago' ? 'Pago' : 'Aguard. Pgto'));
+            const badgeClass = orderStatus === 'em_rota' ? 'status-transit' : (orderStatus === 'preparado' ? 'status-pending' : 'status-transit');
 
             const marker = new google.maps.Marker({
                 position,
@@ -160,13 +174,14 @@
                     <div class="map-popup-card">
                         <header>
                             <strong>#${orderShortId}</strong>
-                            <span class="status-badge ${isPaid ? 'status-transit' : 'status-pending'}">
-                                ${isPaid ? 'Em Rota' : 'Aguard. Pgto'}
+                            <span class="status-badge ${badgeClass}">
+                                ${statusLabel}
                             </span>
                         </header>
                         <div style="font-size: 0.85rem; color: #212529;">
                             <p style="margin: 0 0 4px 0; font-weight: 600;">${escapeHtml(clientName)}</p>
                             <p style="margin: 0; color: #6c757d;">${escapeHtml(fullAddress)}</p>
+                            ${courierName ? `<p style="margin: 6px 0 0 0; font-size: 0.8rem; color: #0284c7;"><strong>Entregador:</strong> ${escapeHtml(courierName)}</p>` : ''}
                         </div>
                     </div>
                 `

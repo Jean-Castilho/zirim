@@ -29,9 +29,10 @@
                   </a>
                   <% } %>
 
-                    <% if (user.role==='delivery' || user.role==='admin' ) { %>
-                      <a href="/delivery" class="nav-link <%= isActive('/delivery') ? 'active' : '' %>"
-                        aria-label="Painel do Entregador">
+                    <% if (user.role==='entregador' || user.role==='delivery' || user.role==='admin' ) { %>
+                      <a href="<%= user.role==='admin' ? '/delivery' : '/delivery/courier' %>" class="nav-link <%= isActive('/delivery') ? 'active' : '' %>"
+                        aria-label="<%= user.role==='admin' ? 'Monitoramento de Entregas' : 'Painel do Entregador' %>"
+                        title="<%= user.role==='admin' ? 'Monitoramento de Entregas' : 'Painel do Entregador' %>">
                         <span class="material-icons notranslate md-22">local_shipping</span>
                       </a>
                       <% } %>

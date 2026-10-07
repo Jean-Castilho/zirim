@@ -46,6 +46,10 @@ export default class ProductController {
     return this.streamImage(req, res);
   }
 
+  async findAll(query = {}, options = {}) {
+    return await this.repository.findAll(query, options);
+  }
+
   async getProductsByIds(ids, projection = {}) {
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       throw new ValidationError("Array de IDs é requerido para a projeção.");

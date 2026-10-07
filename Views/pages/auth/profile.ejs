@@ -208,10 +208,39 @@
     border: 1px solid #b2f5ea;
   }
 
+  .order-status.preparado {
+    color: #d97706;
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+  }
+
+  .order-status.em_rota {
+    color: #0284c7;
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+  }
+
+  .order-status.entregue {
+    color: #166534;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+  }
+
   .order-status.pendente {
     color: var(--cor-alerta);
     background-color: #fffaf0;
     border: 1px solid #feebc8;
+  }
+
+  .order-pin-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0fdf4;
+    border: 1px dashed #20c997;
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin-top: 8px;
   }
 
   .order-status.cancelado {
@@ -354,7 +383,7 @@
         <div class="info-group">
           <label>Cargo:</label>
           <p>
-            <%= user?.role ==='admin' ? 'Administrador' : 'Usuário' %>
+            <%= user?.role ==='admin' ? 'Administrador' : ((user?.role === 'entregador' || user?.role === 'delivery') ? 'Entregador' : 'Usuário') %>
           </p>
         </div>
         <div class="profile-actions">
@@ -376,12 +405,29 @@
                 </div>
                 <div class="order-details">
                   <div class="order-status <%= order.status || 'pendente' %>">
-                    <%= order.status || 'pendente' %>
+                    <% 
+                      let statusLabel = 'Aguardando Pagamento';
+                      if (order.status === 'pago') statusLabel = 'Pago / Preparando';
+                      else if (order.status === 'preparado') statusLabel = 'Pronto p/ Envio';
+                      else if (order.status === 'em_rota') statusLabel = 'Em Rota de Entrega';
+                      else if (order.status === 'entregue') statusLabel = 'Entregue';
+                      else if (order.status === 'cancelado') statusLabel = 'Cancelado';
+                    %>
+                    <%= statusLabel %>
                   </div>
                   <div class="order-total">
                     R$ <%= (order.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %>
                   </div>
                 </div>
+                <% if (order.delivery?.confirmationCodePlain && ['preparado', 'em_rota'].includes(order.status)) { %>
+                  <div>
+                    <div class="order-pin-container" title="Informe este código ao entregador no ato do recebimento">
+                      <span class="material-icons" style="font-size: 15px; color: #0ca678;">vpn_key</span>
+                      <span style="font-size: 0.8rem; color: #2b8a3e; font-weight: 600;">PIN de Entrega:</span>
+                      <strong style="font-family: monospace; font-size: 1rem; color: #087f5b; letter-spacing: 2px;"><%= order.delivery.confirmationCodePlain %></strong>
+                    </div>
+                  </div>
+                <% } %>
                 <% if (order._id || order.id) { %>
                   <% if (order.status === 'pendente') { %>
                     <a href="/checkout/<%= order._id || order.id %>" class="order-link order-link-pay">

@@ -1,5 +1,10 @@
 import express from "express";
-import { generateCsrfToken } from "../middleware/authMiddleware.js";
+import { 
+  generateCsrfToken, 
+  requireAuth, 
+  requireAdmin, 
+  requireCourier 
+} from "../middleware/authMiddleware.js";
 
 import {
   Home,
@@ -49,18 +54,18 @@ router.get("/favorites", Favorites);
 router.get("/cart", Cart);
 router.get("/checkout/:id", Checkout);
 
-router.get("/profile", Profile);
-router.get("/dashboard", Dashboard);
-router.get("/edit/home", generateCsrfToken, EditPageHome);
+router.get("/profile", requireAuth, Profile);
+router.get("/dashboard", requireAdmin, Dashboard);
+router.get("/edit/home", requireAdmin, generateCsrfToken, EditPageHome);
 
-router.get("/users", generateCsrfToken, Users);
+router.get("/users", requireAdmin, generateCsrfToken, Users);
 
-router.get("/delivery", Delivery);
-router.get("/logistica", Logistica);
+router.get("/delivery", requireCourier, Delivery);
+router.get("/logistica", requireAdmin, generateCsrfToken, Logistica);
 
-router.get("/inventory", Inventory);
-router.get("/inventory/add", generateCsrfToken, AddProduct);
-router.get("/inventory/edit/:id", generateCsrfToken, EditProduct);
+router.get("/inventory", requireAdmin, Inventory);
+router.get("/inventory/add", requireAdmin, generateCsrfToken, AddProduct);
+router.get("/inventory/edit/:id", requireAdmin, generateCsrfToken, EditProduct);
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {
