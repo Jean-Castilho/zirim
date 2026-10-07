@@ -17,10 +17,9 @@ function showNotification(message, type = 'success') {
     if (type === 'error') icon = 'error';
     if (type === 'warning') icon = 'warning';
 
-        //<i class="material-icons">${icon}</i>
-    notification.innerHTML = `
-        <span>${message}</span>
-    `;
+    const textSpan = document.createElement('span');
+    textSpan.textContent = message;
+    notification.appendChild(textSpan);
 
     container.appendChild(notification);
 

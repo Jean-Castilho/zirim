@@ -25,6 +25,20 @@ router.post("/deleteUser/:id", requireAuth, (req, res, next) => userController.d
 router.post("/updateProfile", requireAuth, (req, res, next) => userController.updateProfile(req, res, next));
 
 router.post(
+    "/users/edit/:id",
+    requireAuth,
+    requireAdmin,
+    validateCsrfToken,
+    (req, res, next) => userController.updateUser(req, res, next)
+);
+router.delete(
+    "/users/edit/:id",
+    requireAuth,
+    requireAdmin,
+    (req, res, next) => userController.deleteUser(req, res, next)
+);
+
+router.post(
     "/updateBannerHome",
     requireAuth,
     requireAdmin,

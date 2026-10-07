@@ -1,4 +1,9 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/css/intlTelInput.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/js/intlTelInput.min.js"></script>
+
 <style>
+  .iti { width: 100%; }
+  .iti__country-list { text-align: left; }
   .admin-container {
     padding: 40px 20px;
     max-width: 1200px;
@@ -144,7 +149,100 @@
     margin-bottom: 10px;
     display: block;
   }
+
+  /* Modal de Edição Rápida */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-dialog {
+    background: #fff;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    overflow: hidden;
+    animation: fadeInModal 0.2s ease-out;
+  }
+  @keyframes fadeInModal {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--cor-borda);
+  }
+  .modal-header h3 { margin: 0; font-size: 1.25rem; color: var(--cor-primaria); }
+  .btn-close-modal {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #888;
+  }
+  .modal-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--cor-texto-escuro);
+  }
+  .form-control {
+    padding: 9px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--cor-borda);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-control:focus { border-color: var(--cor-primaria); }
+  .modal-footer {
+    padding: 16px 24px;
+    background: #fbfbfb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid var(--cor-borda);
+  }
+  .btn-secondary {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--cor-borda);
+    background: #fff;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .btn-primary {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    background: var(--cor-primaria);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
+
+<input type="hidden" id="csrf-token" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
 <div class="admin-container">
   
@@ -170,27 +268,33 @@
       <tbody>
         <% if (users && users.length > 0) { %>
           <% users.forEach(user => { %>
-            <tr>
-              <td><%= user.name %></td>
-              <td><%= user.email?.endereco || user.email %></td>
-              <td><%= user.phone?.number || user.phone || 'N/A' %></td>
-              <td>
+            <tr id="user-row-<%= user._id %>"
+                data-id="<%= user._id %>"
+                data-name="<%= user.name %>"
+                data-email="<%= user.email?.endereco || user.email %>"
+                data-phone="<%= user.phone?.number || user.phone || '' %>"
+                data-role="<%= user.role || 'user' %>"
+                data-active="<%= user.isActive !== false %>">
+              <td class="col-name"><%= user.name %></td>
+              <td class="col-email"><%= user.email?.endereco || user.email %></td>
+              <td class="col-phone"><%= user.phone?.number || user.phone || 'N/A' %></td>
+              <td class="col-role">
                 <span class="role-badge"><%= user.role || 'user' %></span>
               </td>
-              <td>
+              <td class="col-status">
                 <span class="status-badge <%= user.isActive !== false ? 'status-active' : 'status-inactive' %>">
                   <%= user.isActive !== false ? 'Ativo' : 'Inativo' %>
                 </span>
               </td>
               <td style="text-align: center;">
                 <div class="actions-wrapper">
-                  <a href="/admin/users/edit/<%= user._id %>" title="Editar" class="btn-icon btn-edit" style="text-decoration: none;">
+                  <button type="button" title="Editar" class="btn-icon btn-edit" onclick="openEditUserModal('<%= user._id %>')">
                     <i class="material-icons">edit</i>
-                  </a>
+                  </button>
                   <button type="button" 
                           title="Desativar/Excluir" 
                           class="btn-icon btn-delete"
-                          hx-delete="/api/users/<%= user._id %>"
+                          hx-delete="/users/edit/<%= user._id %>"
                           hx-trigger="click"
                           hx-target="closest tr"
                           hx-swap="outerHTML swap:0.5s"
@@ -219,3 +323,200 @@
     </a>
   </div>
 </div>
+
+<!-- Modal de Edição In-Place -->
+<div class="modal-backdrop" id="edit-user-modal" onclick="if(event.target === this) closeEditUserModal()">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3>Editar Usuário</h3>
+      <button type="button" class="btn-close-modal" onclick="closeEditUserModal()">&times;</button>
+    </div>
+    <form id="form-edit-user" onsubmit="handleEditUserSubmit(event)">
+      <input type="hidden" id="edit-user-id">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="edit-user-name">Nome Completo</label>
+          <input type="text" id="edit-user-name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-user-email">E-mail</label>
+          <input type="email" id="edit-user-email" class="form-control" disabled style="background:#eee; cursor:not-allowed;">
+        </div>
+        <div class="form-group">
+          <label for="edit-user-phone">Telefone</label>
+          <input type="text" id="edit-user-phone" class="form-control" placeholder="(00) 00000-0000">
+        </div>
+        <div class="form-group">
+          <label for="edit-user-role">Função / Perfil</label>
+          <select id="edit-user-role" class="form-control">
+            <option value="user">USER</option>
+            <option value="entregador">ENTREGADOR</option>
+            <option value="admin">ADMIN</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-user-status">Status</label>
+          <select id="edit-user-status" class="form-control">
+            <option value="true">Ativo</option>
+            <option value="false">Inativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeEditUserModal()">Cancelar</button>
+        <button type="submit" class="btn-primary" id="btn-save-user">Salvar Alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modalEl = document.getElementById('edit-user-modal');
+  const btnSave = document.getElementById('btn-save-user');
+  const editPhoneInput = document.getElementById('edit-user-phone');
+
+  const itiEdit = window.intlTelInput ? window.intlTelInput(editPhoneInput, {
+    initialCountry: "br",
+    separateDialCode: true,
+    strictMode: true,
+    autoPlaceholder: "polite",
+    formatOnDisplay: true,
+    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/js/utils.js",
+  }) : null;
+
+  editPhoneInput.addEventListener('blur', () => {
+    if (window.intlTelInputUtils && editPhoneInput.value.trim() && itiEdit) {
+      const formatted = itiEdit.getNumber(window.intlTelInputUtils.numberFormat.NATIONAL);
+      if (formatted) editPhoneInput.value = formatted;
+    }
+  });
+  editPhoneInput.addEventListener('countrychange', () => {
+    editPhoneInput.value = '';
+  });
+
+  function openEditUserModal(userId) {
+    const row = document.getElementById(`user-row-${userId}`);
+    if (!row) return;
+
+    document.getElementById('edit-user-id').value = userId;
+    document.getElementById('edit-user-name').value = row.dataset.name || '';
+    document.getElementById('edit-user-email').value = row.dataset.email || '';
+
+    const currentPhone = row.dataset.phone || '';
+    if (itiEdit) {
+      itiEdit.setNumber(currentPhone);
+    } else {
+      editPhoneInput.value = currentPhone;
+    }
+    document.getElementById('edit-user-role').value = row.dataset.role || 'user';
+    document.getElementById('edit-user-status').value = row.dataset.active === 'true' ? 'true' : 'false';
+
+    modalEl.style.display = 'flex';
+    document.getElementById('edit-user-name').focus();
+  }
+
+  function closeEditUserModal() {
+    modalEl.style.display = 'none';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalEl.style.display === 'flex') {
+      closeEditUserModal();
+    }
+  });
+
+  async function handleEditUserSubmit(e) {
+    e.preventDefault();
+    const userId = document.getElementById('edit-user-id').value;
+    const name = document.getElementById('edit-user-name').value.trim();
+    let phone = editPhoneInput.value.trim();
+    const role = document.getElementById('edit-user-role').value;
+    const isActive = document.getElementById('edit-user-status').value === 'true';
+
+    if (itiEdit && phone) {
+      if (!itiEdit.isValidNumber()) {
+        const errorMsg = 'Por favor, insira um número de telefone válido.';
+        if (typeof showNotification === 'function') {
+          showNotification(errorMsg, 'error');
+        } else {
+          alert(errorMsg);
+        }
+        return;
+      }
+      phone = itiEdit.getNumber();
+    }
+
+    btnSave.disabled = true;
+    btnSave.textContent = 'Salvando...';
+
+    const csrfToken = document.getElementById('csrf-token')?.value;
+    const headers = { 
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+    if (csrfToken) headers['x-csrf-token'] = csrfToken;
+
+    try {
+      const response = await fetch(`/users/edit/${userId}`, {
+        method: 'post',
+        headers,
+        body: JSON.stringify({ name, phone, role, isActive })
+      });
+
+      const isJson = response.headers.get('content-type')?.includes('application/json');
+      const data = isJson ? await response.json() : null;
+
+      if (!response.ok) {
+        const errorMsg = data?.error || data?.message || (
+          response.status === 401 ? 'Sessão expirada. Faça login novamente.' :
+          response.status === 403 ? 'Permissão negada para editar usuários.' :
+          `Erro ao processar requisição (Status: ${response.status})`
+        );
+        throw new Error(errorMsg);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error || data.message || 'Falha ao atualizar usuário.');
+      }
+
+      // Atualiza linha na tabela sem recarregar a página
+      const row = document.getElementById(`user-row-${userId}`);
+      if (row) {
+        row.dataset.name = name;
+        row.dataset.phone = phone;
+        row.dataset.role = role;
+        row.dataset.active = String(isActive);
+
+        row.querySelector('.col-name').textContent = name;
+        row.querySelector('.col-phone').textContent = phone || 'N/A';
+        row.querySelector('.col-role').innerHTML = `<span class="role-badge">${role}</span>`;
+        row.querySelector('.col-status').innerHTML = `
+          <span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">
+            ${isActive ? 'Ativo' : 'Inativo'}
+          </span>
+        `;
+      }
+
+      closeEditUserModal();
+      if (typeof showNotification === 'function') {
+        showNotification('Usuário atualizado com sucesso!', 'success');
+      } else if (typeof notificationShow === 'function') {
+        notificationShow('Usuário atualizado com sucesso!', 'sucesso');
+      } else if (typeof window.notificationShow === 'function') {
+        window.notificationShow('Usuário atualizado com sucesso!', 'sucesso');
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Erro ao atualizar usuário.';
+      if (typeof showNotification === 'function') {
+        showNotification(errorMessage, 'error');
+      } else if (typeof notificationShow === 'function') {
+        notificationShow(errorMessage, 'erro');
+      } else if (typeof window.notificationShow === 'function') {
+        window.notificationShow(errorMessage, 'erro');
+      }
+    } finally {
+      btnSave.disabled = false;
+      btnSave.textContent = 'Salvar Alterações';
+    }
+  }
+</script>

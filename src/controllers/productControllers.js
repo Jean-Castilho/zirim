@@ -21,7 +21,15 @@ export default class ProductController {
       downloadStream.on('error', (err) => {
         console.error('Erro ao fazer stream da imagem:', err);
         if (!res.headersSent) {
-          res.status(500).send('Erro interno ao carregar a imagem');
+          return res.status(500).send('Erro interno ao carregar a imagem');
+        }
+        res.end();
+      });
+
+      // Garante que o stream seja destruído se o cliente fechar a conexão antes do término
+      req.on('close', () => {
+        if (!downloadStream.destroyed) {
+          downloadStream.destroy();
         }
       });
 

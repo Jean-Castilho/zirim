@@ -1,5 +1,4 @@
 <link rel="stylesheet" href="/css/pages/delivery.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 
 <main class="delivery-container">
     <aside class="delivery-sidebar">
@@ -29,7 +28,8 @@
                     const lat = order.location?.lat != null && Number.isFinite(Number(order.location.lat)) ? Number(order.location.lat) : 'null';
                     const lng = order.location?.lng != null && Number.isFinite(Number(order.location.lng)) ? Number(order.location.lng) : 'null';
                     const clientName = order.user?.name || 'Cliente Zirim';
-                    const clientPhone = order.user?.phone || 'Não informado';
+                    const rawPhone = order.user?.phone;
+                    const clientPhone = (typeof rawPhone === 'object' ? rawPhone?.number : rawPhone) || 'Não informado';
                     const street = order.address?.street || '';
                     const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
                     const cep = order.address?.cep ? ` (CEP: ${order.address.cep})` : '';
@@ -89,25 +89,16 @@
     </section>
 </main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=<%= mapApiKey %>"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <script>
     let map;
+    let bounds;
+    let activeInfoWindow = null;
     const markersMap = {};
-    const deliveryPoints = [];
     const activeOrders = <%- JSON.stringify(activeOrders || []).replace(/</g, '\\u003c') %>;
-    const defaultPosition = [-23.5505, -46.6333];
-
-    function createCustomMarkerIcon() {
-        return L.divIcon({
-            className: 'custom-map-marker',
-            html: `<div class="marker-pin"><i data-lucide="truck"></i></div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
-        });
-    }
+    const defaultPosition = { lat: -23.5505, lng: -46.6333 };
 
     function escapeHtml(text) {
         const div = document.createElement('div');
@@ -116,37 +107,158 @@
     }
 
     function initMap() {
-        map = L.map('map').setView(defaultPosition, 12);
+        if (typeof google === 'undefined' || !google.maps) {
+            const mapEl = document.getElementById('map');
+            if (mapEl) {
+                mapEl.innerHTML = `
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#6c757d;text-align:center;padding:2rem;">
+                        <p style="font-weight:600;margin-bottom:0.5rem;">Não foi possível carregar o Google Maps.</p>
+                        <small>Verifique se a variável GOOGLE_API_KEY está configurada no seu ambiente.</small>
+                    </div>
+                `;
+            }
+            return;
+        }
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            maxZoom: 19,
-            subdomains: 'abcd'
-        }).addTo(map);
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: defaultPosition,
+            zoom: 12,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            zoomControl: true
+        });
 
-        const deliveryPoints = [];
+        bounds = new google.maps.LatLngBounds();
+        let validCount = 0;
+
         activeOrders.forEach(order => {
             const lat = Number(order.location?.lat);
             const lng = Number(order.location?.lng);
             if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
 
-            const point = [lat, lng];
-            deliveryPoints.push(point);
-            L.marker(point).addTo(map)
-                .bindPopup(`Pedido #${String(order._id).slice(-6).toUpperCase()}`);
+            const position = { lat, lng };
+            bounds.extend(position);
+            validCount++;
+
+            const orderShortId = order._id ? String(order._id).slice(-6).toUpperCase() : '------';
+            const clientName = order.user?.name || 'Cliente Zirim';
+            const street = order.address?.street || '';
+            const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
+            const cep = order.address?.cep ? ` (CEP: ${order.address.cep})` : '';
+            const fullAddress = street ? `${street}${neighborhood}${cep}` : 'Endereço não informado';
+            const isPaid = order.statusInterno === 'pago';
+
+            const marker = new google.maps.Marker({
+                position,
+                map,
+                title: `Pedido #${orderShortId} - ${clientName}`
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div class="map-popup-card">
+                        <header>
+                            <strong>#${orderShortId}</strong>
+                            <span class="status-badge ${isPaid ? 'status-transit' : 'status-pending'}">
+                                ${isPaid ? 'Em Rota' : 'Aguard. Pgto'}
+                            </span>
+                        </header>
+                        <div style="font-size: 0.85rem; color: #212529;">
+                            <p style="margin: 0 0 4px 0; font-weight: 600;">${escapeHtml(clientName)}</p>
+                            <p style="margin: 0; color: #6c757d;">${escapeHtml(fullAddress)}</p>
+                        </div>
+                    </div>
+                `
+            });
+
+            marker.addListener('click', () => {
+                if (activeInfoWindow) activeInfoWindow.close();
+                infoWindow.open(map, marker);
+                activeInfoWindow = infoWindow;
+                highlightCard(order._id);
+            });
+
+            markersMap[order._id] = { marker, infoWindow, position };
         });
 
-        if (deliveryPoints.length) {
-            map.fitBounds(deliveryPoints, { padding: [40, 40], maxZoom: 13 });
+        if (validCount > 0) {
+            if (validCount === 1) {
+                map.setCenter(bounds.getCenter());
+                map.setZoom(15);
+            } else {
+                map.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
+            }
+        }
+    }
+
+    function highlightCard(orderId) {
+        document.querySelectorAll('.order-card').forEach(card => card.classList.remove('is-selected'));
+        if (!orderId) return;
+        const selectedCard = document.getElementById(`order-card-${orderId}`);
+        if (selectedCard) {
+            selectedCard.classList.add('is-selected');
+            selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    function focusDelivery(lat, lng, orderId) {
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            highlightCard(orderId);
+            return;
+        }
+        if (!map) return;
+
+        map.panTo({ lat, lng });
+        map.setZoom(16);
+
+        if (orderId && markersMap[orderId]) {
+            if (activeInfoWindow) activeInfoWindow.close();
+            const { marker, infoWindow } = markersMap[orderId];
+            infoWindow.open(map, marker);
+            activeInfoWindow = infoWindow;
         }
 
+        highlightCard(orderId);
     }
 
-    function focusDelivery(lat, lng) {
-        if (!map || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
-        map.flyTo([lat, lng], 15);
+    function fitAllDeliveries() {
+        if (!map || !bounds || bounds.isEmpty()) return;
+        map.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
     }
 
-    initMap();
-    lucide.createIcons();
+    function filterOrders(query) {
+        const term = (query || '').trim().toLowerCase();
+        const cards = document.querySelectorAll('.order-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const text = card.getAttribute('data-search') || '';
+            const orderId = card.id.replace('order-card-', '');
+            const isMatch = !term || text.includes(term);
+
+            card.style.display = isMatch ? 'flex' : 'none';
+
+            if (markersMap[orderId]) {
+                markersMap[orderId].marker.setVisible(isMatch);
+            }
+
+            if (isMatch) visibleCount++;
+        });
+
+        const countBadge = document.getElementById('orders-count');
+        if (countBadge) {
+            countBadge.textContent = visibleCount;
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            lucide.createIcons();
+        });
+    } else {
+        initMap();
+        lucide.createIcons();
+    }
 </script>

@@ -46,4 +46,43 @@ export default class OrderController {
             return res.status(500).send('Internal Server Error');
         }
     }
+
+    async confirmDelivery(req, res, next) {
+        try {
+            const user = req.session?.user;
+            if (!user) throw new UnauthorizedError("Usuário não autenticado.");
+
+            const orderId = req.body.orderId || req.params.id;
+            const { code } = req.body;
+
+            if (!orderId || !code) {
+                return res.status(400).json({ error: "ID do pedido e código PIN são obrigatórios." });
+            }
+
+            const result = await this.repository.confirmDelivery(orderId, user._id, code);
+            return res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async selectOrderForDelivery(req, res, next) {
+        try {
+            const user = req.session?.user;
+            if (!user) throw new UnauthorizedError("Usuário não autenticado.");
+
+            const orderId = req.body.orderId || req.params.id;
+            if (!orderId) {
+                return res.status(400).json({ error: "ID do pedido é obrigatório." });
+            }
+
+            const result = await this.repository.selectOrderForDelivery(orderId, user);
+            if (result.error) {
+                return res.status(400).json({ error: result.error });
+            }
+            return res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
 }

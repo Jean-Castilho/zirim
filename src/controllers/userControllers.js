@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import UserService from "../services/UserService.js";
 
 import {
@@ -97,7 +98,48 @@ export default class UserController {
             const { id } = req.params;
             const result = await this.service.deleteUser(id);
             if (!result) throw new NotFoundError("Usuario nao encontrado.");
+            if (req.headers["hx-request"]) {
+                return res.status(200).send("");
+            }
             return res.status(200).json({ message: "Usuario excluido com sucesso."});
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updateUser(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { name, phone, role, isActive } = req.body;
+
+            if (!id || !ObjectId.isValid(id)) {
+                throw new ValidationError("ID de usuário inválido.");
+            }
+
+            if (!name || !name.trim()) {
+                throw new ValidationError("O nome é obrigatório.");
+            }
+
+            const allowedRoles = ["user", "entregador", "admin"];
+            if (role && !allowedRoles.includes(role)) {
+                throw new ValidationError("Perfil/função inválida.");
+            }
+
+            const updatedUser = await this.service.updateUser(id, {
+                name: name.trim(),
+                phone: typeof phone === "string" ? phone.trim() : "",
+                role: role || "user",
+                isActive: typeof isActive === "boolean" ? isActive : isActive === "true"
+            });
+
+            if (!updatedUser) {
+                throw new NotFoundError("Usuário não encontrado.");
+            }
+
+            return res.status(200).json({
+                message: "Usuário atualizado com sucesso.",
+                user: updatedUser
+            });
         } catch (error) {
             next(error);
         }

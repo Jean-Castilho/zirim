@@ -396,4 +396,136 @@ export default class OrderRepository extends BaseRepository {
 
         return { orders: allOrders, stats };
     }
+
+    async getCourierDeliveries(courierId) {
+        const idVariants = ObjectId.isValid(courierId)
+            ? [courierId, String(courierId), new ObjectId(courierId)]
+            : [courierId, String(courierId)];
+
+        return await this.getCollection().find({
+            "delivery.courierId": { $in: idVariants },
+            statusInterno: { $in: ["pago", "em_transporte", "em_rota"] }
+        }).sort({ updatedAt: -1, createdAt: -1 }).toArray();
+    }
+
+    async getAvailableDeliveries() {
+        return await this.getCollection().find({
+            statusInterno: "preparado",
+            $or: [
+                { "delivery.courierId": { $exists: false } },
+                { "delivery.courierId": null }
+            ]
+        }).sort({ createdAt: 1 }).toArray();
+    }
+
+    async selectOrderForDelivery(orderId, courierUser) {
+        if (!orderId || !ObjectId.isValid(orderId)) {
+            return { error: "ID de pedido inválido." };
+        }
+
+        const courierRole = courierUser.role;
+        if (courierRole !== "entregador" && courierRole !== "admin") {
+            return { error: "Apenas usuários com perfil de entregador podem aceitar entregas." };
+        }
+
+        const courierId = courierUser._id;
+        const confirmationCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+        // Operação atômica: garante que o pedido está "preparado" e sem entregador associado
+        const updateResult = await this.getCollection().findOneAndUpdate(
+            {
+                _id: new ObjectId(orderId),
+                statusInterno: "preparado",
+                $or: [
+                    { "delivery.courierId": { $exists: false } },
+                    { "delivery.courierId": null }
+                ]
+            },
+            {
+                $set: {
+                    statusInterno: "em_rota",
+                    "delivery.courierId": courierId,
+                    "delivery.courierName": courierUser.name || "Entregador",
+                    "delivery.courierPhone": (typeof courierUser.phone === "object" ? courierUser.phone?.number : courierUser.phone) || "",
+                    "delivery.confirmationCodePlain": confirmationCode,
+                    "delivery.startedAt": new Date(),
+                    updatedAt: new Date()
+                }
+            },
+            { returnDocument: "after" }
+        );
+
+        const updatedOrder = updateResult?.value ?? updateResult;
+        if (!updatedOrder) {
+            return { error: "Pedido indisponível: não está pronto para entrega ou já foi aceito por outro entregador." };
+        }
+
+        return {
+            success: true,
+            message: "Pedido selecionado para entrega com sucesso!",
+            orderId: updatedOrder._id,
+            statusInterno: "em_rota"
+        };
+    }
+
+    async confirmDelivery(orderId, courierId, code) {
+        if (!orderId || !code) {
+            return { error: "ID do pedido e código são obrigatórios." };
+        }
+
+        const idVariants = ObjectId.isValid(courierId)
+            ? [courierId, String(courierId), new ObjectId(courierId)]
+            : [courierId, String(courierId)];
+
+        const order = await this.getCollection().findOne({
+            _id: new ObjectId(orderId),
+            "delivery.courierId": { $in: idVariants }
+        });
+
+        if (!order) {
+            return { error: "Pedido não encontrado ou não atribuído a você." };
+        }
+
+        if (order.statusInterno === "entregue") {
+            return { error: "Este pedido já foi finalizado como entregue." };
+        }
+
+        const attempts = Number(order.delivery?.attempts || 0);
+        if (attempts >= 5) {
+            return { error: "Limite de tentativas excedido (5x). Contate a central de suporte." };
+        }
+
+        const cleanInput = String(code).trim();
+        const expectedCode = order.delivery?.confirmationCodePlain || order.delivery?.confirmationCode;
+        const expectedHash = order.delivery?.confirmationCodeHash;
+
+        let isValid = false;
+        if (expectedCode && String(expectedCode).trim() === cleanInput) {
+            isValid = true;
+        } else if (expectedHash) {
+            const inputHash = crypto.createHash("sha256").update(cleanInput).digest("hex");
+            if (inputHash === expectedHash) {
+                isValid = true;
+            }
+        }
+
+        if (!isValid) {
+            const nextAttempts = attempts + 1;
+            await this.getCollection().updateOne(
+                { _id: order._id },
+                { $inc: { "delivery.attempts": 1 } }
+            );
+            return { error: `Código incorreto. Tentativa ${nextAttempts} de 5.` };
+        }
+
+        await this.getCollection().updateOne(
+            { _id: order._id },
+            {
+                $set: { statusInterno: "entregue", "delivery.deliveredAt": new Date(), updatedAt: new Date() },
+                $unset: { "delivery.confirmationCodeHash": "", "delivery.confirmationCodePlain": "" }
+            }
+        );
+
+        return { success: true, message: "Entrega confirmada com sucesso!" };
+    }
 }

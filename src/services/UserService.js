@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import UserRepository from "../repository/UserRepository.js";
-import { ValidationError, GeneralError } from "../utils/handleResponse.js";
+import { ValidationError, GeneralError, NotFoundError } from "../utils/handleResponse.js";
 import { compararPassword, createHashPassword } from "./authServices.js";
 import { validateUser } from "./validationData.js";
 
@@ -89,5 +89,14 @@ export default class UserService {
 
     async deleteUser(id) {
         return await this.repository.delete(id);
+    }
+
+    async updateUser(id, updateData) {
+        if (!id) throw new ValidationError("ID do usuário é obrigatório.");
+        const existing = await this.repository.findById(id);
+        if (!existing) throw new NotFoundError("Usuário não encontrado.");
+
+        await this.repository.updateProfile(id, updateData);
+        return await this.repository.findById(id, { password: 0 });
     }
 }

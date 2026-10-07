@@ -83,3 +83,17 @@ export const requireAdmin = (req, res, next) => {
   }
   next();
 };
+
+/**
+ * Protege rotas que exigem perfil de entregador (ou administrador).
+ */
+export const requireCourier = (req, res, next) => {
+  const role = req.session?.user?.role;
+  if (!req.session?.user || (role !== "entregador" && role !== "admin")) {
+    if (expectsJson(req)) {
+      return next(new GeneralError("Acesso negado. Apenas entregadores autorizados podem realizar esta operação.", 403));
+    }
+    return res.redirect("/login");
+  }
+  next();
+};

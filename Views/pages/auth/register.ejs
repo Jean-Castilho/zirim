@@ -51,7 +51,21 @@
       const iti = window.intlTelInput(phoneInput, {
         initialCountry: "br",
         separateDialCode: true,
+        strictMode: true,
+        autoPlaceholder: "polite",
+        formatOnDisplay: true,
         utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/js/utils.js",
+      });
+
+      // Formata automaticamente o número para o padrão nacional do país selecionado
+      phoneInput.addEventListener('blur', () => {
+        if (window.intlTelInputUtils && phoneInput.value.trim()) {
+          const formatted = iti.getNumber(window.intlTelInputUtils.numberFormat.NATIONAL);
+          if (formatted) phoneInput.value = formatted;
+        }
+      });
+      phoneInput.addEventListener('countrychange', () => {
+        phoneInput.value = '';
       });
 
       document.getElementById('registerForm').addEventListener('submit', async function(e) {

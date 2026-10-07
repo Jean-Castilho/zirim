@@ -1,0 +1,272 @@
+<link rel="stylesheet" href="/css/pages/delivery.css">
+
+<input type="hidden" id="csrf-token" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<div class="courier-container">
+    <header class="courier-header">
+        <div>
+            <h1>Painel do Entregador</h1>
+            <p class="courier-subtitle">Entregas em rota: <strong id="deliveries-count"><%= (deliveries && deliveries.length) || 0 %></strong></p>
+        </div>
+    </header>
+
+    <section class="available-orders-section" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-primary);">
+            Pedidos Prontos para Retirada (<span id="available-count"><%= (typeof availableOrders !== 'undefined' && availableOrders.length) || 0 %></span>)
+        </h2>
+        <div class="courier-list" id="available-list">
+            <% if (typeof availableOrders !== 'undefined' && availableOrders.length > 0) { %>
+                <% availableOrders.forEach(order => { 
+                    const shortId = order._id ? order._id.toString().slice(-6).toUpperCase() : '------';
+                    const clientName = order.user?.name || 'Cliente';
+                    const street = order.address?.street || '';
+                    const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
+                    const fullAddress = street ? `${street}${neighborhood}` : 'Endereço não informado';
+                %>
+                    <article class="courier-card" id="available-card-<%= order._id %>" style="border-left: 4px solid var(--warning);">
+                        <div class="courier-card-head">
+                            <span class="order-tag">#<%= shortId %></span>
+                            <span class="status-badge status-pending">
+                                <span class="status-dot"></span> Pronto para Entrega
+                            </span>
+                        </div>
+                        <div class="courier-card-info">
+                            <div class="info-row">
+                                <i data-lucide="user"></i>
+                                <strong><%= clientName %></strong>
+                            </div>
+                            <div class="info-row">
+                                <i data-lucide="map-pin"></i>
+                                <span><%= fullAddress %></span>
+                            </div>
+                        </div>
+                        <div class="courier-card-actions" style="grid-template-columns: 1fr;">
+                            <button type="button" class="btn-confirm" onclick="selectOrder('<%= order._id %>')">
+                                <i data-lucide="package-plus"></i> Aceitar e Iniciar Rota
+                            </button>
+                        </div>
+                    </article>
+                <% }) %>
+            <% } else { %>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Nenhum pedido aguardando entregador no momento.</p>
+            <% } %>
+        </div>
+    </section>
+
+    <header class="courier-header">
+        <h2 style="font-size: 1.1rem; color: var(--text-primary); margin: 0;">Minha Rota de Entregas</h2>
+    </header>
+
+    <main class="courier-list" id="courier-list">
+        <% if (deliveries && deliveries.length > 0) { %>
+            <% deliveries.forEach(order => { 
+                const shortId = order._id ? order._id.toString().slice(-6).toUpperCase() : '------';
+                const clientName = order.user?.name || 'Cliente';
+                const rawPhone = order.user?.phone;
+                const clientPhone = (typeof rawPhone === 'object' ? rawPhone?.number : rawPhone) || '';
+                const street = order.address?.street || '';
+                const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
+                const fullAddress = street ? `${street}${neighborhood}` : 'Endereço não informado';
+                const lat = order.location?.lat;
+                const lng = order.location?.lng;
+                const routeUrl = (lat && lng) 
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` 
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+            %>
+                <article class="courier-card" id="card-<%= order._id %>">
+                    <div class="courier-card-head">
+                        <span class="order-tag">#<%= shortId %></span>
+                        <span class="status-badge status-transit">
+                            <span class="status-dot"></span> Em Rota
+                        </span>
+                    </div>
+
+                    <div class="courier-card-info">
+                        <div class="info-row">
+                            <i data-lucide="user"></i>
+                            <strong><%= clientName %></strong>
+                        </div>
+                        <% if (clientPhone) { %>
+                            <div class="info-row">
+                                <i data-lucide="phone"></i>
+                                <a href="tel:<%= clientPhone %>" class="phone-link"><%= clientPhone %></a>
+                            </div>
+                        <% } %>
+                        <div class="info-row">
+                            <i data-lucide="map-pin"></i>
+                            <span><%= fullAddress %></span>
+                        </div>
+                    </div>
+
+                    <div class="courier-card-actions">
+                        <a href="<%= routeUrl %>" target="_blank" rel="noopener" class="btn-route">
+                            <i data-lucide="navigation"></i> Traçar Rota
+                        </a>
+                        <button type="button" class="btn-confirm" onclick="openPinModal('<%= order._id %>', '#<%= shortId %>')">
+                            <i data-lucide="check-circle-2"></i> Confirmar Entrega
+                        </button>
+                    </div>
+                </article>
+            <% }) %>
+        <% } else { %>
+            <div class="empty-orders-state" style="margin-top: 2rem;">
+                <div class="empty-icon-wrap">
+                    <i data-lucide="check-check"></i>
+                </div>
+                <h3>Nenhuma entrega pendente</h3>
+                <p>Bom trabalho! Todas as entregas sob sua responsabilidade foram concluídas.</p>
+            </div>
+        <% } %>
+    </main>
+</div>
+
+<!-- Modal de Confirmação por Código -->
+<div class="courier-modal-backdrop" id="pin-modal" style="display: none;">
+    <div class="courier-modal">
+        <div class="courier-modal-header">
+            <h3>Confirmar Recebimento</h3>
+            <button type="button" class="btn-close-modal" onclick="closePinModal()">&times;</button>
+        </div>
+        <form id="pin-form" onsubmit="submitDeliveryCode(event)">
+            <p class="modal-instruction">Solicite ao cliente o código de segurança e digite abaixo para liberar o pacote:</p>
+            <p class="modal-order-label" id="modal-order-id">Pedido #------</p>
+
+            <div class="pin-input-wrap">
+                <input 
+                    type="text" 
+                    id="pin-code-input" 
+                    name="code" 
+                    inputmode="numeric" 
+                    pattern="[0-9]*" 
+                    maxlength="6" 
+                    placeholder="0000" 
+                    required 
+                    autocomplete="one-time-code"
+                />
+            </div>
+
+            <div class="pin-error-feedback" id="pin-error-msg" style="display: none;"></div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closePinModal()">Cancelar</button>
+                <button type="submit" class="btn-submit" id="btn-submit-pin">Finalizar Entrega</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+
+    let currentOrderId = null;
+    const modal = document.getElementById('pin-modal');
+    const pinInput = document.getElementById('pin-code-input');
+    const errorBox = document.getElementById('pin-error-msg');
+    const orderLabel = document.getElementById('modal-order-id');
+    const submitBtn = document.getElementById('btn-submit-pin');
+
+    async function selectOrder(orderId) {
+        const csrfToken = document.getElementById('csrf-token')?.value;
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) headers['x-csrf-token'] = csrfToken;
+
+        try {
+            const response = await fetch('/delivery/select', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ orderId })
+            });
+
+            const data = await response.json();
+            if (!response.ok || data.error) {
+                throw new Error(data.error || 'Erro ao aceitar pedido.');
+            }
+
+            alert(data.message || 'Pedido aceito! Rota iniciada.');
+            window.location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function openPinModal(orderId, orderText) {
+        currentOrderId = orderId;
+        orderLabel.textContent = `Pedido ${orderText}`;
+        pinInput.value = '';
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+        modal.style.display = 'flex';
+        setTimeout(() => pinInput.focus(), 150);
+    }
+
+    function closePinModal() {
+        currentOrderId = null;
+        modal.style.display = 'none';
+    }
+
+    async function submitDeliveryCode(event) {
+        event.preventDefault();
+        if (!currentOrderId) return;
+
+        const code = pinInput.value.trim();
+        if (!code) return;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verificando...';
+        errorBox.style.display = 'none';
+        const csrfToken = document.getElementById('csrf-token')?.value;
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) {
+            headers['x-csrf-token'] = csrfToken;
+        }
+
+        try {
+            const response = await fetch('/delivery/confirm', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ orderId: currentOrderId, code })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                throw new Error(data.error || 'Código incorreto.');
+            }
+
+            const card = document.getElementById(`card-${currentOrderId}`);
+            if (card) {
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => card.remove(), 300);
+            }
+
+            const countEl = document.getElementById('deliveries-count');
+            if (countEl) {
+                countEl.textContent = Math.max(0, Number(countEl.textContent || 1) - 1);
+                if (Number(countEl.textContent) === 0) {
+                    const listEl = document.getElementById('courier-list');
+                    if (listEl) {
+                        listEl.innerHTML = `
+                            <div class="empty-orders-state" style="margin-top: 2rem;">
+                                <div class="empty-icon-wrap"><i data-lucide="check-check"></i></div>
+                                <h3>Nenhuma entrega pendente</h3>
+                                <p>Bom trabalho! Todas as entregas sob sua responsabilidade foram concluídas.</p>
+                            </div>
+                        `;
+                        lucide.createIcons();
+                    }
+                }
+            }
+
+            closePinModal();
+        } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = 'block';
+            pinInput.select();
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Finalizar Entrega';
+        }
+    }
+</script>

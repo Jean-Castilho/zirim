@@ -87,6 +87,7 @@ export default class UserRepository extends BaseRepository {
     if (typeof data.emailVerified === 'boolean') updateFields['email.verified'] = data.emailVerified;
     if (data.phone) updateFields['phone.number'] = data.phone;
     if (data.role) updateFields.role = data.role;
+    if (typeof data.isActive === 'boolean') updateFields.isActive = data.isActive;
     if (data.password) updateFields.password = data.password;
     
     updateFields.updatedAt = new Date();

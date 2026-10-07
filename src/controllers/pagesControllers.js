@@ -254,7 +254,8 @@ export const Delivery = async (req, res, next) => {
     renderPage(req, res, "../pages/admin/delivery/delivery", {
       titulo: "Monitoramento de Entregas",
       message: "Acompanhe os pedidos ativos no mapa",
-      activeOrders
+      activeOrders,
+      mapApiKey: process.env.GOOGLE_API_KEY || ''
     });
   } catch (error) {
     next(error);
@@ -343,6 +344,82 @@ export const EditPageHome = async (req, res, next) => {
       homePageData
     });
 
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CourierDashboard = async (req, res, next) => {
+  try {
+    const user = req.session?.user;
+    if (!user) {
+      return res.redirect("/login");
+    }
+
+    const [deliveries, availableOrders] = await Promise.all([
+      orderRepository.getCourierDeliveries(user._id),
+      orderRepository.getAvailableDeliveries()
+    ]);
+
+    renderPage(req, res, "../pages/admin/delivery/dashboard", {
+      titulo: "Minhas Entregas",
+      message: "Entregas atribuídas a você",
+      deliveries,
+      availableOrders
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const SelectOrderForDelivery = async (req, res, next) => {
+  try {
+    const user = req.session?.user;
+    if (!user) {
+      return res.status(401).json({ error: "Sessão expirada. Faça login novamente." });
+    }
+
+    if (user.role !== "entregador" && user.role !== "admin") {
+      return res.status(403).json({ error: "Apenas entregadores têm permissão para aceitar entregas." });
+    }
+
+    const orderId = req.body.orderId || req.params.id;
+    if (!orderId) {
+      return res.status(400).json({ error: "ID do pedido é obrigatório." });
+    }
+
+    const result = await orderRepository.selectOrderForDelivery(orderId, user);
+
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const ConfirmDeliveryCode = async (req, res, next) => {
+  try {
+    const user = req.session?.user;
+    if (!user) {
+      return res.status(401).json({ error: "Sessão expirada. Faça login novamente." });
+    }
+
+    const orderId = req.body.orderId || req.params.id;
+    const { code } = req.body;
+
+    if (!orderId || !code) {
+      return res.status(400).json({ error: "ID do pedido e código PIN são obrigatórios." });
+    }
+
+    const result = await orderRepository.confirmDelivery(orderId, user._id, code);
+
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
