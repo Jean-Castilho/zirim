@@ -87,7 +87,8 @@ export const validateCartItems = async (items) => {
       quantidade: cartItem.quantity,
       garantia: product.garantia || null,
       cor: cartItem.cor,
-      tamanho: cartItem.tamanho
+      tamanho: cartItem.tamanho,
+      sku: variation?.sku || null
     };
   });
 };
@@ -143,7 +144,7 @@ export const processCreateOrder = async (user, orderData) => {
   const paymentResult = await orderRepository.gerarPix(totalPrice, user);
   if (paymentResult.error) {
     await orderRepository.updateOrderPayment(orderId, paymentResult, "pagamento_falhou");
-    throw new Error(`Erro ao gerar PIX: ${paymentResult.error}`);
+    throw new ValidationError(`Erro ao gerar PIX: ${paymentResult.error}`);
   }
 
   await orderRepository.updateOrderPayment(

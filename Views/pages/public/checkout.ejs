@@ -73,7 +73,7 @@
                     </span>
                 </span>
             </div>
-        <% } else if (order.statusInterno === 'pago' || order.payment.status === 'approved') { %>
+        <% } else if (order.statusInterno === 'pago' || order.payment?.status === 'approved') { %>
             <div class="success-checkmark material-icons">check_circle</div>
             <h2 class="status-heading">Pagamento Confirmado!</h2>
             <p style="color: #6c757d; font-size: 0.95rem;">Seu pedido está sendo preparado pela equipe e em breve será liberado para entrega.</p>
@@ -97,16 +97,34 @@
                     </span>
                 </span>
             </div>
+        <% } else if (order.statusInterno === 'pagamento_falhou' || (!order.payment?.qr_code && !order.payment?.qr_code_base64)) { %>
+            <div class="error-cross material-icons">error_outline</div>
+            <h2 class="status-heading">Falha ao Gerar Pagamento</h2>
+            <p style="color: #6c757d; font-size: 0.95rem;"><%= order.payment?.error || 'Não foi possível gerar os dados do PIX para este pedido.' %></p>
+            <div id="status-container" style="margin-top: 15px;">
+                <span class="status-badge status-cancelled">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons">warning</span>
+                        Chave PIX indisponível
+                    </span>
+                </span>
+            </div>
+            <div style="margin-top: 25px;">
+                <a href="/cart" class="btn-copy" style="text-decoration: none; display: inline-flex; justify-content: center; align-items: center; background: #333; color: #fff;">
+                    <span class="material-icons" style="font-size: 1.2rem;">arrow_back</span>
+                    Voltar ao Carrinho
+                </a>
+            </div>
         <% } else { %>
             <h2 class="status-heading" id="checkout-title">Aguardando Pagamento PIX</h2>
             <p style="color: #6c757d; font-size: 0.95rem;">Utilize o código abaixo no app do seu banco para confirmar o pedido.</p>
             
             <div id="pix-payment-area">
                 <div class="pix-qr-container">
-                    <img src="data:image/jpeg;base64,<%= order.payment.qr_code_base64 %>" alt="QR Code PIX">
+                    <img src="data:image/jpeg;base64,<%= order.payment?.qr_code_base64 %>" alt="QR Code PIX">
                 </div>
                 
-                <div class="pix-code-box" id="pix-code-text"><%= order.payment.qr_code %></div>
+                <div class="pix-code-box" id="pix-code-text"><%= order.payment?.qr_code %></div>
                 
                 <button class="btn-copy" id="btn-copy-pix">
                     <span class="material-icons" style="font-size: 1.3rem;">content_copy</span>
@@ -170,7 +188,7 @@
             
             <div class="total-row">
                 <span style="color: #222; font-weight: 700;">Total do Pedido</span>
-                <strong style="color: #D2042D;">R$ <%= Number(order.payment.transaction_amount).toFixed(2) %></strong>
+                <strong style="color: #D2042D;">R$ <%= Number(order.payment?.transaction_amount ?? order.total ?? 0).toFixed(2) %></strong>
             </div>
         </div>
     </div>
@@ -178,7 +196,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const paymentId = "<%= order.payment?.id %>";
+        const paymentId = "<%= order.payment?.id || '' %>";
         const btnCopy = document.getElementById('btn-copy-pix');
         const pixCodeText = document.getElementById('pix-code-text') ? document.getElementById('pix-code-text').innerText : '';
         const statusBadge = document.getElementById('payment-status-badge');
@@ -203,7 +221,7 @@
         }
 
         async function checkPaymentStatus() {
-            if (!paymentId) return;
+            if (!paymentId || paymentId === 'undefined' || paymentId === 'null') return;
             try {
                 const response = await fetch(`/orders/status/${paymentId}`);
                 if (!response.ok) return;
@@ -219,13 +237,15 @@
                         setTimeout(() => {
                             pixPaymentArea.style.display = 'none';
                             
-                            statusBadge.className = "status-badge status-approved";
-                            statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">check_circle</span> Pagamento recebido com sucesso!</span>';
+                            if (statusBadge) {
+                                statusBadge.className = "status-badge status-approved";
+                                statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">check_circle</span> Pagamento recebido com sucesso!</span>';
+                            }
                             
                             const successIcon = document.createElement('div');
                             successIcon.className = 'success-checkmark material-icons';
                             successIcon.innerText = 'check_circle';
-                            document.getElementById('payment-card').prepend(successIcon);
+                            document.getElementById('payment-card')?.prepend(successIcon);
                         }, 300);
                     }
                 } else if (['rejected', 'cancelled', 'refunded', 'charged_back'].includes(data.status)) {
@@ -237,13 +257,15 @@
                         setTimeout(() => {
                             pixPaymentArea.style.display = 'none';
                             
-                            statusBadge.className = "status-badge status-cancelled";
-                            statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">cancel</span> O pagamento foi cancelado ou recusado.</span>';
+                            if (statusBadge) {
+                                statusBadge.className = "status-badge status-cancelled";
+                                statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">cancel</span> O pagamento foi cancelado ou recusado.</span>';
+                            }
                             
                             const errorIcon = document.createElement('div');
                             errorIcon.className = 'error-cross material-icons';
                             errorIcon.innerText = 'cancel';
-                            document.getElementById('payment-card').prepend(errorIcon);
+                            document.getElementById('payment-card')?.prepend(errorIcon);
                         }, 300);
                     }
                 }
@@ -252,8 +274,8 @@
             }
         }
 
-        const isFinished = "<%= (['pago', 'preparado', 'em_rota', 'entregue', 'cancelado'].includes(order.statusInterno) || ['approved', 'rejected', 'cancelled', 'refunded', 'charged_back'].includes(order.payment?.status)) %>" === "true";
-        if (!isFinished && paymentId) {
+        const isFinished = "<%= (['pago', 'preparado', 'em_rota', 'entregue', 'cancelado', 'pagamento_falhou'].includes(order.statusInterno) || ['approved', 'rejected', 'cancelled', 'refunded', 'charged_back'].includes(order.payment?.status)) %>" === "true";
+        if (!isFinished && paymentId && paymentId !== 'undefined' && paymentId !== 'null') {
             statusInterval = setInterval(checkPaymentStatus, 8000);
         }
     });

@@ -758,12 +758,28 @@
                         method: 'POST',
                         redirect: 'follow',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         },
                         body: JSON.stringify(orderPayload)
                     });
 
-                    if (response.redirected && response.url.startsWith(window.location.origin + '/checkout/')) {
+                    const data = await response.json().catch(() => ({}));
+
+                    if (response.ok && (data.redirectUrl || data.orderId)) {
+                        const targetUrl = data.redirectUrl || `/checkout/${data.orderId}`;
+                        const remainingCart = cart.filter(item => item.selected === false);
+                        if (remainingCart.length > 0) {
+                            localStorage.setItem('cart', JSON.stringify(remainingCart));
+                        } else {
+                            localStorage.removeItem('cart');
+                        }
+                        showNotification('Compra criada com sucesso. Abrindo o checkout.', 'success');
+                        window.location.assign(targetUrl);
+                        return;
+                    }
+
+                    if (response.redirected && response.url.includes('/checkout/')) {
                         const remainingCart = cart.filter(item => item.selected === false);
                         if (remainingCart.length > 0) {
                             localStorage.setItem('cart', JSON.stringify(remainingCart));
@@ -772,13 +788,16 @@
                         }
                         showNotification('Compra criada com sucesso. Abrindo o checkout.', 'success');
                         window.location.assign(response.url);
-                    } else if (response.status === 401) {
+                        return;
+                    }
+
+                    if (response.status === 401) {
                         showNotification('Não foi possível concluir a compra sem uma sessão.', 'error');
                         window.location.assign('/login?redirect=' + encodeURIComponent('/cart'));
-                    } else {
-                        const error = await response.json().catch(() => ({}));
-                        showNotification(error.message || 'Erro ao processar o checkout. Tente novamente.', 'error');
+                        return;
                     }
+
+                    showNotification(data.message || data.error || 'Erro ao processar o checkout. Tente novamente.', 'error');
                 } catch (error) {
                     console.error('Erro no checkout:', error);
                     showNotification('Ocorreu um erro ao tentar finalizar a compra.', 'error');

@@ -34,6 +34,15 @@ export default class OrderController {
             };
 
             const result = await processCreateOrder(user, req.body);
+
+            if (req.xhr || req.headers.accept?.includes('json') || req.is('json')) {
+                return res.status(201).json({
+                    success: true,
+                    orderId: result.orderId,
+                    redirectUrl: `/checkout/${result.orderId}`
+                });
+            }
+
             return res.redirect(`/checkout/${result.orderId}`);
         } catch (error) {
             next(error);

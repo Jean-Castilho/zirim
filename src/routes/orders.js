@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
 router.get('/status/:id', async (req, res) => {
   const { id } = req.params;
 
-  if (!id) {
+  if (!id || id === 'undefined' || id === 'null') {
     return res.status(400).json({ error: 'ID de pagamento obrigatório.' });
   }
 
@@ -56,6 +56,7 @@ router.get('/status/:id', async (req, res) => {
 });
 
 router.post('/creat-Order', (req, res, next) => orderController.creatOrder(req, res, next));
+router.post('/create-order', (req, res, next) => orderController.creatOrder(req, res, next));
 
 router.post('/webhook', (req, res) => orderController.handleWebhook(req, res));
 
