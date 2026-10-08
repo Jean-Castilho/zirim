@@ -63,24 +63,26 @@
                 <div id="cart-cep-error" class="cart-cep-error" style="display: none;"></div>
             </div>
 
-            <div class="guest-checkout-fields" id="guest-checkout-fields">
-                <div class="guest-checkout-title">
-                    <span class="material-icons">person_add</span>
-                    <span>Dados do cliente</span>
+            <% if (!user) { %>
+                <div class="guest-checkout-fields" id="guest-checkout-fields">
+                    <div class="guest-checkout-title">
+                        <span class="material-icons">person_add</span>
+                        <span>Dados do cliente</span>
+                    </div>
+                    <label>
+                        <span>Nome completo</span>
+                        <input id="guest-name" type="text" autocomplete="name" placeholder="Seu nome" required>
+                    </label>
+                    <label>
+                        <span>E-mail</span>
+                        <input id="guest-email" type="email" autocomplete="email" placeholder="seu@email.com" required>
+                    </label>
+                    <label>
+                        <span>Telefone</span>
+                        <input id="guest-phone" type="tel" autocomplete="tel" placeholder="(00) 00000-0000">
+                    </label>
                 </div>
-                <label>
-                    <span>Nome completo</span>
-                    <input id="guest-name" type="text" autocomplete="name" placeholder="Seu nome" required>
-                </label>
-                <label>
-                    <span>E-mail</span>
-                    <input id="guest-email" type="email" autocomplete="email" placeholder="seu@email.com" required>
-                </label>
-                <label>
-                    <span>Telefone</span>
-                    <input id="guest-phone" type="tel" autocomplete="tel" placeholder="(00) 00000-0000">
-                </label>
-            </div>
+            <% } %>
 
             <div id="cart-cep-result" class="cart-cep-result" style="display: none;">
                 <div class="cep-address-info">
@@ -707,24 +709,31 @@
                     const guestEmail = this.elements.guestEmail?.value.trim() || '';
                     const guestPhone = this.elements.guestPhone?.value.trim() || '';
 
-                    if (!guestName || !guestEmail) {
-                        showNotification('Informe nome e e-mail para concluir a compra temporária.', 'warning');
-                        this.elements.guestName?.focus();
-                        return;
+                    if (this.elements.guestName) {
+                        if (!guestName || !guestEmail) {
+                            showNotification('Informe nome e e-mail para concluir a compra temporária.', 'warning');
+                            this.elements.guestName.focus();
+                            return;
+                        }
+
+                        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+                            showNotification('Informe um e-mail válido para concluir a compra.', 'error');
+                            this.elements.guestEmail.focus();
+                            return;
+                        }
                     }
 
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
-                        showNotification('Informe um e-mail válido para concluir a compra.', 'error');
-                        this.elements.guestEmail.focus();
-                        return;
-                    }
+                    const customer = this.elements.guestName
+                        ? { name: guestName, email: guestEmail, phone: guestPhone }
+                        : {};
 
-                    const customer = { name: guestName, email: guestEmail, phone: guestPhone };
-                    localStorage.setItem('cart_customer', JSON.stringify(customer));
-                    localStorage.setItem('cart_address', JSON.stringify({
-                        ...savedCepData,
-                        cep: savedCepData.formattedCep || savedCepData.cep
-                    }));
+                    if (Object.keys(customer).length > 0) {
+                        localStorage.setItem('cart_customer', JSON.stringify(customer));
+                        localStorage.setItem('cart_address', JSON.stringify({
+                            ...savedCepData,
+                            cep: savedCepData.formattedCep || savedCepData.cep
+                        }));
+                    }
 
                     const orderPayload = {
                         customer,
