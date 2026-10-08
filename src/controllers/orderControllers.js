@@ -1,6 +1,7 @@
+import { ObjectId } from "mongodb";
 import OrderRepository from "../repository/OrderRepository.js";
 import { processCreateOrder } from "../services/orderService.js";
-import { UnauthorizedError } from "../utils/handleResponse.js";
+import { UnauthorizedError, ValidationError } from "../utils/handleResponse.js";
 
 export default class OrderController {
     constructor() {
@@ -17,8 +18,20 @@ export default class OrderController {
 
     async creatOrder(req, res, next) {
         try {
-            const user = req.session?.user;
-            if (!user) throw new UnauthorizedError("Usuário não autenticado.");
+            const sessionUser = req.session?.user;
+            const guestCustomer = req.body.customer || {};
+
+            if (!sessionUser && (!guestCustomer.name || !guestCustomer.email)) {
+                throw new ValidationError("Informe nome e e-mail para concluir a compra temporária.");
+            }
+
+            const user = sessionUser || {
+                _id: new ObjectId(),
+                name: guestCustomer.name.trim(),
+                email: guestCustomer.email.trim(),
+                phone: guestCustomer.phone?.trim() || "Não informado",
+                isGuest: true
+            };
 
             const result = await processCreateOrder(user, req.body);
             return res.redirect(`/checkout/${result.orderId}`);

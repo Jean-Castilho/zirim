@@ -1,16 +1,35 @@
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<% if (mapApiKey) { %>
+<script src="https://maps.googleapis.com/maps/api/js?key=<%= mapApiKey %>"></script>
+<% } %>
 
-<div class="cart-container">
-    <h1>Meu Carrinho</h1>
-    <div id="cart-items" class="cart-items-list">
-        <div class="cart-loading">
-            <span class="material-icons rotating">sync</span>
-            Carregando itens...
+<section class="cart-page" aria-labelledby="cart-page-title">
+    <header class="cart-page-header">
+        <div class="cart-page-title">
+            <span class="cart-page-title-icon" aria-hidden="true">
+                <span class="material-icons">shopping_basket</span>
+            </span>
+            <div>
+                <h1 id="cart-page-title">Meu Carrinho</h1>
+                <p>Revise seus itens, escolha a entrega e finalize sua compra.</p>
+            </div>
         </div>
-    </div>
+        <span class="cart-page-badge">
+            <span class="material-icons">shield</span>
+            Compra segura
+        </span>
+    </header>
 
-    <div class="cart-sidebar">
+    <div class="cart-container">
+        <div class="cart-main-column">
+            <div id="cart-items" class="cart-items-list" aria-live="polite">
+                <div class="cart-loading">
+                    <span class="material-icons rotating">sync</span>
+                    Carregando itens...
+                </div>
+            </div>
+        </div>
+
+        <aside class="cart-sidebar" aria-label="Resumo da compra">
         <div class="cart-maps-container" id="cart-maps-container">
             
             <div class="cart-cep-header">
@@ -42,6 +61,25 @@
                     <span>Buscando CEP e calculando rotas...</span>
                 </div>
                 <div id="cart-cep-error" class="cart-cep-error" style="display: none;"></div>
+            </div>
+
+            <div class="guest-checkout-fields" id="guest-checkout-fields">
+                <div class="guest-checkout-title">
+                    <span class="material-icons">person_add</span>
+                    <span>Dados do cliente</span>
+                </div>
+                <label>
+                    <span>Nome completo</span>
+                    <input id="guest-name" type="text" autocomplete="name" placeholder="Seu nome" required>
+                </label>
+                <label>
+                    <span>E-mail</span>
+                    <input id="guest-email" type="email" autocomplete="email" placeholder="seu@email.com" required>
+                </label>
+                <label>
+                    <span>Telefone</span>
+                    <input id="guest-phone" type="tel" autocomplete="tel" placeholder="(00) 00000-0000">
+                </label>
             </div>
 
             <div id="cart-cep-result" class="cart-cep-result" style="display: none;">
@@ -85,7 +123,7 @@
                     </div>
                     <span id="map-status-badge" class="map-status-badge">Aguardando CEP</span>
                 </div>
-                <div id="cart-mini-map" class="cart-mini-map">
+                <div id="cart-mini-map" class="cart-mini-map" data-map-api-key="<%= mapApiKey %>">
                     <div id="cart-map-placeholder" class="map-placeholder">
                         <span class="material-icons">explore</span>
                         <p>Digite o seu CEP para ver o mapa</p>
@@ -114,16 +152,18 @@
                 <a href="/products" class="btn-continue-shopping">Continuar Comprando</a>
             </div>
         </div>
+        </aside>
     </div>
-</div>
+</section>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const CartPage = {
             shippingCost: 0,
             currentSubtotal: 0,
-            mapInstance: null,
-            mapMarker: null,
+            mapApiKey: document.getElementById('cart-mini-map')?.dataset.mapApiKey || '',
+            googleMapInstance: null,
+            googleMapMarker: null,
 
             elements: {
                 itemsContainer: document.getElementById('cart-items'),
@@ -142,13 +182,30 @@
                 miniMap: document.getElementById('cart-mini-map'),
                 mapPlaceholder: document.getElementById('cart-map-placeholder'),
                 mapStatusBadge: document.getElementById('map-status-badge'),
-                shippingOptionsContainer: document.getElementById('shipping-options')
+                shippingOptionsContainer: document.getElementById('shipping-options'),
+                guestName: document.getElementById('guest-name'),
+                guestEmail: document.getElementById('guest-email'),
+                guestPhone: document.getElementById('guest-phone')
             },
 
             init() {
                 this.render();
                 this.bindEvents();
                 this.initCep();
+                this.loadSavedCustomer();
+            },
+
+            loadSavedCustomer() {
+                try {
+                    const savedCustomer = JSON.parse(localStorage.getItem('cart_customer') || 'null');
+                    if (savedCustomer) {
+                        if (this.elements.guestName) this.elements.guestName.value = savedCustomer.name || '';
+                        if (this.elements.guestEmail) this.elements.guestEmail.value = savedCustomer.email || '';
+                        if (this.elements.guestPhone) this.elements.guestPhone.value = savedCustomer.phone || '';
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar dados do cliente salvo:', e);
+                }
             },
 
             initCep() {
@@ -415,111 +472,82 @@
             },
 
             renderMiniMap(lat, lng, popupContent, animate = true) {
-                const initMapCode = () => {
-                    if (!window.L) return;
-
+                if (!this.mapApiKey) {
                     if (this.elements.mapPlaceholder) {
-                        this.elements.mapPlaceholder.style.display = 'none';
+                        this.elements.mapPlaceholder.style.display = 'flex';
+                        this.elements.mapPlaceholder.innerHTML = `
+                            <span class="material-icons">map_off</span>
+                            <p>Google Maps indisponível</p>
+                            <small>Configure GOOGLE_API_KEY para exibir o mapa.</small>
+                        `;
                     }
+                    return;
+                }
 
-                    const markerIcon = L.divIcon({
-                        className: 'zirim-map-marker',
-                        html: `
-                            <div style="
-                                width: 24px;
-                                height: 24px;
-                                background-color: #e10732;
-                                border: 2px solid #ffffff;
-                                border-radius: 50% 50% 50% 0;
-                                transform: rotate(-45deg);
-                                box-shadow: 0 1px 0.8px rgba(225, 7, 50, 0.4);
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                            ">
-                                <span class="material-icons" style="
-                                    color: #ffffff;
-                                    font-size: 12px;
-                                    transform: rotate(45deg);
-                                ">place</span>
-                            </div>
-                        `,
-                        iconSize: [24, 24],
-                        iconAnchor: [13, 26],
-                        popupAnchor: [0, -26]
-                    });
+                if (!window.google?.maps) {
+                    this.showMapError('Não foi possível carregar o Google Maps. Tente novamente.');
+                    return;
+                }
 
-                    if (!this.mapInstance) {
-                        this.mapInstance = L.map('cart-mini-map', {
-                            zoomControl: true,
-                            scrollWheelZoom: false
-                        }).setView([lat, lng], 15);
+                this.renderGoogleMap(lat, lng, popupContent, animate);
+            },
 
-                        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                            maxZoom: 19,
-                            subdomains: 'abcd'
-                        }).addTo(this.mapInstance);
-
-                        this.mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(this.mapInstance);
-                        if (popupContent) {
-                            this.mapMarker.bindPopup(popupContent).openPopup();
-                        }
-                    } else {
-                        if (animate) {
-                            this.mapInstance.flyTo([lat, lng], 15, { duration: 1.2 });
-                        } else {
-                            this.mapInstance.setView([lat, lng], 15);
-                        }
-
-                        if (this.mapMarker) {
-                            this.mapMarker.setLatLng([lat, lng]);
-                            if (popupContent) {
-                                this.mapMarker.setPopupContent(popupContent).openPopup();
-                            }
-                        } else {
-                            this.mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(this.mapInstance);
-                            if (popupContent) {
-                                this.mapMarker.bindPopup(popupContent).openPopup();
-                            }
-                        }
-                    }
-
-                    setTimeout(() => {
-                        if (this.mapInstance) {
-                            this.mapInstance.invalidateSize();
-                        }
-                    }, 250);
-                };
-
-                if (window.L) {
-                    initMapCode();
-                } else {
-                    this.loadLeaflet(initMapCode);
+            showMapError(message) {
+                if (this.elements.mapPlaceholder) {
+                    this.elements.mapPlaceholder.style.display = 'flex';
+                    this.elements.mapPlaceholder.innerHTML = `
+                        <span class="material-icons">error_outline</span>
+                        <p>Mapa indisponível</p>
+                        <small>${message}</small>
+                    `;
+                }
+                if (this.elements.mapStatusBadge) {
+                    this.elements.mapStatusBadge.innerText = 'Erro no mapa';
+                    this.elements.mapStatusBadge.classList.remove('active');
                 }
             },
 
-            loadLeaflet(callback) {
-                if (window.L) {
-                    callback();
-                    return;
+            renderGoogleMap(lat, lng, popupContent, animate = true) {
+                if (!window.google?.maps || !this.elements.miniMap) return;
+
+                if (!this.googleMapInstance) {
+                    this.googleMapInstance = new google.maps.Map(this.elements.miniMap, {
+                        center: { lat, lng },
+                        zoom: 15,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: false
+                    });
+                } else if (animate) {
+                    this.googleMapInstance.panTo({ lat, lng });
+                    this.googleMapInstance.setZoom(15);
                 }
-                if (!document.getElementById('leaflet-css')) {
-                    const link = document.createElement('link');
-                    link.id = 'leaflet-css';
-                    link.rel = 'stylesheet';
-                    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-                    document.head.appendChild(link);
-                }
-                if (!document.getElementById('leaflet-js')) {
-                    const script = document.createElement('script');
-                    script.id = 'leaflet-js';
-                    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-                    script.onload = () => callback();
-                    document.head.appendChild(script);
+
+                if (!this.googleMapMarker) {
+                    const marker = new google.maps.Marker({
+                        position: { lat, lng },
+                        map: this.googleMapInstance,
+                        title: 'Localização do pedido'
+                    });
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: popupContent,
+                        position: { lat, lng }
+                    });
+                    marker.addListener('click', () => infoWindow.open({
+                        anchor: marker,
+                        map: this.googleMapInstance,
+                        shouldFocus: false
+                    }));
+                    this.googleMapMarker = marker;
+                    this.googleMapInfoWindow = infoWindow;
                 } else {
-                    const existing = document.getElementById('leaflet-js');
-                    existing.addEventListener('load', () => callback());
+                    this.googleMapMarker.setPosition({ lat, lng });
+                    this.googleMapInfoWindow?.setContent(popupContent);
+                    this.googleMapInfoWindow?.setPosition({ lat, lng });
+                }
+
+                if (this.elements.mapPlaceholder) {
+                    this.elements.mapPlaceholder.style.display = 'none';
                 }
             },
 
@@ -565,7 +593,7 @@
                     if (item.selected === undefined) item.selected = true;
 
                     const itemTotal = item.preco * item.quantidade;
-                    if (item.selected) {
+                    if (item.selected && item.quantidade > 0) {
                         total += itemTotal;
                         hasSelected = true;
                     }
@@ -603,12 +631,6 @@
                 this.elements.itemsContainer.innerHTML = html;
                 this.updateTotals(total);
                 this.elements.checkoutBtn.disabled = !hasSelected;
-
-                if (this.mapInstance) {
-                    setTimeout(() => {
-                        this.mapInstance.invalidateSize();
-                    }, 200);
-                }
             },
 
             updateTotals(total) {
@@ -637,13 +659,16 @@
                     this.render();
                     window.dispatchEvent(new Event('cartUpdated'));
                 } else if (newQty === 0) {
-                    this.removeItem(index);
+                    cart[index].quantidade = 0;
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    this.render();
+                    window.dispatchEvent(new Event('cartUpdated'));
                 }
             },
 
             async handleCheckout() {
                 const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-                const selectedItems = cart.filter(item => item.selected !== false);
+                const selectedItems = cart.filter(item => item.selected !== false && Number(item.quantidade) > 0);
                 if (selectedItems.length === 0) return;
 
                 // Valida se o CEP foi informado antes de prosseguir
@@ -678,8 +703,31 @@
                     const selectedShippingOption = document.querySelector('input[name="shipping-option"]:checked');
                     const shippingMethod = selectedShippingOption ? selectedShippingOption.value : 'padrao';
                     const shippingCost = Number(this.shippingCost || 0);
+                    const guestName = this.elements.guestName?.value.trim() || '';
+                    const guestEmail = this.elements.guestEmail?.value.trim() || '';
+                    const guestPhone = this.elements.guestPhone?.value.trim() || '';
+
+                    if (!guestName || !guestEmail) {
+                        showNotification('Informe nome e e-mail para concluir a compra temporária.', 'warning');
+                        this.elements.guestName?.focus();
+                        return;
+                    }
+
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+                        showNotification('Informe um e-mail válido para concluir a compra.', 'error');
+                        this.elements.guestEmail.focus();
+                        return;
+                    }
+
+                    const customer = { name: guestName, email: guestEmail, phone: guestPhone };
+                    localStorage.setItem('cart_customer', JSON.stringify(customer));
+                    localStorage.setItem('cart_address', JSON.stringify({
+                        ...savedCepData,
+                        cep: savedCepData.formattedCep || savedCepData.cep
+                    }));
 
                     const orderPayload = {
+                        customer,
                         items,
                         address: {
                             cep: savedCepData.formattedCep || savedCepData.cep,
@@ -696,29 +744,35 @@
                         }
                     };
                     
+                    showNotification('Criando sua compra temporária...', 'info');
                     const response = await fetch('/orders/creat-Order', {
                         method: 'POST',
+                        redirect: 'follow',
                         headers: {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify(orderPayload)
                     });
 
-                    if (response.redirected) {
+                    if (response.redirected && response.url.startsWith(window.location.origin + '/checkout/')) {
                         const remainingCart = cart.filter(item => item.selected === false);
                         if (remainingCart.length > 0) {
                             localStorage.setItem('cart', JSON.stringify(remainingCart));
                         } else {
                             localStorage.removeItem('cart');
                         }
-                        window.location.href = response.url;
+                        showNotification('Compra criada com sucesso. Abrindo o checkout.', 'success');
+                        window.location.assign(response.url);
+                    } else if (response.status === 401) {
+                        showNotification('Não foi possível concluir a compra sem uma sessão.', 'error');
+                        window.location.assign('/login?redirect=' + encodeURIComponent('/cart'));
                     } else {
-                        const error = await response.json();
-                        alert(error.message || 'Erro ao processar o checkout. Verifique se você está logado.');
+                        const error = await response.json().catch(() => ({}));
+                        showNotification(error.message || 'Erro ao processar o checkout. Tente novamente.', 'error');
                     }
                 } catch (error) {
                     console.error('Erro no checkout:', error);
-                    alert('Ocorreu um erro ao tentar finalizar a compra.');
+                    showNotification('Ocorreu um erro ao tentar finalizar a compra.', 'error');
                 } finally {
                     this.elements.checkoutBtn.disabled = false;
                     this.elements.checkoutBtn.innerText = 'Finalizar Compra';

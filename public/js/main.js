@@ -17,8 +17,13 @@ function showNotification(message, type = 'success') {
     if (type === 'error') icon = 'error';
     if (type === 'warning') icon = 'warning';
 
+    const iconContainer = document.createElement('span');
+    iconContainer.className = 'notification-icon';
+    iconContainer.innerHTML = `<span class="material-icons" aria-hidden="true">${icon}</span>`;
+
     const textSpan = document.createElement('span');
     textSpan.textContent = message;
+    notification.appendChild(iconContainer);
     notification.appendChild(textSpan);
 
     container.appendChild(notification);
@@ -28,13 +33,15 @@ function showNotification(message, type = 'success') {
         notification.classList.add('show');
     });
 
-    // Remove after 3 seconds
+    // Remove após 3 segundos, com animação de saída
     setTimeout(() => {
         notification.classList.remove('show');
-        // Aguarda a transição terminar para remover do DOM
-        notification.addEventListener('transitionend', () => {
-            notification.remove();
-        }, { once: true });
+        notification.classList.add('leaving');
+
+        const finishExit = () => notification.remove();
+        notification.addEventListener('transitionend', finishExit, { once: true });
+
+        window.setTimeout(finishExit, 300);
     }, 3000);
 }
 

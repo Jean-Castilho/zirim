@@ -155,6 +155,7 @@ export const Cart = (req, res) => {
   renderPage(req, res, "../pages/public/cart", {
     titulo: "Meu Carrinho",
     message: "Seu carrinho de compras!",
+    mapApiKey: process.env.GOOGLE_API_KEY || '',
   });
 };
 
