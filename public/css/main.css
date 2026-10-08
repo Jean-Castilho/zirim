@@ -46,6 +46,7 @@ button,
 }
 
 .btn-primary {
+    padding: 5px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
