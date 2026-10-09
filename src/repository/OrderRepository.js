@@ -8,6 +8,22 @@ import BaseRepository from "./BaseRepository.js";
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN });
 const paymentClient = new Payment(client);
+const paymentFields = [
+    "id",
+    "status",
+    "status_detail",
+    "transaction_amount",
+    "date_of_expiration",
+    "qr_code",
+    "qr_code_base64",
+    "error"
+];
+
+const buildPaymentData = (paymentResult = {}) => Object.fromEntries(
+    paymentFields
+        .filter((field) => paymentResult[field] !== undefined)
+        .map((field) => [field, paymentResult[field]])
+);
 
 export default class OrderRepository extends BaseRepository {
   
@@ -92,7 +108,7 @@ export default class OrderRepository extends BaseRepository {
                         { "payment.id": Number(id) }
                     ]
                 },
-                { $set: { "payment.lastSyncAttemptAt": new Date() } }
+                { $set: { "paymentSync.lastAttemptAt": new Date() }, $unset: { "payment.lastSyncAttemptAt": "" } }
             );
             const paymentInfo = await paymentClient.get({ id });
             if (paymentInfo) {
@@ -147,7 +163,7 @@ export default class OrderRepository extends BaseRepository {
                 if (!order) return null;
 
                 const incomingUpdatedAt = Date.parse(paymentInfo.date_last_updated || '');
-                const storedUpdatedAt = Date.parse(order.payment?.date_last_updated || '');
+                const storedUpdatedAt = Date.parse(order.paymentSync?.providerUpdatedAt || order.payment?.date_last_updated || '');
                 if (Number.isFinite(incomingUpdatedAt) && Number.isFinite(storedUpdatedAt) && incomingUpdatedAt < storedUpdatedAt) {
                     return order;
                 }
@@ -157,12 +173,12 @@ export default class OrderRepository extends BaseRepository {
                 const setFields = {
                     "payment.status": paymentStatus,
                     "payment.status_detail": paymentInfo.status_detail || null,
-                    "payment.lastSyncedAt": now,
+                    "paymentSync.lastSyncedAt": now,
                     updatedAt: now,
                 };
 
                 if (paymentInfo.date_last_updated) {
-                    setFields["payment.date_last_updated"] = paymentInfo.date_last_updated;
+                    setFields["paymentSync.providerUpdatedAt"] = paymentInfo.date_last_updated;
                 }
                 if (paymentInfo.date_of_expiration) {
                     setFields["payment.date_of_expiration"] = new Date(paymentInfo.date_of_expiration);
@@ -172,9 +188,18 @@ export default class OrderRepository extends BaseRepository {
                 }
 
                 const transactionData = paymentInfo.point_of_interaction?.transaction_data || {};
-                const update = { $set: setFields, $inc: { stateVersion: 1 } };
+                const update = {
+                    $set: setFields,
+                    $unset: {
+                        "payment.lastSyncAttemptAt": "",
+                        "payment.lastSyncedAt": "",
+                        "payment.date_last_updated": ""
+                    },
+                    $inc: { stateVersion: 1 }
+                };
                 if (isTerminalPaymentStatus(paymentStatus)) {
-                    update.$unset = { "payment.qr_code": "", "payment.qr_code_base64": "" };
+                    update.$unset["payment.qr_code"] = "";
+                    update.$unset["payment.qr_code_base64"] = "";
                 } else {
                     if (transactionData.qr_code) setFields["payment.qr_code"] = transactionData.qr_code;
                     if (transactionData.qr_code_base64) setFields["payment.qr_code_base64"] = transactionData.qr_code_base64;
@@ -328,6 +353,7 @@ export default class OrderRepository extends BaseRepository {
                         { statusInterno: 'pendente' },
                         {
                             statusInterno: { $in: ['cancelado', 'expirado'] },
+                            "paymentSync.lastSyncedAt": { $exists: false },
                             "payment.lastSyncedAt": { $exists: false }
                         }
                     ]
@@ -340,8 +366,14 @@ export default class OrderRepository extends BaseRepository {
                 },
                 {
                     $or: [
-                        { "payment.lastSyncAttemptAt": { $exists: false } },
-                        { "payment.lastSyncAttemptAt": { $lte: retryCutoff } }
+                        { "paymentSync.lastAttemptAt": { $lte: retryCutoff } },
+                        {
+                            "paymentSync.lastAttemptAt": { $exists: false },
+                            $or: [
+                                { "payment.lastSyncAttemptAt": { $exists: false } },
+                                { "payment.lastSyncAttemptAt": { $lte: retryCutoff } }
+                            ]
+                        }
                     ]
                 }
             ]
@@ -375,15 +407,20 @@ export default class OrderRepository extends BaseRepository {
         }
         const filter = ObjectId.isValid(orderId) ? { _id: new ObjectId(orderId) } : { _id: orderId };
         const novoStatus = statusInterno || (paymentResult?.status ? this.mapStatus(paymentResult.status) : 'pendente');
+        const paymentData = buildPaymentData(paymentResult);
+        const setFields = {
+            payment: paymentData,
+            statusInterno: novoStatus,
+            updatedAt: new Date()
+        };
+        if (paymentResult?.date_last_updated) {
+            setFields["paymentSync.providerUpdatedAt"] = paymentResult.date_last_updated;
+        }
 
         return await this.getCollection().updateOne(
             filter,
             {
-                $set: {
-                    payment: paymentResult || {},
-                    statusInterno: novoStatus,
-                    updatedAt: new Date()
-                }
+                $set: setFields
             }
         );
     }

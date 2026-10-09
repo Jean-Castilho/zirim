@@ -3,7 +3,7 @@
         data-payment-id="<%= order.payment?.id || '' %>"
         data-payment-status="<%= order.payment?.status || '' %>"
         data-order-status="<%= order.statusInterno || '' %>"
-        data-payment-last-synced="<%= Boolean(order.payment?.lastSyncedAt) %>">
+        data-payment-last-synced="<%= Boolean(order.paymentSync?.lastSyncedAt || order.payment?.lastSyncedAt) %>">
         <% if (order.statusInterno === 'entregue') { %>
             <div class="success-checkmark material-icons">task_alt</div>
             <h2 class="status-heading">Pedido Entregue!</h2>
