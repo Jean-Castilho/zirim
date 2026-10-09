@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import ProductController from "../controllers/productControllers.js";
 import { handleResponse } from "../utils/handleResponse.js";
+import { requireAuth, requireAdmin, validateCsrfToken } from "../middleware/authMiddleware.js";
 
 const productController = new ProductController();
 const router = express.Router();
@@ -21,11 +22,29 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.post("/", upload.any(), async (req, res, next) => {
+router.post("/", requireAuth, requireAdmin, upload.any(), validateCsrfToken, async (req, res, next) => {
   try {
     // Controller atualizado espera apenas 'req'
     const productNew = await productController.uploadProductAndImage(req);
     res.redirect("/inventory");
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/:id", requireAuth, requireAdmin, upload.any(), validateCsrfToken, async (req, res, next) => {
+  try {
+    await productController.updateProduct(req);
+    return res.status(200).send("Produto atualizado com sucesso.");
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:id", requireAuth, requireAdmin, validateCsrfToken, async (req, res, next) => {
+  try {
+    await productController.deleteProduct(req);
+    return res.status(200).send("");
   } catch (error) {
     next(error);
   }

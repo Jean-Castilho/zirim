@@ -10,7 +10,7 @@ import {
 
 import { createToken } from "../services/authServices.js";
 import { verifyOtpCode } from "../services/otpService.js";
-import { sendPasswordResetEmail } from "../services/contactService.js";
+import { sendEmailOtp as dispatchEmailOtp, sendPasswordResetEmail } from "../services/contactService.js";
 
 export default class UserController {
     constructor() {
@@ -18,33 +18,43 @@ export default class UserController {
     }
     
     async #establishSession(req, res, next, user, statusCode, message) {
-        const cookieSecure = process.env.NODE_ENV === 'production';
-        const token = createToken({
-            _id: user._id,
-            email: user.email.endereco,
-        });
+        try {
+            await new Promise((resolve, reject) => {
+                req.session.regenerate((error) => error ? reject(error) : resolve());
+            });
 
-        req.session.user = {
-            ...user,
-            _id: user._id.toString()
-        };
+            const safeUser = { ...user };
+            delete safeUser.password;
 
-        req.session.save((err) => {
-            if (err) return next(err);
+            const token = createToken({
+                _id: safeUser._id,
+                email: safeUser.email?.endereco,
+            });
+            const sessionUser = {
+                ...safeUser,
+                _id: safeUser._id.toString()
+            };
+            req.session.user = sessionUser;
+
+            await new Promise((resolve, reject) => {
+                req.session.save((error) => error ? reject(error) : resolve());
+            });
+
             return res
                 .cookie("token", token, {
                     httpOnly: true,
-                    secure: cookieSecure,
+                    secure: process.env.NODE_ENV === 'production',
                     sameSite: 'Lax',
                 })
                 .status(statusCode)
-                .json({ message, user });
-        });
+                .json({ message, user: sessionUser });
+        } catch (error) {
+            return next(error);
+        }
     }
 
     async login(req, res, next) {
-        const { email, password, rememberMe } = req.body;
-        const rememberUser = rememberMe === 'on' ? true : false;
+        const { email, password } = req.body;
         try {
             const user = await this.service.authenticate(email, password);
             await this.#establishSession(req, res, next, user, 200, "Login realizado");
@@ -72,7 +82,13 @@ export default class UserController {
                 throw new UnauthorizedError("Sessao expirada ou usuario nao autenticado.");
             }
 
-            const otpEntry = await verifyOtpCode(email, otp);
+            const accountEmail = String(req.session.user.email?.endereco || "").trim().toLowerCase();
+            const requestedEmail = String(email || "").trim().toLowerCase();
+            if (!accountEmail || requestedEmail !== accountEmail) {
+                throw new ValidationError("O código deve corresponder ao e-mail da sua conta.");
+            }
+
+            const otpEntry = await verifyOtpCode(accountEmail, otp);
             if (!otpEntry) {
                 throw new GeneralError("Codigo OTP invalido ou expirado.", 400);
             }
@@ -93,6 +109,56 @@ export default class UserController {
     
     }
 
+    async sendEmailOtp(req, res, next) {
+        try {
+            const email = String(req.session?.user?.email?.endereco || "").trim().toLowerCase();
+            if (!email) throw new ValidationError("Sua conta não possui um e-mail válido.");
+
+            await dispatchEmailOtp(email);
+            return res.status(200).json({ message: "Código de verificação enviado para o e-mail da sua conta." });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async sendPhoneOtp(req, res, next) {
+        try {
+            const userId = req.session?.user?._id;
+            if (!userId) throw new UnauthorizedError("Usuário não autenticado.");
+
+            const result = await this.service.requestPhoneVerification(userId, req.body.phone);
+            if (result.alreadyVerified) {
+                req.session.phoneVerificationNumber = null;
+                return res.status(200).json({ message: "Este número já está verificado.", verified: true });
+            }
+
+            req.session.phoneVerificationNumber = result.phone;
+            return res.status(200).json({ message: "Código de verificação enviado pelo WhatsApp." });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async verifyPhoneOtp(req, res, next) {
+        try {
+            const userId = req.session?.user?._id;
+            if (!userId) throw new UnauthorizedError("Usuário não autenticado.");
+
+            const phone = String(req.body.phone || "").trim();
+            if (req.session.phoneVerificationNumber !== phone) {
+                throw new ValidationError("Solicite um novo código para este número.");
+            }
+
+            const user = await this.service.verifyPhoneNumber(userId, phone, req.body.otp);
+            req.session.user.phone = user.phone;
+            req.session.phoneVerificationNumber = null;
+
+            return res.status(200).json({ message: "Número de telefone verificado com sucesso." });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async deleteUser(req, res, next) {
         try {
             const { id } = req.params;
@@ -102,6 +168,45 @@ export default class UserController {
                 return res.status(200).send("");
             }
             return res.status(200).json({ message: "Usuario excluido com sucesso."});
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updateProfile(req, res, next) {
+        try {
+            const userId = req.session?.user?._id;
+            if (!userId) throw new UnauthorizedError("Usuário não autenticado.");
+
+            const name = String(req.body.name || "").trim();
+            if (!name) throw new ValidationError("O nome é obrigatório.");
+
+            const updatedUser = await this.service.updateUser(userId, { name });
+            req.session.user.name = updatedUser.name;
+            return res.status(200).json({ message: "Perfil atualizado com sucesso.", user: updatedUser });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updatePassword(req, res, next) {
+        try {
+            const userId = req.session?.user?._id;
+            if (!userId) throw new UnauthorizedError("Usuário não autenticado.");
+
+            const { currentPassword, password, confirmPassword } = req.body;
+            if (!currentPassword || !password || !confirmPassword) {
+                throw new ValidationError("Preencha a senha atual, a nova senha e a confirmação.");
+            }
+            if (password !== confirmPassword) {
+                throw new ValidationError("As senhas informadas não coincidem.");
+            }
+            if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+                throw new ValidationError("A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, minúscula e número.");
+            }
+
+            await this.service.changePassword(userId, currentPassword, password);
+            return res.status(200).json({ message: "Senha atualizada com sucesso." });
         } catch (error) {
             next(error);
         }

@@ -31,6 +31,39 @@ export default class ProductRepository extends BaseRepository {
     };
   }
 
+  #extractVariations(body = {}) {
+    const nestedVariations = body.variacoes ?? body.variations;
+    if (Array.isArray(nestedVariations)) return nestedVariations;
+    if (nestedVariations && typeof nestedVariations === "object") {
+      return Object.keys(nestedVariations)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(index => nestedVariations[index]);
+    }
+
+    const variations = [];
+    for (const [key, value] of Object.entries(body)) {
+      const match = key.match(/^(?:variacoes|variations)\[(\d+)\]\[(\w+)\]$/);
+      if (!match) continue;
+      const index = Number(match[1]);
+      variations[index] ||= {};
+      variations[index][match[2]] = value;
+    }
+    return variations;
+  }
+
+  #mapVariationFiles(files = []) {
+    const filesByVariation = new Map();
+    for (const file of files) {
+      const match = file.fieldname.match(/^(?:variacoes|variations)\[(\d+)\]\[imagens\]$/);
+      if (!match) continue;
+      const index = Number(match[1]);
+      const variationFiles = filesByVariation.get(index) || [];
+      variationFiles.push(file);
+      filesByVariation.set(index, variationFiles);
+    }
+    return filesByVariation;
+  }
+
   async #uploadFileWithRetry(file, retries = 3) {
     for (let i = 0; i < retries; i++) {
       try {
@@ -57,22 +90,9 @@ export default class ProductRepository extends BaseRepository {
   }
 
   async createProductWithImages(body, files = []) {
-    const variationFilesMap = new Map();
-    files.forEach(file => {
-      const match = file.fieldname.match(/variations\[(\d+)\]\[imagens\]/);
-      if (match && match[1]) {
-        const variationIndex = parseInt(match[1], 10);
-        if (!variationFilesMap.has(variationIndex)) {
-          variationFilesMap.set(variationIndex, []);
-        }
-        variationFilesMap.get(variationIndex).push(file);
-      }
-    });
-
-    let rawVariations = [];
-    if (Array.isArray(body.variations)) {
-      rawVariations = body.variations;
-    } else if (body.cores || body.tamanhos || body.preco || body.estoque || variationFilesMap.has(0)) {
+    const variationFilesMap = this.#mapVariationFiles(files);
+    const rawVariations = this.#extractVariations(body);
+    if (rawVariations.length === 0 && (body.cores || body.tamanhos || body.preco || body.estoque || variationFilesMap.has(0))) {
       rawVariations.push(body);
     }
 
@@ -114,30 +134,23 @@ export default class ProductRepository extends BaseRepository {
     const existingProduct = await super.findById(id);
     if (!existingProduct) throw new Error("Produto nao encontrado.");
 
-    const newImages = [];
-    if (files.length) {
-      const uploadPromises = files.map(file => 
-        this.#uploadFileWithRetry(file).catch(error => {
-          console.error(`Erro ao processar imagem no update: ${error.message}`);
-          return null; 
-        })
-      );
-      
-      const results = await Promise.all(uploadPromises);
-      newImages.push(...results.filter(name => name !== null));
-    }
+    const filesByVariation = this.#mapVariationFiles(files);
+    const submittedVariations = this.#extractVariations(body);
+    const rawVariations = submittedVariations.length ? submittedVariations : existingProduct.variacoes || [];
+    const processedVariations = [];
 
-    const keptImages = Array.isArray(body.existingImages) 
-       ? body.existingImages 
-       : body.existingImages ? [body.existingImages] : [];
+    for (let index = 0; index < rawVariations.length; index++) {
+      const variation = rawVariations[index];
+      const variationFiles = filesByVariation.get(index) || [];
+      const images = variationFiles.length
+        ? await Promise.all(variationFiles.map(file => this.#uploadFileWithRetry(file)))
+        : existingProduct.variacoes?.[index]?.imagens || [];
+      processedVariations.push(this.#processVariationObject({ ...variation, imagens: images }));
+    }
 
     const productData = {
       nome: body.name || body.nome,
-      preco: parseFloat(body.preco),
-      imagens: [...keptImages, ...newImages],
-      variacoes: Array.isArray(body.variations)
-        ? body.variations.map(variation => this.#processVariationObject(variation))
-        : [],
+      variacoes: processedVariations,
       categoria: body.categoria,
       descricao: body.descricao,
     };
@@ -152,9 +165,10 @@ export default class ProductRepository extends BaseRepository {
     const product = await super.findById(id);
     if (!product) throw new Error("Produto nao encontrado.");
 
-    if (product.imagens?.length > 0) {
+    const imageNames = [...new Set((product.variacoes || []).flatMap(variation => variation.imagens || []))];
+    if (imageNames.length > 0) {
       const filesCollection = this.db.collection('fs.files');
-      const filesToDelete = await filesCollection.find({ filename: { $in: product.imagens } }).toArray();
+      const filesToDelete = await filesCollection.find({ filename: { $in: imageNames } }).toArray();
       
       const deletePromises = filesToDelete.map(file => this.bucket.delete(file._id));
       await Promise.all(deletePromises);

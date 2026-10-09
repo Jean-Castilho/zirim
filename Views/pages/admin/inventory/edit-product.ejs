@@ -58,8 +58,7 @@
   </header>
 
   <div class="form-card">
-    <!-- O endpoint de API para atualização usa PUT via HTMX -->
-    <form hx-put="/api/products/<%= product._id %>" 
+    <form hx-put="/products/<%= product._id %>"
           hx-encoding="multipart/form-data" 
           hx-headers='{"x-csrf-token": "<%= csrfToken %>"}'
           hx-target="#form-feedback"
@@ -196,13 +195,21 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  const initializeEditProductPage = () => {
+    const addVariationButton = document.getElementById('add-variation-btn');
+    if (!addVariationButton) return;
     const initialData = <%- JSON.stringify(product.variacoes || []) %>;
     if (initialData.length > 0) {
       initialData.forEach(v => addVariationBlock(v));
     } else {
       addVariationBlock();
     }
-    document.getElementById('add-variation-btn').addEventListener('click', () => addVariationBlock());
-  });
+    addVariationButton.addEventListener('click', () => addVariationBlock());
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeEditProductPage, { once: true });
+  } else {
+    initializeEditProductPage();
+  }
 </script>

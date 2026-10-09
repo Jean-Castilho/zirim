@@ -1,5 +1,9 @@
 <div class="checkout-container">
-    <div class="card" id="payment-card">
+    <div class="card" id="payment-card"
+        data-payment-id="<%= order.payment?.id || '' %>"
+        data-payment-status="<%= order.payment?.status || '' %>"
+        data-order-status="<%= order.statusInterno || '' %>"
+        data-payment-last-synced="<%= Boolean(order.payment?.lastSyncedAt) %>">
         <% if (order.statusInterno === 'entregue') { %>
             <div class="success-checkmark material-icons">task_alt</div>
             <h2 class="status-heading">Pedido Entregue!</h2>
@@ -73,7 +77,19 @@
                     </span>
                 </span>
             </div>
-        <% } else if (order.statusInterno === 'pago' || order.payment?.status === 'approved') { %>
+        <% } else if (order.statusInterno === 'cancelado' || order.statusInterno === 'expirado' || ['rejected', 'cancelled', 'expired', 'refunded', 'charged_back'].includes(order.payment?.status)) { %>
+            <div class="error-cross material-icons">cancel</div>
+            <h2 class="status-heading"><%= order.statusInterno === 'expirado' || order.payment?.status === 'expired' ? 'PIX Expirado' : (['refunded', 'charged_back'].includes(order.payment?.status) ? 'Pagamento Reembolsado' : 'Pagamento Cancelado') %></h2>
+            <p style="color: #6c757d; font-size: 0.95rem;"><%= order.statusInterno === 'expirado' || order.payment?.status === 'expired' ? 'O prazo para pagamento deste PIX terminou.' : 'Este pedido foi cancelado ou o pagamento foi estornado.' %></p>
+            <div id="status-container">
+                <span class="status-badge status-cancelled">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons">cancel</span>
+                        O pedido não pode mais ser pago.
+                    </span>
+                </span>
+            </div>
+        <% } else if (order.statusInterno === 'pago' || order.payment?.status === 'approved' || order.payment?.status === 'authorized') { %>
             <div class="success-checkmark material-icons">check_circle</div>
             <h2 class="status-heading">Pagamento Confirmado!</h2>
             <p style="color: #6c757d; font-size: 0.95rem;">Seu pedido está sendo preparado pela equipe e em breve será liberado para entrega.</p>
@@ -82,18 +98,6 @@
                     <span style="display: flex; align-items: center; gap: 8px;">
                         <span class="material-icons">check_circle</span>
                         Pagamento recebido com sucesso!
-                    </span>
-                </span>
-            </div>
-        <% } else if (order.statusInterno === 'cancelado' || ['rejected', 'cancelled', 'refunded', 'charged_back'].includes(order.payment?.status)) { %>
-            <div class="error-cross material-icons">cancel</div>
-            <h2 class="status-heading">Pagamento Cancelado</h2>
-            <p style="color: #6c757d; font-size: 0.95rem;">Este pedido foi cancelado ou o tempo para pagamento expirou.</p>
-            <div id="status-container">
-                <span class="status-badge status-cancelled">
-                    <span style="display: flex; align-items: center; gap: 8px;">
-                        <span class="material-icons">cancel</span>
-                        O pedido não pode mais ser pago.
                     </span>
                 </span>
             </div>
@@ -194,89 +198,4 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const paymentId = "<%= order.payment?.id || '' %>";
-        const btnCopy = document.getElementById('btn-copy-pix');
-        const pixCodeText = document.getElementById('pix-code-text') ? document.getElementById('pix-code-text').innerText : '';
-        const statusBadge = document.getElementById('payment-status-badge');
-        const pixPaymentArea = document.getElementById('pix-payment-area');
-        const checkoutTitle = document.getElementById('checkout-title');
-        let statusInterval;
-
-        if (btnCopy) {
-            btnCopy.addEventListener('click', () => {
-                navigator.clipboard.writeText(pixCodeText).then(() => {
-                    const originalContent = btnCopy.innerHTML;
-                    btnCopy.style.background = '#28a745';
-                    btnCopy.innerHTML = '<span class="material-icons" style="font-size: 1.3rem;">check</span> Copiado!';
-                    setTimeout(() => {
-                        btnCopy.style.background = '';
-                        btnCopy.innerHTML = originalContent;
-                    }, 2500);
-                }).catch(err => {
-                    console.error('Erro ao copiar:', err);
-                });
-            });
-        }
-
-        async function checkPaymentStatus() {
-            if (!paymentId || paymentId === 'undefined' || paymentId === 'null') return;
-            try {
-                const response = await fetch(`/orders/status/${paymentId}`);
-                if (!response.ok) return;
-                
-                const data = await response.json();
-                
-                if (data.status === 'approved') {
-                    clearInterval(statusInterval);
-                    
-                    if (checkoutTitle) checkoutTitle.innerText = "Pagamento Confirmado!";
-                    if (pixPaymentArea) {
-                        pixPaymentArea.style.opacity = '0';
-                        setTimeout(() => {
-                            pixPaymentArea.style.display = 'none';
-                            
-                            if (statusBadge) {
-                                statusBadge.className = "status-badge status-approved";
-                                statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">check_circle</span> Pagamento recebido com sucesso!</span>';
-                            }
-                            
-                            const successIcon = document.createElement('div');
-                            successIcon.className = 'success-checkmark material-icons';
-                            successIcon.innerText = 'check_circle';
-                            document.getElementById('payment-card')?.prepend(successIcon);
-                        }, 300);
-                    }
-                } else if (['rejected', 'cancelled', 'refunded', 'charged_back'].includes(data.status)) {
-                    clearInterval(statusInterval);
-                    
-                    if (checkoutTitle) checkoutTitle.innerText = "Pagamento Cancelado";
-                    if (pixPaymentArea) {
-                        pixPaymentArea.style.opacity = '0';
-                        setTimeout(() => {
-                            pixPaymentArea.style.display = 'none';
-                            
-                            if (statusBadge) {
-                                statusBadge.className = "status-badge status-cancelled";
-                                statusBadge.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="material-icons">cancel</span> O pagamento foi cancelado ou recusado.</span>';
-                            }
-                            
-                            const errorIcon = document.createElement('div');
-                            errorIcon.className = 'error-cross material-icons';
-                            errorIcon.innerText = 'cancel';
-                            document.getElementById('payment-card')?.prepend(errorIcon);
-                        }, 300);
-                    }
-                }
-            } catch (error) {
-                console.error('Erro na sincronização:', error);
-            }
-        }
-
-        const isFinished = "<%= (['pago', 'preparado', 'em_rota', 'entregue', 'cancelado', 'pagamento_falhou'].includes(order.statusInterno) || ['approved', 'rejected', 'cancelled', 'refunded', 'charged_back'].includes(order.payment?.status)) %>" === "true";
-        if (!isFinished && paymentId && paymentId !== 'undefined' && paymentId !== 'null') {
-            statusInterval = setInterval(checkPaymentStatus, 8000);
-        }
-    });
-</script>
+<script src="/js/checkout.js"></script>

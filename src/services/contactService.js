@@ -74,6 +74,9 @@ export const sendWhatsAppOtp = async (number) => {
     const fetchOptions = await createWhatsAppMessageCode(number);
     const response = await fetch(WHATSAPP_API_URL, fetchOptions);
     const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error?.message || "A API do WhatsApp recusou o envio do código.");
+    }
 
     return data;
   } catch (error) {

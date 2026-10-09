@@ -1,0 +1,284 @@
+<% if (type === 'phone') { %>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/css/intlTelInput.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/js/intlTelInput.min.js"></script>
+<% } %>
+
+<section class="verify-contact-page">
+  <div class="verify-contact-container">
+    <a class="verify-contact-back" href="/profile">
+      <span class="material-icons" aria-hidden="true">arrow_back</span>
+      Voltar ao perfil
+    </a>
+
+    <span class="material-icons verify-contact-icon" aria-hidden="true"><%= type === 'phone' ? 'sms' : 'mark_email_read' %></span>
+    <h1><%= titulo %></h1>
+    <p class="verify-contact-description">
+      <% if (type === 'phone') { %>
+        Enviaremos um código pelo WhatsApp para confirmar que este número pertence a você.
+      <% } else { %>
+        Enviaremos um código para o endereço de e-mail cadastrado na sua conta.
+      <% } %>
+    </p>
+
+    <% if (verified) { %>
+      <div class="verify-contact-complete" role="status">
+        <span class="material-icons" aria-hidden="true">check_circle</span>
+        Este contato já está verificado.
+      </div>
+    <% } else { %>
+      <input type="hidden" id="verify-contact-csrf" value="<%= csrfToken %>">
+      <div class="verify-contact-field">
+        <label for="verify-contact-value"><%= type === 'phone' ? 'Número de telefone' : 'E-mail' %></label>
+        <% if (type === 'phone') { %>
+          <input type="tel" id="verify-contact-value" value="<%= contact %>" autocomplete="tel" required>
+        <% } else { %>
+          <input type="email" id="verify-contact-value" value="<%= contact %>" readonly>
+        <% } %>
+      </div>
+
+      <button type="button" id="request-contact-otp" class="verify-contact-button">
+        <span class="material-icons" aria-hidden="true">send</span>
+        Enviar código <%= type === 'phone' ? 'pelo WhatsApp' : 'por e-mail' %>
+      </button>
+
+      <div id="verify-contact-code-area" class="verify-contact-code-area" hidden>
+        <label for="verify-contact-code">Código de 6 dígitos</label>
+        <input type="text" id="verify-contact-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000">
+        <button type="button" id="confirm-contact-otp" class="verify-contact-button">Confirmar código</button>
+      </div>
+      <p id="verify-contact-message" class="verify-contact-message" role="status" aria-live="polite"></p>
+    <% } %>
+  </div>
+</section>
+
+<style>
+  .verify-contact-page {
+    display: flex;
+    justify-content: center;
+    min-height: 68vh;
+    padding: var(--espacamento-grande);
+    background: var(--cor-fundo-site);
+  }
+
+  .verify-contact-container {
+    width: 100%;
+    max-width: 480px;
+    align-self: flex-start;
+    margin: 24px auto;
+    padding: 28px;
+    background: #fff;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    box-shadow: var(--sombra-suave);
+  }
+
+  .verify-contact-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--cor-info);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .verify-contact-icon {
+    display: block;
+    margin: 28px auto 12px;
+    color: var(--cor-secundaria);
+    font-size: 42px;
+    text-align: center;
+  }
+
+  .verify-contact-container h1 {
+    margin: 0 0 10px;
+    color: var(--cor-primaria);
+    font-family: var(--fonte-titulo);
+    font-size: 1.6rem;
+    text-align: center;
+  }
+
+  .verify-contact-description {
+    margin: 0 0 24px;
+    color: var(--cor-texto-medio);
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .verify-contact-field,
+  .verify-contact-code-area {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .verify-contact-field label,
+  .verify-contact-code-area label {
+    color: var(--cor-texto-escuro);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .verify-contact-field input,
+  .verify-contact-code-area input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-padrao);
+    font: inherit;
+  }
+
+  .verify-contact-field input[readonly] {
+    background: var(--cor-fundo-neutro);
+    color: var(--cor-texto-medio);
+  }
+
+  .verify-contact-field .iti {
+    width: 100%;
+  }
+
+  .verify-contact-code-area[hidden] {
+    display: none;
+  }
+
+  .verify-contact-code-area input {
+    font-size: 1.25rem;
+    letter-spacing: 0.3rem;
+    text-align: center;
+  }
+
+  .verify-contact-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: var(--raio-padrao);
+    background: var(--cor-secundaria);
+    color: var(--cor-texto-claro);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .verify-contact-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+
+  .verify-contact-message {
+    min-height: 1.3em;
+    margin: 14px 0 0;
+    color: var(--cor-texto-medio);
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .verify-contact-complete {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    color: var(--cor-sucesso);
+    font-weight: 700;
+  }
+
+  @media (max-width: 520px) {
+    .verify-contact-page {
+      padding: 12px;
+    }
+
+    .verify-contact-container {
+      margin: 12px auto;
+      padding: 22px 18px;
+    }
+  }
+</style>
+
+<% if (!verified) { %>
+<script>
+  (() => {
+    const contactType = '<%= type %>';
+    const contactInput = document.getElementById('verify-contact-value');
+    const requestButton = document.getElementById('request-contact-otp');
+    const codeArea = document.getElementById('verify-contact-code-area');
+    const codeInput = document.getElementById('verify-contact-code');
+    const confirmButton = document.getElementById('confirm-contact-otp');
+    const message = document.getElementById('verify-contact-message');
+    const csrfToken = document.getElementById('verify-contact-csrf').value;
+    const phoneInput = contactType === 'phone'
+      ? window.intlTelInput(contactInput, {
+          initialCountry: 'br',
+          separateDialCode: true,
+          strictMode: true,
+          formatOnDisplay: true,
+          utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/js/utils.js',
+        })
+      : null;
+    let pendingPhone = '';
+
+    const post = async (url, data) => {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'x-csrf-token': csrfToken,
+        },
+        body: new URLSearchParams(data).toString(),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Não foi possível concluir a solicitação.');
+      return result;
+    };
+
+    requestButton.addEventListener('click', async () => {
+      requestButton.disabled = true;
+      message.textContent = 'Enviando código...';
+      try {
+        let endpoint = '/email/send-otp';
+        let payload = {};
+        if (contactType === 'phone') {
+          if (!phoneInput.isValidNumber()) throw new Error('Informe um número de telefone válido.');
+          pendingPhone = phoneInput.getNumber();
+          endpoint = '/phone/send-otp';
+          payload = { phone: pendingPhone };
+        }
+
+        const result = await post(endpoint, payload);
+        message.textContent = result.message;
+        contactInput.disabled = contactType === 'phone';
+        codeArea.hidden = false;
+        requestButton.textContent = 'Reenviar código';
+        codeInput.focus();
+      } catch (error) {
+        message.textContent = error.message;
+      } finally {
+        requestButton.disabled = false;
+      }
+    });
+
+    confirmButton.addEventListener('click', async () => {
+      confirmButton.disabled = true;
+      message.textContent = 'Validando código...';
+      try {
+        const endpoint = contactType === 'phone' ? '/phone/verify-otp' : '/verify-otp';
+        const payload = contactType === 'phone'
+          ? { phone: pendingPhone, otp: codeInput.value.trim() }
+          : { email: contactInput.value.trim(), otp: codeInput.value.trim() };
+        const result = await post(endpoint, payload);
+        message.textContent = result.message;
+        window.location.assign('/profile');
+      } catch (error) {
+        message.textContent = error.message;
+      } finally {
+        confirmButton.disabled = false;
+      }
+    });
+  })();
+</script>
+<% } %>

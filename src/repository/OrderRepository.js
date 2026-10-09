@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { DataBase } from "../config/db.js";
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import crypto from 'crypto';
+import { mapPaymentStatus, normalizePaymentStatus, resolveOrderStatus, isTerminalPaymentStatus } from '../services/paymentState.js';
 
 import BaseRepository from "./BaseRepository.js";
 
@@ -60,7 +61,10 @@ export default class OrderRepository extends BaseRepository {
             return {
                 id: result.id,
                 status: result.status,
+                status_detail: result.status_detail,
                 transaction_amount: result.transaction_amount,
+                date_of_expiration: new Date(result.date_of_expiration || expirationDate),
+                date_last_updated: result.date_last_updated,
                 qr_code,
                 qr_code_base64,
             };
@@ -71,17 +75,7 @@ export default class OrderRepository extends BaseRepository {
     }
 
     mapStatus(mpStatus) {
-        const mapping = {
-            'pending': 'pendente',
-            'approved': 'pago',
-            'authorized': 'pago',
-            'in_process': 'pendente',
-            'rejected': 'cancelado',
-            'cancelled': 'cancelado',
-            'refunded': 'cancelado',
-            'charged_back': 'cancelado'
-        };
-        return mapping[mpStatus] || 'pendente';
+        return mapPaymentStatus(mpStatus) || 'pendente';
     }
 
     async consultarPix(id) {
@@ -89,9 +83,20 @@ export default class OrderRepository extends BaseRepository {
             return { error: 'O campo "id" é obrigatório.' };
         }
         try {
+            const paymentId = String(id);
+            await this.getCollection().updateOne(
+                {
+                    $or: [
+                        { "payment.id": id },
+                        { "payment.id": paymentId },
+                        { "payment.id": Number(id) }
+                    ]
+                },
+                { $set: { "payment.lastSyncAttemptAt": new Date() } }
+            );
             const paymentInfo = await paymentClient.get({ id });
             if (paymentInfo) {
-                await this.sincronizarStatusPedido(id, paymentInfo.status);
+                await this.sincronizarStatusPedido(paymentInfo);
             }
             return paymentInfo;
         } catch (error) {
@@ -105,7 +110,7 @@ export default class OrderRepository extends BaseRepository {
      * @param {string} orderId 
      * @param {string} mpStatus Status bruto do Mercado Pago (ex: 'cancelled')
      */
-    async updateOrderStatus(orderId, mpStatus) {
+    async updateOrderStatus(orderId) {
         const order = await this.findById(orderId);
         if (!order) {
             return { error: 'Pedido não encontrado.' };
@@ -116,55 +121,103 @@ export default class OrderRepository extends BaseRepository {
             return { error: 'Pagamento não associado a este pedido.' };
         }
 
-        await this.sincronizarStatusPedido(paymentId, mpStatus);
-        return { success: true, status: this.mapStatus(mpStatus) };
+        const paymentInfo = await paymentClient.get({ id: paymentId });
+        await this.sincronizarStatusPedido(paymentInfo);
+        return { success: true, status: this.mapStatus(paymentInfo.status) };
     }
 
-    async sincronizarStatusPedido(paymentId, mpStatus) {
-        let order = await this.getCollection().findOne({ // Use let to reassign if needed
+    async sincronizarStatusPedido(paymentInfo) {
+        const paymentId = paymentInfo?.id;
+        const paymentStatus = normalizePaymentStatus(paymentInfo?.status);
+        if (!paymentId || !paymentStatus) return null;
+
+        const paymentQuery = {
             $or: [
                 { "payment.id": paymentId },
+                { "payment.id": String(paymentId) },
                 { "payment.id": Number(paymentId) }
             ]
-        });
-        if (!order) return;
+        };
+        const collection = this.getCollection();
+        let updatedOrder = null;
+
         try {
-            const novoStatus = this.mapStatus(mpStatus);
-            
-            // Evita processamento redundante se o status não mudou
-            const statusInalterado = order.payment?.status === mpStatus && order.statusInterno === novoStatus;
-            if (statusInalterado) {
-                if (mpStatus === 'approved' && !order.inventoryProcessed) {
-                    await this.executarBaixaEstoque(order);
+            for (let attempt = 0; attempt < 5; attempt++) {
+                const order = await collection.findOne(paymentQuery);
+                if (!order) return null;
+
+                const incomingUpdatedAt = Date.parse(paymentInfo.date_last_updated || '');
+                const storedUpdatedAt = Date.parse(order.payment?.date_last_updated || '');
+                if (Number.isFinite(incomingUpdatedAt) && Number.isFinite(storedUpdatedAt) && incomingUpdatedAt < storedUpdatedAt) {
+                    return order;
                 }
-                return;
+
+                const nextOrderStatus = resolveOrderStatus(order.statusInterno, paymentStatus);
+                const now = new Date();
+                const setFields = {
+                    "payment.status": paymentStatus,
+                    "payment.status_detail": paymentInfo.status_detail || null,
+                    "payment.lastSyncedAt": now,
+                    updatedAt: now,
+                };
+
+                if (paymentInfo.date_last_updated) {
+                    setFields["payment.date_last_updated"] = paymentInfo.date_last_updated;
+                }
+                if (paymentInfo.date_of_expiration) {
+                    setFields["payment.date_of_expiration"] = new Date(paymentInfo.date_of_expiration);
+                }
+                if (nextOrderStatus !== order.statusInterno) {
+                    setFields.statusInterno = nextOrderStatus;
+                }
+
+                const transactionData = paymentInfo.point_of_interaction?.transaction_data || {};
+                const update = { $set: setFields, $inc: { stateVersion: 1 } };
+                if (isTerminalPaymentStatus(paymentStatus)) {
+                    update.$unset = { "payment.qr_code": "", "payment.qr_code_base64": "" };
+                } else {
+                    if (transactionData.qr_code) setFields["payment.qr_code"] = transactionData.qr_code;
+                    if (transactionData.qr_code_base64) setFields["payment.qr_code_base64"] = transactionData.qr_code_base64;
+                }
+
+                const currentVersion = order.stateVersion;
+                const filter = { _id: order._id };
+                filter.stateVersion = currentVersion === undefined ? { $exists: false } : currentVersion;
+                const result = await collection.updateOne(filter, update);
+                if (result.modifiedCount > 0) {
+                    updatedOrder = await collection.findOne({ _id: order._id });
+                    break;
+                }
             }
 
-            // 1. Atualiza status do pedido
-            await this.getCollection().updateOne(
-                { _id: order._id },
-                { 
-                    $set: { 
-                        "payment.status": mpStatus, 
-                        "statusInterno": novoStatus,
-                        "updatedAt": new Date() 
-                    } 
-                }
-            );
-
-            // 3. Se aprovado, processa baixa de estoque
-            if (mpStatus === 'approved' && !order.inventoryProcessed) {
-               await this.executarBaixaEstoque(order);
+            if (!updatedOrder) {
+                throw new Error(`Não foi possível sincronizar o pagamento ${paymentId} após conflitos concorrentes.`);
             }
+
+            if (paymentStatus === 'approved' || paymentStatus === 'authorized') {
+                await this.executarBaixaEstoque(updatedOrder);
+            }
+
+            return updatedOrder;
         } catch (error) {
-            console.error(`[sincronizarStatusPedido] Erro ao sincronizar status do pedido ${order._id} (paymentId: ${paymentId}):`, error);
-            // Dependendo da política de erro, pode-se relançar, registrar em um sistema de monitoramento, etc.
-            throw error; 
+            console.error(`[sincronizarStatusPedido] Erro ao sincronizar o pedido (paymentId: ${paymentId}):`, error);
+            throw error;
         }
     }
 
     async executarBaixaEstoque(order) {
-        // Baixa de estoque otimizada via bulkWrite
+        const ordersCollection = this.getCollection();
+        const reservation = await ordersCollection.updateOne(
+            {
+                _id: order._id,
+                inventoryProcessed: { $ne: true },
+                inventoryProcessing: { $ne: true },
+                inventoryProcessingFailed: { $ne: true }
+            },
+            { $set: { inventoryProcessing: true, inventoryProcessingAt: new Date() } }
+        );
+        if (reservation.modifiedCount === 0) return;
+
         const productsCollection = this.db.collection("products");
         const bulkOps = order.items.map(item => {
             const elemMatch = {
@@ -197,19 +250,117 @@ export default class OrderRepository extends BaseRepository {
             };
         });
 
-        if (bulkOps.length > 0) {
-            const bulkResult = await productsCollection.bulkWrite(bulkOps);
-            
-            if (bulkResult.writeErrors && bulkResult.writeErrors.length > 0) {
-                console.error(`[executarBaixaEstoque] Erros durante bulkWrite para pedido ${order._id}:`, bulkResult.writeErrors);
+        const appliedOps = [];
+        try {
+            for (const operation of bulkOps) {
+                const result = await productsCollection.updateOne(
+                    operation.updateOne.filter,
+                    operation.updateOne.update
+                );
+                if (result.matchedCount !== 1) {
+                    throw new Error(`Estoque insuficiente ou variação indisponível no pedido ${order._id}.`);
+                }
+                appliedOps.push(operation);
             }
 
-            // Marca o pedido como processado para evitar múltiplas baixas de estoque
-            await this.getCollection().updateOne(
-                { _id: order._id },
-                { $set: { inventoryProcessed: true } }
+            await ordersCollection.updateOne(
+                { _id: order._id, inventoryProcessing: true },
+                {
+                    $set: {
+                        inventoryProcessed: true,
+                        inventoryProcessedAt: new Date()
+                    },
+                    $unset: { inventoryProcessing: "", inventoryProcessingAt: "", inventoryProcessingFailed: "", inventoryProcessingError: "" }
+                }
             );
+        } catch (error) {
+            const rollbackErrors = [];
+            for (const operation of appliedOps.reverse()) {
+                const rollbackFilter = {
+                    ...operation.updateOne.filter,
+                    variacoes: {
+                        $elemMatch: { ...operation.updateOne.filter.variacoes.$elemMatch }
+                    }
+                };
+                delete rollbackFilter.variacoes.$elemMatch.estoque;
+
+                try {
+                    const quantity = Math.abs(operation.updateOne.update.$inc["variacoes.$.estoque"]);
+                    const rollbackResult = await productsCollection.updateOne(
+                        rollbackFilter,
+                        { $inc: { "variacoes.$.estoque": quantity } }
+                    );
+                    if (rollbackResult.matchedCount !== 1) {
+                        throw new Error("A variação não foi encontrada durante a compensação.");
+                    }
+                } catch (rollbackError) {
+                    rollbackErrors.push(rollbackError.message);
+                }
+            }
+
+            const failureMessage = rollbackErrors.length > 0
+                ? `${error.message} Falha ao reverter parte do estoque: ${rollbackErrors.join('; ')}`
+                : error.message;
+            await ordersCollection.updateOne(
+                { _id: order._id, inventoryProcessing: true },
+                {
+                    $set: {
+                        inventoryProcessingFailed: true,
+                        inventoryProcessingError: failureMessage,
+                        inventoryProcessingFailedAt: new Date()
+                    },
+                    $unset: { inventoryProcessing: "", inventoryProcessingAt: "" }
+                }
+            );
+            throw error;
         }
+    }
+
+    async syncExpiredPendingOrders(userId = null) {
+        const now = new Date();
+        const fallbackExpiration = new Date(now.getTime() - 60 * 60 * 1000);
+        const retryCutoff = new Date(now.getTime() - 5 * 60 * 1000);
+        const query = {
+            "payment.id": { $exists: true, $ne: null },
+            $and: [
+                {
+                    $or: [
+                        { statusInterno: 'pendente' },
+                        {
+                            statusInterno: { $in: ['cancelado', 'expirado'] },
+                            "payment.lastSyncedAt": { $exists: false }
+                        }
+                    ]
+                },
+                {
+                    $or: [
+                        { "payment.date_of_expiration": { $lte: now } },
+                        { "payment.date_of_expiration": { $exists: false }, createdAt: { $lte: fallbackExpiration } }
+                    ]
+                },
+                {
+                    $or: [
+                        { "payment.lastSyncAttemptAt": { $exists: false } },
+                        { "payment.lastSyncAttemptAt": { $lte: retryCutoff } }
+                    ]
+                }
+            ]
+        };
+
+        if (userId) {
+            const userIdVariants = ObjectId.isValid(userId)
+                ? [userId, String(userId), new ObjectId(userId)]
+                : [String(userId)];
+            query["user._id"] = { $in: userIdVariants };
+        }
+
+        const orders = await this.getCollection().find(query).sort({ createdAt: 1 }).limit(25).toArray();
+        let synchronized = 0;
+        for (const order of orders) {
+            const result = await this.consultarPix(order.payment.id);
+            if (!result.error) synchronized++;
+        }
+        return synchronized;
     }
 
     /**
@@ -290,7 +441,17 @@ export default class OrderRepository extends BaseRepository {
     async cancelExpiredOrder(orderId) {
         return await this.getCollection().updateOne(
             { _id: new ObjectId(orderId) },
-            { $set: { statusInterno: 'cancelado', updatedAt: new Date() } }
+            {
+                $set: {
+                    statusInterno: 'cancelado',
+                    "payment.status": 'cancelled',
+                    updatedAt: new Date()
+                },
+                $unset: {
+                    "payment.qr_code": "",
+                    "payment.qr_code_base64": ""
+                }
+            }
         );
     }
 
@@ -301,7 +462,7 @@ export default class OrderRepository extends BaseRepository {
         const salesStats = await this.getCollection().aggregate([
             {
                 $match: {
-                    statusInterno: 'pago',
+                    "payment.status": 'approved',
                     createdAt: { $gte: dateThreshold }
                 }
             },
@@ -336,6 +497,7 @@ export default class OrderRepository extends BaseRepository {
             em_rota: 0,
             entregue: 0,
             cancelado: 0,
+            expirado: 0,
             faturamento: 0
         };
 
@@ -354,9 +516,11 @@ export default class OrderRepository extends BaseRepository {
                 stats.entregue++;
             } else if (status === 'cancelado') {
                 stats.cancelado++;
+            } else if (status === 'expirado') {
+                stats.expirado++;
             }
 
-            if (['pago', 'preparado', 'em_rota', 'entregue'].includes(status) || order.payment?.status === 'approved') {
+            if (order.payment?.status === 'approved') {
                 stats.faturamento += Number(order.payment?.transaction_amount || 0);
             }
         }

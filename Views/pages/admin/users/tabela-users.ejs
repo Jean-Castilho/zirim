@@ -292,14 +292,15 @@
                     <i class="material-icons">edit</i>
                   </button>
                   <button type="button" 
-                          title="Desativar/Excluir" 
+                        title="Excluir usuário"
                           class="btn-icon btn-delete"
+                        hx-headers='{"x-csrf-token":"<%= csrfToken %>"}'
                           hx-delete="/users/edit/<%= user._id %>"
                           hx-trigger="click"
                           hx-target="closest tr"
                           hx-swap="outerHTML swap:0.5s"
-                          hx-confirm="Tem certeza que deseja desativar o usuário '<%= user.name %>'?">
-                    <i class="material-icons">person_off</i>
+                        hx-confirm="Excluir permanentemente o usuário '<%= user.name %>'? Esta ação não pode ser desfeita.">
+                    <i class="material-icons">delete_forever</i>
                   </button>
                 </div>
               </td>

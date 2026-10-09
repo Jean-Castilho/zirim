@@ -7,11 +7,17 @@ import { fileURLToPath } from 'url';
 import Server from "./src/server.js";
 import { connectDataBase, closeDataBase } from './src/config/db.js';
 import { errorMiddleware } from "./src/utils/handleResponse.js";
+import OrderRepository from './src/repository/OrderRepository.js';
 
 const app = express();
+const orderRepository = new OrderRepository();
 const port = process.env.PORT || 3090;
 const isProd = process.env.NODE_ENV === 'production';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+let expirationSyncTimer;
+let expirationSyncPromise;
+let httpServer;
+let isShuttingDown = false;
 
 // 1. Configurações de Template e Assets
 app.set('trust proxy', 1); 
@@ -60,17 +66,55 @@ app.use(errorMiddleware);
 const start = async () => {
     try {
         await connectDataBase();
-        app.listen(port, () => console.log(`Servidor rodando na porta: http://localhost:${port}`));
+        httpServer = app.listen(port, () => {
+            console.log(`Servidor rodando na porta: http://localhost:${port}`);
+            expirationSyncTimer = setInterval(synchronizeExpiredOrders, 60 * 1000);
+            expirationSyncTimer.unref();
+            void synchronizeExpiredOrders();
+        });
     } catch (error) {
         console.error("Falha ao iniciar a aplicação.", error);
         process.exit(1);
     }
 };
 
-process.on("SIGINT", async () => {
-    console.log("Encerrando aplicação. Fechando conexões...");
-    await closeDataBase();
-    process.exit(0);
-});
+const synchronizeExpiredOrders = () => {
+    if (isShuttingDown || expirationSyncPromise) return expirationSyncPromise;
+
+    expirationSyncPromise = orderRepository.syncExpiredPendingOrders()
+        .catch((error) => {
+            console.error('Falha ao sincronizar pagamentos vencidos:', error);
+        })
+        .finally(() => {
+            expirationSyncPromise = null;
+        });
+
+    return expirationSyncPromise;
+};
+
+const shutdown = async (signal) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log(`Encerrando aplicação (${signal}). Fechando conexões...`);
+
+    if (expirationSyncTimer) clearInterval(expirationSyncTimer);
+
+    try {
+        if (httpServer?.listening) {
+            await new Promise((resolve, reject) => {
+                httpServer.close((error) => error ? reject(error) : resolve());
+            });
+        }
+
+        if (expirationSyncPromise) await expirationSyncPromise;
+        await closeDataBase();
+    } catch (error) {
+        console.error('Erro ao encerrar a aplicação:', error);
+        process.exitCode = 1;
+    }
+};
+
+process.once('SIGINT', () => void shutdown('SIGINT'));
+process.once('SIGTERM', () => void shutdown('SIGTERM'));
 
 start();

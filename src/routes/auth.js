@@ -17,12 +17,15 @@ router.post("/register", validateCsrfToken, (req, res, next) => userController.r
 router.post("/forgotPassword", validateCsrfToken, (req, res, next) => userController.forgotPassword(req, res, next));
 router.post("/PasswordReset", validateCsrfToken, (req, res, next) => userController.PasswordReset(req, res, next));
 
-router.post("/updatePassword", requireAuth, (req, res, next) => userController.updatePassword(req, res, next));
+router.post("/updatePassword", requireAuth, validateCsrfToken, (req, res, next) => userController.updatePassword(req, res, next));
 
 router.post("/verify-otp", validateCsrfToken, (req, res, next) => userController.verifyOtp(req, res, next));
+router.post("/email/send-otp", requireAuth, validateCsrfToken, (req, res, next) => userController.sendEmailOtp(req, res, next));
+router.post("/phone/send-otp", requireAuth, validateCsrfToken, (req, res, next) => userController.sendPhoneOtp(req, res, next));
+router.post("/phone/verify-otp", requireAuth, validateCsrfToken, (req, res, next) => userController.verifyPhoneOtp(req, res, next));
 
-router.post("/deleteUser/:id", requireAuth, (req, res, next) => userController.deleteUser(req, res, next));
-router.post("/updateProfile", requireAuth, (req, res, next) => userController.updateProfile(req, res, next));
+router.post("/deleteUser/:id", requireAuth, requireAdmin, validateCsrfToken, (req, res, next) => userController.deleteUser(req, res, next));
+router.post("/updateProfile", requireAuth, validateCsrfToken, (req, res, next) => userController.updateProfile(req, res, next));
 
 router.post(
     "/users/edit/:id",
@@ -35,6 +38,7 @@ router.delete(
     "/users/edit/:id",
     requireAuth,
     requireAdmin,
+    validateCsrfToken,
     (req, res, next) => userController.deleteUser(req, res, next)
 );
 

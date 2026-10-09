@@ -1,4 +1,3 @@
-import { sendEmailOtp } from "../services/contactService.js";
 import { renderPage, NotFoundError } from "../utils/handleResponse.js";
 import ProductService from "../services/ProductService.js";
 import UserService from "../services/UserService.js";
@@ -118,22 +117,34 @@ export const ResetPassword = async (req, res, next) => {
 
 export const VerifyOtp = async (req, res, next) => {
   try {
-    const userEmail = req.session?.user?.email?.endereco;
-
-    if (!userEmail) {
+    if (!req.session?.user?.email?.endereco) {
       return res.redirect('/login');
     }
 
-    const normalized = String(userEmail).trim().toLowerCase();
+    return res.redirect('/verify-contact?type=email');
+  } catch (error) {
+    next(error);
+  }
+};
 
-    renderPage(req, res, "../pages/auth/verify-otp", {
-      titulo: "Verificar E-mail",
-      message: `Enviamos um código de verificação para ${normalized}.`,
-      email: normalized
-    });
+export const VerifyContact = async (req, res, next) => {
+  try {
+    const type = req.query.type === "phone" ? "phone" : req.query.type === "email" ? "email" : null;
+    if (!type) return res.redirect("/profile");
 
-    sendEmailOtp(normalized).catch(err => {
-      console.error("Falha ao enviar e-mail de OTP em segundo plano:", err);
+    const user = await userService.getUserById(req.session.user._id);
+    if (!user) return res.redirect("/login");
+
+    const contact = type === "phone" ? user.phone?.number || "" : user.email?.endereco || "";
+    if (type === "email" && !contact) {
+      return res.redirect("/profile");
+    }
+
+    renderPage(req, res, "../pages/auth/verify-contact", {
+      titulo: type === "phone" ? "Verificar telefone" : "Verificar e-mail",
+      type,
+      contact,
+      verified: type === "phone" ? Boolean(user.phone?.verified) : Boolean(user.email?.verified),
     });
   } catch (error) {
     next(error);
@@ -166,29 +177,17 @@ export const Profile = async (req, res, next) => {
       return res.redirect('/login');
     }
 
+    await orderRepository.syncExpiredPendingOrders(userId);
+
     const [userProfile, orders] = await Promise.all([
       userService.getUserById(userId),
       orderRepository.findUserOrders(userId)
     ]);
 
-    const sessentaMinutos = 60 * 60 * 1000;
-    const now = Date.now();
-
     userProfile.orderns = orders.map(o => {
-      let status = o.statusInterno || 'pendente';
-
-      if (status === 'pendente' && o.createdAt) {
-        if (now - new Date(o.createdAt).getTime() > sessentaMinutos) {
-          status = 'cancelado';
-          orderRepository.cancelExpiredOrder(o._id).catch(err =>
-            console.error(`Erro ao cancelar pedido expirado ${o._id}:`, err)
-          );
-        }
-      }
-
       return {
         _id: o._id,
-        status: status,
+        status: o.statusInterno || 'pendente',
         total: o.payment?.transaction_amount || 0,
         createdAt: o.createdAt,
         delivery: o.delivery || null
@@ -297,9 +296,22 @@ export const Logistica = async (req, res, next) => {
 export const Checkout = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const order = await orderRepository.findById(id);
+    let order = await orderRepository.findById(id);
     if (!order) {
       return next(new NotFoundError("Pedido não encontrado.", id));
+    }
+
+    const sessionUser = req.session?.user;
+    const ownsOrder = sessionUser && String(order.user?._id) === String(sessionUser._id);
+    const isAdmin = sessionUser?.role === "admin";
+    const ownsGuestOrder = req.session?.guestOrderIds?.includes(String(order._id));
+    if (!ownsOrder && !isAdmin && !ownsGuestOrder) {
+      return next(new NotFoundError("Pedido não encontrado.", id));
+    }
+
+    if (order.payment?.id && ['pendente', 'cancelado', 'expirado'].includes(order.statusInterno)) {
+      await orderRepository.consultarPix(order.payment.id);
+      order = await orderRepository.findById(id);
     }
 
     renderPage(req, res, "../pages/public/checkout", {

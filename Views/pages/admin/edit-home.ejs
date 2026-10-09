@@ -707,7 +707,8 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    const initializeHomeEditor = () => {
+        if (!document.getElementById('bannerTitle')) return;
         const bannerTitleInput = document.getElementById('bannerTitle');
         const bannerDescriptionInput = document.getElementById('bannerDescription');
         const bannerExibirBotaoInput = document.getElementById('bannerExibirBotao');
@@ -935,6 +936,12 @@
                 showNotification('Falha ao processar a requisição. Verifique os dados.', 'error');
             }
         });
-    });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeHomeEditor, { once: true });
+    } else {
+        initializeHomeEditor();
+    }
 
 </script>

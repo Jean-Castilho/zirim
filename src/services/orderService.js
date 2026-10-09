@@ -17,7 +17,7 @@ export const validateCartItems = async (items) => {
     }
 
     const quantity = Number(item.quantity ?? 0);
-    if (!Number.isFinite(quantity) || quantity <= 0) {
+    if (!Number.isSafeInteger(quantity) || quantity <= 0) {
       throw new Error(`A quantidade do produto ${item.id} é inválida.`);
     }
 
@@ -30,7 +30,22 @@ export const validateCartItems = async (items) => {
     };
   });
 
-  const productIds = normalizedItems.map((item) => item.id);
+  const groupedItems = new Map();
+  for (const item of normalizedItems) {
+    const key = JSON.stringify([item.id, item.cor, item.tamanho]);
+    const existing = groupedItems.get(key);
+    if (existing) {
+      existing.quantity += item.quantity;
+      if (!Number.isSafeInteger(existing.quantity)) {
+        throw new ValidationError(`A quantidade do produto ${item.id} excede o limite permitido.`);
+      }
+    } else {
+      groupedItems.set(key, { ...item });
+    }
+  }
+  const consolidatedItems = [...groupedItems.values()];
+
+  const productIds = consolidatedItems.map((item) => item.id);
   const validObjectIds = productIds
     .filter((id) => ObjectId.isValid(id))
     .map((id) => new ObjectId(id));
@@ -44,7 +59,7 @@ export const validateCartItems = async (items) => {
   }
 
   const foundIds = new Set(selectedProducts.map((product) => product._id.toString()));
-  const notFound = normalizedItems
+  const notFound = consolidatedItems
     .filter((item) => !foundIds.has(item.id))
     .map((item) => item.id);
 
@@ -54,7 +69,7 @@ export const validateCartItems = async (items) => {
 
   const productMap = new Map(selectedProducts.map((p) => [p._id.toString(), p]));
 
-  return normalizedItems.map((cartItem) => { // Usar 'return' aqui para garantir que o map retorne o array
+  return consolidatedItems.map((cartItem) => {
     const product = productMap.get(cartItem.id);
     
     // Busca a variação correspondente por cor e tamanho para obter o preço correto
@@ -94,8 +109,8 @@ export const validateCartItems = async (items) => {
 };
 
 export const processCreateOrder = async (user, orderData) => {
-  if (!user) {
-    throw new ValidationError("Usuário não autenticado.");
+  if (!user?._id) {
+    throw new ValidationError("Dados do comprador inválidos.");
   }
 
   const validatedItems = await validateCartItems(orderData.items);
@@ -103,8 +118,12 @@ export const processCreateOrder = async (user, orderData) => {
 
   const addressData = orderData.address || {};
   const shippingData = orderData.shipping || {};
-  const shippingCost = Number(shippingData.cost ?? addressData.shippingCost ?? 0);
-  const validShippingCost = (Number.isFinite(shippingCost) && shippingCost > 0) ? shippingCost : 0;
+  const shippingMethod = String(shippingData.method || "padrao");
+  const shippingPrices = { padrao: 0, expresso: 14.9 };
+  if (!Object.hasOwn(shippingPrices, shippingMethod)) {
+    throw new ValidationError("Método de entrega inválido.");
+  }
+  const validShippingCost = shippingPrices[shippingMethod];
   const totalPrice = itemsTotal + validShippingCost;
 
   const payloadOrder = {
@@ -128,13 +147,14 @@ export const processCreateOrder = async (user, orderData) => {
       lng: Number(addressData.lng || -46.6333)
     },
     shipping: {
-      method: shippingData.method || "padrao",
+      method: shippingMethod,
       cost: validShippingCost
     },
     subtotal: itemsTotal,
     total: totalPrice,
     statusInterno: "pendente",
     createdAt: new Date(),
+    stateVersion: 0,
     inventoryProcessed: false,
     payment: {}
   };

@@ -1,119 +1,103 @@
-/**
- * Adiciona um produto aos favoritos no localStorage.
- * @param {string} productId - O ID do produto a ser adicionado aos favoritos.
- * @param {HTMLElement} buttonElement - O elemento do botão de favorito associado.
- * @returns {boolean} True se o produto foi adicionado, false se já existia.
- */
-function addToFavorites(productId, buttonElement) {
-    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+(() => {
+    const readFavorites = () => {
+        try {
+            const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            return Array.isArray(favorites) ? favorites.map(String) : [];
+        } catch {
+            return [];
+        }
+    };
 
-    if (favorites.includes(productId)) {
+    const updateFavoriteButtonVisualState = (button) => {
+        const icon = button.querySelector('.favorite-icon');
+        if (!icon) return;
 
-        showNotification('Este produto já está nos seus favoritos!', 'info');
-        return false;
-    }
+        const isFavorited = readFavorites().includes(button.dataset.productId);
+        icon.textContent = isFavorited ? 'favorite' : 'favorite_border';
+        button.dataset.isFavorited = String(isFavorited);
+        if (!isFavorited) icon.classList.remove('smooth-scale-animation');
+    };
 
-    favorites.push(productId);
-    localStorage.setItem('favorites', JSON.stringify(favorites));
+    const initializeFavoriteButtons = (container) => {
+        container.querySelectorAll('.btn-favorite').forEach((button) => {
+            updateFavoriteButtonVisualState(button);
+            button.querySelector('.favorite-icon')?.classList.remove('smooth-scale-animation');
+        });
+    };
 
-    showNotification('Produto adicionado aos favoritos!', 'success');
-    return true;
-}
+    const addToFavorites = (productId) => {
+        const favorites = readFavorites();
+        if (favorites.includes(productId)) {
+            showNotification('Este produto já está nos seus favoritos!', 'info');
+            return false;
+        }
 
-/**
- * Remove um produto dos favoritos no localStorage.
- * @param {string} productId - O ID do produto a ser removido dos favoritos.
- * @param {HTMLElement} buttonElement - O elemento do botão de favorito associado.
- * @returns {boolean} True se o produto foi removido, false se não foi encontrado.
- */
-function removeFromFavorites(productId, buttonElement) {
-    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    const updatedFavorites = favorites.filter(id => id !== productId);
+        favorites.push(productId);
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+        showNotification('Produto adicionado aos favoritos!', 'success');
+        return true;
+    };
 
-    if (updatedFavorites.length < favorites.length) {
+    const removeFromFavorites = (productId) => {
+        const favorites = readFavorites();
+        const updatedFavorites = favorites.filter(id => id !== productId);
+        if (updatedFavorites.length === favorites.length) return false;
+
         localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
         showNotification('Produto removido dos favoritos!', 'info');
         return true;
-    }
-    return false;
-}
-
-function updateFavoriteButtonVisualState(button) {
-    const productId = button.dataset.productId;
-    const icon = button.querySelector('.favorite-icon');
-    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-
-    if (favorites.includes(productId)) {
-        icon.textContent = 'favorite';
-        button.dataset.isFavorited = 'true';
-    } else {
-        icon.textContent = 'favorite_border';
-        button.dataset.isFavorited = 'false';
-        icon.classList.remove('smooth-scale-animation');
-    }
-}
-
-function initializeFavoriteButtons(container) {
-    const favoriteButtons = container.querySelectorAll('.btn-favorite');
-    favoriteButtons.forEach(button => {
-        updateFavoriteButtonVisualState(button);
-        const icon = button.querySelector('.favorite-icon');
-        icon.classList.remove('smooth-scale-animation');
-    });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
+    };
 
     initializeFavoriteButtons(document);
 
+    if (document.body.dataset.favoriteHandlersInitialized) return;
+    document.body.dataset.favoriteHandlersInitialized = 'true';
+
     document.body.addEventListener('click', (event) => {
         const button = event.target.closest('.btn-favorite');
-        if (button) {
-            event.preventDefault();
-            const currentProductId = button.dataset.productId;
+        if (!button) return;
 
-            if (button.dataset.isFavorited === 'true') {
-                if (removeFromFavorites(currentProductId, button)) {
-                    const favoriteCard = button.closest('.favorites-container .product-card');
+        event.preventDefault();
+        const productId = button.dataset.productId;
+        const icon = button.querySelector('.favorite-icon');
 
-                    if (favoriteCard) {
-                        favoriteCard.remove();
-                    } else {
-                        updateFavoriteButtonVisualState(button);
-                        const icon = button.querySelector('.favorite-icon');
-                        icon.classList.add('smooth-scale-animation');
-                        setTimeout(() => icon.classList.remove('smooth-scale-animation'), 300);
-                    }
-                }
+        if (button.dataset.isFavorited === 'true') {
+            if (!removeFromFavorites(productId)) return;
+
+            const favoriteCard = button.closest('.favorites-container .product-card');
+            if (favoriteCard) {
+                favoriteCard.remove();
+                window.dispatchEvent(new Event('favoritesUpdated'));
             } else {
-                if (addToFavorites(currentProductId, button)) {
-                    updateFavoriteButtonVisualState(button);
-                    const icon = button.querySelector('.favorite-icon');
-                    icon.classList.add('smooth-scale-animation');
-                    setTimeout(() => icon.classList.remove('smooth-scale-animation'), 300);
-                }
+                updateFavoriteButtonVisualState(button);
+                icon?.classList.add('smooth-scale-animation');
+                setTimeout(() => icon?.classList.remove('smooth-scale-animation'), 300);
             }
+            return;
+        }
+
+        if (addToFavorites(productId)) {
+            updateFavoriteButtonVisualState(button);
+            icon?.classList.add('smooth-scale-animation');
+            setTimeout(() => icon?.classList.remove('smooth-scale-animation'), 300);
         }
     });
 
     document.body.addEventListener('mouseover', (event) => {
         const button = event.target.closest('.btn-favorite');
         if (button && button.dataset.isFavorited === 'false') {
-            const icon = button.querySelector('.favorite-icon');
-            icon.textContent = 'favorite';
+            button.querySelector('.favorite-icon')?.replaceChildren('favorite');
         }
     });
 
     document.body.addEventListener('mouseout', (event) => {
         const button = event.target.closest('.btn-favorite');
         if (button && button.dataset.isFavorited === 'false') {
-            const icon = button.querySelector('.favorite-icon');
-            icon.textContent = 'favorite_border';
+            button.querySelector('.favorite-icon')?.replaceChildren('favorite_border');
         }
     });
 
-    // evento htmx:afterSwap para re-inicializar os botões de favorito em conteúdo novo
     document.body.addEventListener('htmx:afterSwap', (event) => {
         initializeFavoriteButtons(event.detail.target || document);
     });
-});
+})();

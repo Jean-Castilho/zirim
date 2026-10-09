@@ -121,6 +121,7 @@
     .status-entregue { background: rgba(43, 138, 62, 0.2); color: #166534; }
     .status-pendente { background: rgba(230, 126, 34, 0.1); color: var(--warning); }
     .status-cancelado { background: rgba(201, 42, 42, 0.1); color: var(--danger); }
+    .status-expirado { background: rgba(201, 42, 42, 0.1); color: var(--danger); }
 
     .pin-badge {
         display: inline-flex;
@@ -267,10 +268,17 @@
                                             Entregue
                                         <% } else if (status === 'cancelado') { %>
                                             Cancelado
+                                        <% } else if (status === 'expirado') { %>
+                                            PIX Expirado
                                         <% } else { %>
                                             Aguard. Pgto
                                         <% } %>
                                     </span>
+                                    <% if (order.inventoryProcessingFailed) { %>
+                                        <small role="alert" style="display: block; margin-top: 5px; color: var(--danger); font-weight: 700;">
+                                            Revisar baixa de estoque
+                                        </small>
+                                    <% } %>
                                 </td>
                                 <td>
                                     <% if (pinCode) { %>

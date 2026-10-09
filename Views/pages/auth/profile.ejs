@@ -124,6 +124,20 @@
     background-color: var(--cor-erro);
   }
 
+  a.badge.unverified {
+    display: inline-block;
+    text-decoration: none;
+    transition: filter 0.2s ease, transform 0.2s ease;
+  }
+
+  a.badge.unverified:hover,
+  a.badge.unverified:focus-visible {
+    filter: brightness(0.88);
+    transform: translateY(-1px);
+    outline: 2px solid var(--cor-erro);
+    outline-offset: 2px;
+  }
+
   .btn-logout {
     display: block;
     border: 2px solid var(--cor-destaque);
@@ -249,6 +263,12 @@
     border: 1px solid #fed7d7;
   }
 
+  .order-status.expirado {
+    color: var(--cor-erro);
+    background-color: #fff5f5;
+    border: 1px solid #fed7d7;
+  }
+
   .order-link {
     font-size: 0.85rem;
     color: var(--cor-info);
@@ -363,9 +383,11 @@
           <p>
             <%= user?.email?.endereco || 'Não informado' %>
             <% if (user?.email?.endereco) { %>
-              <span class="badge <%= user?.email?.verified ? 'verified' : 'unverified' %>">
-                <%= user?.email?.verified ? 'Verificado' : 'Não verificado' %>
-              </span>
+              <% if (user?.email?.verified) { %>
+                <span class="badge verified">Verificado</span>
+              <% } else { %>
+                <a class="badge unverified" href="/verify-contact?type=email" aria-label="Não verificado. Solicitar código por e-mail">Não verificado</a>
+              <% } %>
             <% } %>
           </p>
         </div>
@@ -374,9 +396,11 @@
           <p>
             <%= user?.phone?.number || 'Não informado' %>
             <% if (user?.phone?.number) { %>
-              <span class="badge <%= user?.phone?.verified ? 'verified' : 'unverified' %>">
-                <%= user?.phone?.verified ? 'Verificado' : 'Não verificado' %>
-              </span>
+              <% if (user?.phone?.verified) { %>
+                <span class="badge verified">Verificado</span>
+              <% } else { %>
+                <a class="badge unverified" href="/verify-contact?type=phone" aria-label="Não verificado. Solicitar código pelo WhatsApp">Não verificado</a>
+              <% } %>
             <% } %>
           </p>
         </div>
@@ -412,6 +436,7 @@
                       else if (order.status === 'em_rota') statusLabel = 'Em Rota de Entrega';
                       else if (order.status === 'entregue') statusLabel = 'Entregue';
                       else if (order.status === 'cancelado') statusLabel = 'Cancelado';
+                      else if (order.status === 'expirado') statusLabel = 'PIX Expirado';
                     %>
                     <%= statusLabel %>
                   </div>

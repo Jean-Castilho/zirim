@@ -236,7 +236,8 @@
                   <button type="button" 
                           title="Excluir" 
                           class="btn-icon btn-delete"
-                          hx-delete="/api/products/<%= product._id %>"
+                          hx-headers='{"x-csrf-token":"<%= csrfToken %>"}'
+                          hx-delete="/products/<%= product._id %>"
                           hx-trigger="click"
                           hx-target="closest tr"
                           hx-swap="outerHTML swap:0.5s"

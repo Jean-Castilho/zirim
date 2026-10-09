@@ -9,10 +9,12 @@ export default class UserRepository extends BaseRepository {
   async findByEmailForAuth(email) {
     return await this.findByEmail(email, {
       projection: {
+        name: 1,
         email: 1,
+        phone: 1,
         password: 1,
-        numero: 1,
-        role: 1
+        role: 1,
+        isActive: 1,
       }
     });
   }
@@ -66,7 +68,7 @@ export default class UserRepository extends BaseRepository {
       password: data.password,
       phone: { verified: false, number: data.phone },
       email: { verified: false, endereco: data.email },
-      role: data.role || "user",
+      role: "user",
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -97,6 +99,21 @@ export default class UserRepository extends BaseRepository {
     }
 
     return await this.update(id, updateFields);
+  }
+
+  async setVerifiedPhone(id, phone) {
+    const query = ObjectId.isValid(id)
+      ? { $or: [{ _id: new ObjectId(id) }, { _id: String(id) }] }
+      : { _id: String(id) };
+    const result = await this.collection.updateOne(query, {
+      $set: {
+        "phone.number": phone,
+        "phone.verified": true,
+        updatedAt: new Date(),
+      },
+    });
+
+    return result.matchedCount > 0;
   }
 
   async storePasswordResetToken(userId, tokenHash, expiresAt) {

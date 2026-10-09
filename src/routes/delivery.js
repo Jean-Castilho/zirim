@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireCourier, requireAdmin, generateCsrfToken } from "../middleware/authMiddleware.js";
+import { requireCourier, requireAdmin, generateCsrfToken, validateCsrfToken } from "../middleware/authMiddleware.js";
 import { validateBody, rules } from "../utils/validators.js";
 import {
   CourierDashboard,
@@ -17,12 +17,14 @@ router.get("/delivery/courier", requireCourier, generateCsrfToken, CourierDashbo
 router.post(
   "/delivery/prepare",
   requireAdmin,
+  validateCsrfToken,
   validateBody({ orderId: rules.objectId("ID do pedido") }),
   PrepareOrderForDelivery
 );
 router.post(
   "/delivery/orders/:id/prepare",
   requireAdmin,
+  validateCsrfToken,
   PrepareOrderForDelivery
 );
 
@@ -30,12 +32,14 @@ router.post(
 router.post(
   "/delivery/select",
   requireCourier,
+  validateCsrfToken,
   validateBody({ orderId: rules.objectId("ID do pedido") }),
   SelectOrderForDelivery
 );
 router.post(
   "/delivery/orders/:id/select",
   requireCourier,
+  validateCsrfToken,
   SelectOrderForDelivery
 );
 
@@ -43,12 +47,14 @@ router.post(
 router.post(
   "/delivery/confirm",
   requireCourier,
+  validateCsrfToken,
   validateBody({ orderId: rules.objectId("ID do pedido"), code: rules.pinCode }),
   ConfirmDeliveryCode
 );
 router.post(
   "/delivery/orders/:id/confirm",
   requireCourier,
+  validateCsrfToken,
   validateBody({ code: rules.pinCode }),
   ConfirmDeliveryCode
 );

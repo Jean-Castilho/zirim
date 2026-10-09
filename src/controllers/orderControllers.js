@@ -35,6 +35,12 @@ export default class OrderController {
 
             const result = await processCreateOrder(user, req.body);
 
+            if (!sessionUser) {
+                const guestOrderIds = req.session.guestOrderIds || [];
+                guestOrderIds.push(result.orderId);
+                req.session.guestOrderIds = guestOrderIds.slice(-50);
+            }
+
             if (req.xhr || req.headers.accept?.includes('json') || req.is('json')) {
                 return res.status(201).json({
                     success: true,

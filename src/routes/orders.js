@@ -1,38 +1,9 @@
 import express from "express";
 import OrderController from '../controllers/orderControllers.js';
+import { validateCsrfToken } from "../middleware/authMiddleware.js";
 
 const orderController = new OrderController();
 const router = express.Router();
-
-router.post('/', async (req, res) => {
-  const { valor } = req.body;
-
-  const pagamento = await orderController.gerarPix(valor);
-
-  if (pagamento.error || pagamento.mensagem) {
-    return res.render('pagamento-result', {
-      title: 'Erro no Pagamento',
-      erro: pagamento.error || pagamento.mensagem,
-      valor: valor || '0,00',
-      nome: 'Cliente',
-    });
-  }
-
-  const valorFormatado = pagamento.transaction_amount
-    ? Number(pagamento.transaction_amount).toFixed(2)
-    : parseFloat(valor || '0').toFixed(2);
-
-  res.render('pagamento-result', {
-    title: 'Pagamento PIX Gerado',
-    nome: 'Cliente',
-    valor: valorFormatado,
-    erro: null,
-    qr_code: pagamento.qr_code,
-    qr_code_base64: pagamento.qr_code_base64,
-    pagamentoId: pagamento.id,
-    status: pagamento.status,
-  });
-});
 
 router.get('/status/:id', async (req, res) => {
   const { id } = req.params;
@@ -55,8 +26,7 @@ router.get('/status/:id', async (req, res) => {
   });
 });
 
-router.post('/creat-Order', (req, res, next) => orderController.creatOrder(req, res, next));
-router.post('/create-order', (req, res, next) => orderController.creatOrder(req, res, next));
+router.post('/create-order', validateCsrfToken, (req, res, next) => orderController.creatOrder(req, res, next));
 
 router.post('/webhook', (req, res) => orderController.handleWebhook(req, res));
 

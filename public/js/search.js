@@ -1,3 +1,4 @@
+(() => {
 /**
  * search.js - Lógica de busca com debounce (espera de 500ms)
  * Melhora a UX e reduz carga no servidor.
@@ -69,5 +70,10 @@ const initializeSearch = () => {
     }
 };
 
-document.addEventListener('DOMContentLoaded', initializeSearch);
-document.body.addEventListener('htmx:afterSwap', initializeSearch);
+if (!document.body.dataset.searchLifecycleInitialized) {
+    document.body.dataset.searchLifecycleInitialized = 'true';
+    document.body.addEventListener('htmx:afterSwap', initializeSearch);
+}
+
+initializeSearch();
+})();

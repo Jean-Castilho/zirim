@@ -5,10 +5,10 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 export const validateUser = (data) => {
   const errors = [];
   const normalizedData = {
-    ...data,
     name: data.name ? String(data.name).trim() : data.name,
     email: data.email ? String(data.email).trim().toLowerCase() : data.email,
     phone: data.phone ? String(data.phone).trim() : data.phone,
+    password: data.password,
   };
 
   if (!normalizedData.name || !nameRegex.test(normalizedData.name) || normalizedData.name.length < 3) {

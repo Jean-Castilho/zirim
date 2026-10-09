@@ -72,6 +72,7 @@
 .thumbnail {
     width: 100px;
     height: 100px;
+    padding: 0;
     flex-shrink: 0;
     border-radius: var(--raio-padrao);
     overflow: hidden;
@@ -221,6 +222,7 @@
 
 .pill-option {
     cursor: pointer;
+    font-family: inherit;
     padding: 12px 24px;
     border: 2px solid var(--cor-borda-forte);
     border-radius: var(--raio-botao);
