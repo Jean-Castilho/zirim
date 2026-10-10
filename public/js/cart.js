@@ -58,11 +58,10 @@
         };
 
         const CartPage = {
-            shippingCost: 0,
-            currentSubtotal: 0,
             mapApiKey: document.getElementById('cart-mini-map')?.dataset.mapApiKey || '',
             googleMapInstance: null,
             googleMapMarker: null,
+            locationDetailsOverlay: null,
 
             elements: {
                 itemsContainer: document.getElementById('cart-items'),
@@ -77,11 +76,13 @@
                 cepResult: document.getElementById('cart-cep-result'),
                 cepStreet: document.getElementById('cep-res-street'),
                 cepNeighborhood: document.getElementById('cep-res-neighborhood'),
-                shippingDisplay: document.getElementById('cart-shipping'),
+                mapPointLabel: document.getElementById('cart-map-point'),
+                locationArticle: document.getElementById('cart-map-location-details'),
+                locationLatitude: document.getElementById('cart-map-location-latitude'),
+                locationLongitude: document.getElementById('cart-map-location-longitude'),
                 miniMap: document.getElementById('cart-mini-map'),
                 mapPlaceholder: document.getElementById('cart-map-placeholder'),
                 mapStatusBadge: document.getElementById('map-status-badge'),
-                shippingOptionsContainer: document.getElementById('shipping-options'),
                 guestName: document.getElementById('guest-name'),
                 guestEmail: document.getElementById('guest-email'),
                 guestPhone: document.getElementById('guest-phone')
@@ -186,34 +187,6 @@
                     });
                 }
 
-                if (this.elements.shippingOptionsContainer) {
-                    this.elements.shippingOptionsContainer.addEventListener('change', (e) => {
-                        const radio = e.target.closest('input[type="radio"]');
-                        if (radio) {
-                            const optionLabel = radio.closest('.shipping-option');
-                            const allOptions = this.elements.shippingOptionsContainer.querySelectorAll('.shipping-option');
-                            allOptions.forEach(opt => opt.classList.remove('selected'));
-                            if (optionLabel) optionLabel.classList.add('selected');
-
-                            const cost = parseFloat(optionLabel.dataset.cost || '0');
-                            this.updateShipping(cost);
-                        }
-                    });
-                }
-            },
-
-            updateShipping(cost) {
-                this.shippingCost = cost;
-                if (this.elements.shippingDisplay) {
-                    if (cost === 0) {
-                        this.elements.shippingDisplay.className = 'free-shipping';
-                        this.elements.shippingDisplay.innerText = 'Grátis';
-                    } else {
-                        this.elements.shippingDisplay.className = '';
-                        this.elements.shippingDisplay.innerText = `R$ ${cost.toFixed(2).replace('.', ',')}`;
-                    }
-                }
-                this.updateTotals(this.currentSubtotal);
             },
 
             async handleCepLookup() {
@@ -335,19 +308,31 @@
                 }
 
                 if (this.elements.mapStatusBadge) {
-                    this.elements.mapStatusBadge.innerText = 'Localizado';
+                    this.elements.mapStatusBadge.innerText = data.locationSelectedManually ? 'Ponto definido' : 'Localizado';
                     this.elements.mapStatusBadge.classList.add('active');
                 }
 
-                const popupContent = `
-                    <div style="font-size: 12px; line-height: 1rem;">
-                        ${data.street ? `<span>${escapeHtml(data.street)}</span><br>` : ''}
-                        <span>${escapeHtml(data.neighborhood ? data.neighborhood + ', ' : '')}${escapeHtml(data.city)}/${escapeHtml(data.state)}</span><br>
-                        <span style="font-size: 11px; color: #666;">CEP: ${escapeHtml(data.formattedCep || data.cep)}</span>
-                    </div>
-                `;
+                if (this.elements.mapPointLabel) {
+                    this.elements.mapPointLabel.textContent = data.locationSelectedManually
+                        ? 'Clique no mapa para ajustar o ponto de entrega.'
+                        : 'Clique no mapa para marcar o ponto exato de entrega.';
+                }
+                this.updateLocationArticle(data);
+                this.renderMiniMap(data.lat, data.lng, isNewSearch);
+            },
 
-                this.renderMiniMap(data.lat, data.lng, popupContent, isNewSearch);
+            updateLocationArticle(data) {
+                if (!this.elements.locationArticle) return;
+
+                this.elements.locationArticle.hidden = !data.locationSelectedManually;
+                if (!data.locationSelectedManually) return;
+
+                if (this.elements.locationLatitude) {
+                    this.elements.locationLatitude.textContent = Number(data.lat).toFixed(6);
+                }
+                if (this.elements.locationLongitude) {
+                    this.elements.locationLongitude.textContent = Number(data.lng).toFixed(6);
+                }
             },
 
             showCepLoading(isLoading) {
@@ -376,7 +361,7 @@
                 }
             },
 
-            renderMiniMap(lat, lng, popupContent, animate = true) {
+            renderMiniMap(lat, lng, animate = true) {
                 if (!this.mapApiKey) {
                     if (this.elements.mapPlaceholder) {
                         this.elements.mapPlaceholder.style.display = 'flex';
@@ -393,7 +378,7 @@
                     return;
                 }
 
-                this.renderGoogleMap(lat, lng, popupContent, animate);
+                this.renderGoogleMap(lat, lng, animate);
             },
 
             showMapError(message) {
@@ -411,7 +396,7 @@
                 }
             },
 
-            renderGoogleMap(lat, lng, popupContent, animate = true) {
+            renderGoogleMap(lat, lng, animate = true) {
                 if (!window.google?.maps || !this.elements.miniMap) return;
 
                 if (!this.googleMapInstance) {
@@ -422,37 +407,139 @@
                         streetViewControl: false,
                         fullscreenControl: false
                     });
+                    this.googleMapInstance.addListener('click', event => this.selectMapPoint(event.latLng));
                 } else if (animate) {
                     this.googleMapInstance.panTo({ lat, lng });
                     this.googleMapInstance.setZoom(15);
                 }
 
                 if (!this.googleMapMarker) {
-                    const marker = new google.maps.Marker({
+                    this.googleMapMarker = new google.maps.Marker({
                         position: { lat, lng },
                         map: this.googleMapInstance,
-                        title: 'Localização do pedido'
+                        title: 'Ponto exato de entrega'
                     });
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: popupContent,
-                        position: { lat, lng }
-                    });
-                    marker.addListener('click', () => infoWindow.open({
-                        anchor: marker,
-                        map: this.googleMapInstance,
-                        shouldFocus: false
-                    }));
-                    this.googleMapMarker = marker;
-                    this.googleMapInfoWindow = infoWindow;
                 } else {
                     this.googleMapMarker.setPosition({ lat, lng });
-                    this.googleMapInfoWindow?.setContent(popupContent);
-                    this.googleMapInfoWindow?.setPosition({ lat, lng });
+                }
+
+                this.attachLocationDetailsOverlay();
+                if (this.locationDetailsOverlay && this.googleMapMarker) {
+                    this.locationDetailsOverlay.setLocation(this.googleMapMarker.getPosition());
                 }
 
                 if (this.elements.mapPlaceholder) {
                     this.elements.mapPlaceholder.style.display = 'none';
                 }
+            },
+
+            attachLocationDetailsOverlay() {
+                if (this.locationDetailsOverlay || !this.elements.locationArticle || !google.maps.OverlayView) return;
+
+                const article = this.elements.locationArticle;
+                this.locationDetailsOverlay = new class extends google.maps.OverlayView {
+                    position = null;
+
+                    onAdd() {
+                        this.getPanes().floatPane.appendChild(article);
+                        this.draw();
+                        this.getMap().addListener('idle', () => this.ensureSpaceAbovePoint());
+                        this.ensureSpaceAbovePoint();
+                    }
+
+                    draw() {
+                        if (!this.position || article.hidden) return;
+
+                        const pixel = this.getProjection()?.fromLatLngToContainerPixel(this.position);
+                        const mapElement = this.getMap()?.getDiv();
+                        const pane = this.getPanes()?.floatPane;
+                        if (!pixel || !mapElement || !pane) return;
+
+                        const margin = 10;
+                        const halfWidth = article.offsetWidth / 2;
+                        const left = Math.max(halfWidth + margin, Math.min(
+                            pixel.x,
+                            mapElement.clientWidth - halfWidth - margin
+                        ));
+                        const topAbovePoint = pixel.y - article.offsetHeight - 18;
+                        const isBelowPoint = topAbovePoint < margin;
+                        const top = isBelowPoint
+                            ? Math.min(pixel.y + 20, mapElement.clientHeight - article.offsetHeight - margin)
+                            : topAbovePoint;
+                        const mapRect = mapElement.getBoundingClientRect();
+                        const paneRect = pane.getBoundingClientRect();
+
+                        article.style.left = `${mapRect.left - paneRect.left + left}px`;
+                        article.style.top = `${mapRect.top - paneRect.top + Math.max(margin, top)}px`;
+                        article.style.setProperty('--location-anchor-x', `${pixel.x - left + halfWidth}px`);
+                        article.classList.toggle('is-below-point', isBelowPoint);
+                    }
+
+                    onRemove() {
+                        article.remove();
+                    }
+
+                    ensureSpaceAbovePoint() {
+                        if (this.adjustingMap || !this.position || article.hidden) return;
+
+                        const map = this.getMap();
+                        const pixel = this.getProjection()?.fromLatLngToContainerPixel(this.position);
+                        if (!map || !pixel) return;
+
+                        const mapHeight = map.getDiv().clientHeight;
+                        const desiredY = Math.min(article.offsetHeight + 28, mapHeight - 10);
+                        if (pixel.y >= desiredY) return;
+
+                        this.adjustingMap = true;
+                        google.maps.event.addListenerOnce(map, 'idle', () => {
+                            this.adjustingMap = false;
+                            this.draw();
+                        });
+                        map.panBy(0, pixel.y - desiredY);
+                    }
+
+                    setLocation(position) {
+                        this.position = position;
+                        this.draw();
+                        this.ensureSpaceAbovePoint();
+                    }
+                }();
+                this.locationDetailsOverlay.setMap(this.googleMapInstance);
+            },
+
+            selectMapPoint(latLng) {
+                if (!latLng) return;
+
+                const point = latLng.toJSON();
+                if (!hasValidCoordinates(point.lat, point.lng)) return;
+
+                let savedCepData;
+                try {
+                    savedCepData = JSON.parse(localStorage.getItem('cart_cep_data') || 'null');
+                } catch (error) {
+                    savedCepData = null;
+                }
+                if (!savedCepData?.cep) return;
+
+                const updatedData = {
+                    ...savedCepData,
+                    lat: point.lat,
+                    lng: point.lng,
+                    locationSelectedManually: true
+                };
+                localStorage.setItem('cart_cep_data', JSON.stringify(updatedData));
+
+                this.googleMapMarker?.setPosition(point);
+
+                if (this.elements.mapStatusBadge) {
+                    this.elements.mapStatusBadge.innerText = 'Ponto definido';
+                    this.elements.mapStatusBadge.classList.add('active');
+                }
+                if (this.elements.mapPointLabel) {
+                    this.elements.mapPointLabel.textContent = 'Clique no mapa para ajustar o ponto de entrega.';
+                }
+                this.updateLocationArticle(updatedData);
+                this.locationDetailsOverlay?.setLocation(this.googleMapMarker?.getPosition());
             },
 
             toggleSelection(index, isChecked) {
@@ -538,8 +625,7 @@
             },
 
             updateTotals(total) {
-                this.currentSubtotal = total;
-                const finalTotal = total > 0 ? (total + this.shippingCost) : 0;
+                const finalTotal = total > 0 ? total : 0;
                 this.elements.totalDisplay.innerText = finalTotal.toFixed(2).replace('.', ',');
                 this.elements.subtotalDisplay.innerText = total.toFixed(2).replace('.', ',');
             },
@@ -604,9 +690,6 @@
                         tamanho: item.tamanho || ''
                     }));
 
-                    const selectedShippingOption = document.querySelector('input[name="shipping-option"]:checked');
-                    const shippingMethod = selectedShippingOption ? selectedShippingOption.value : 'padrao';
-                    const shippingCost = Number(this.shippingCost || 0);
                     const guestName = this.elements.guestName?.value.trim() || '';
                     const guestEmail = this.elements.guestEmail?.value.trim() || '';
                     const guestPhone = this.elements.guestPhone?.value.trim() || '';
@@ -650,13 +733,13 @@
                             lng: savedCepData.lng
                         },
                         shipping: {
-                            method: shippingMethod,
-                            cost: shippingCost
+                            method: 'padrao',
+                            cost: 0
                         }
                     };
 
                     showNotification('Criando sua compra temporária...', 'info');
-                    const response = await fetch('/orders/creat-order', {
+                    const response = await fetch('/orders/create-order', {
                         method: 'POST',
                         redirect: 'follow',
                         headers: {

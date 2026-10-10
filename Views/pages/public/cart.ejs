@@ -85,28 +85,6 @@
                     </div>
                 </div>
 
-                <div class="shipping-options" id="shipping-options">
-                    <label class="shipping-option selected" data-type="padrao" data-cost="0">
-                        <div class="shipping-option-left">
-                            <input type="radio" name="shipping-option" value="padrao" checked>
-                            <div>
-                                <div class="shipping-title">Entrega Normal</div>
-                                <div class="shipping-deadline">Previsão: 3 a 5 dias úteis</div>
-                            </div>
-                        </div>
-                        <span class="shipping-price free">Grátis</span>
-                    </label>
-                    <label class="shipping-option" data-type="expresso" data-cost="14.90">
-                        <div class="shipping-option-left">
-                            <input type="radio" name="shipping-option" value="expresso">
-                            <div>
-                                <div class="shipping-title">Entrega Expressa</div>
-                                <div class="shipping-deadline">Previsão: 1 a 2 dias úteis</div>
-                            </div>
-                        </div>
-                        <span class="shipping-price">R$ 14,90</span>
-                    </label>
-                </div>
             </div>
 
             <div class="cart-maps"> 
@@ -122,7 +100,20 @@
                         <span class="material-icons">explore</span>
                         <p>Digite o seu CEP para ver o mapa</p>
                     </div>
+                    <article id="cart-map-location-details" class="cart-map-location-details" aria-live="polite" hidden>
+                        <dl class="cart-map-location-data">
+                            <div>
+                                <dt>Latitude</dt>
+                                <dd id="cart-map-location-latitude"></dd>
+                            </div>
+                            <div>
+                                <dt>Longitude</dt>
+                                <dd id="cart-map-location-longitude"></dd>
+                            </div>
+                        </dl>
+                    </article>
                 </div>
+                <p id="cart-map-point" class="cart-map-point">Clique no mapa para marcar o ponto exato de entrega.</p>
             </div>
         </div>
 
