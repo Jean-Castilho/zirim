@@ -1,19 +1,12 @@
 import { ObjectId } from "mongodb";
 import sharp from 'sharp';
 import BaseRepository from "./BaseRepository.js";
-import { DataBase, getGridFSBucket } from "../config/db.js";
+
+import { DataBase } from "../config/db.js";
 
 export default class ProductRepository extends BaseRepository {
   constructor() {
     super("products");
-  }
-
-  get db() {
-    return DataBase();
-  }
-
-  get bucket() {
-    return getGridFSBucket();
   }
 
   #processVariationObject(variationSource) {
@@ -100,10 +93,10 @@ export default class ProductRepository extends BaseRepository {
     for (let i = 0; i < rawVariations.length; i++) {
       const variationBody = rawVariations[i];
       const filesForThisVariation = variationFilesMap.get(i) || [];
-      
+
       const uploadPromises = filesForThisVariation.map(file => this.#uploadFileWithRetry(file));
       const uploadedVariationImageNames = await Promise.all(uploadPromises);
-      
+
       processedVariations.push(this.#processVariationObject({
         ...variationBody,
         imagens: uploadedVariationImageNames,
@@ -130,7 +123,7 @@ export default class ProductRepository extends BaseRepository {
 
   async updateProductWithImages(id, body, files = []) {
     if (!ObjectId.isValid(id)) throw new Error("ID de produto invalido.");
-    
+
     const existingProduct = await super.findById(id);
     if (!existingProduct) throw new Error("Produto nao encontrado.");
 
@@ -161,7 +154,7 @@ export default class ProductRepository extends BaseRepository {
 
   async deleteProductAndImages(id) {
     if (!ObjectId.isValid(id)) throw new Error("ID de produto invalido.");
-    
+
     const product = await super.findById(id);
     if (!product) throw new Error("Produto nao encontrado.");
 
@@ -169,22 +162,23 @@ export default class ProductRepository extends BaseRepository {
     if (imageNames.length > 0) {
       const filesCollection = this.db.collection('fs.files');
       const filesToDelete = await filesCollection.find({ filename: { $in: imageNames } }).toArray();
-      
+
       const deletePromises = filesToDelete.map(file => this.bucket.delete(file._id));
       await Promise.all(deletePromises);
     }
 
     const isDeleted = await super.delete(id);
     if (!isDeleted) throw new Error("Nao foi possivel deletar o produto.");
-    
+
     return { success: true };
   }
 
   async getImageMetadata(filename) {
-    const filesCollection = this.db.collection('uploads.files');
+    const db = DataBase();
+    const filesCollection = db.collection('uploads.files');
     return await filesCollection.findOne({ filename });
   }
-
+  
   getImageStream(filename) {
     return this.bucket.openDownloadStreamByName(filename);
   }

@@ -1,4 +1,5 @@
 import { renderPage, NotFoundError } from "../utils/handleResponse.js";
+
 import ProductService from "../services/ProductService.js";
 import UserService from "../services/UserService.js";
 import DeliveryService from "../services/DeliveryService.js";
@@ -89,7 +90,6 @@ export const Register = (req, res) => {
   });
 };
 
-
 export const ResetPassword = async (req, res, next) => {
   try {
     const token = typeof req.query.token === "string" ? req.query.token : "";
@@ -113,7 +113,6 @@ export const ResetPassword = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const VerifyOtp = async (req, res, next) => {
   try {

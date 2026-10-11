@@ -1,5 +1,4 @@
 import { ObjectId } from "mongodb";
-import { DataBase } from "../config/db.js";
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import crypto from 'crypto';
 import { mapPaymentStatus, normalizePaymentStatus, resolveOrderStatus, isTerminalPaymentStatus } from '../services/paymentState.js';
@@ -29,14 +28,6 @@ export default class OrderRepository extends BaseRepository {
   
     constructor() {
         super("orders");
-    }
-
-    get db() {
-        return DataBase();
-    }
-
-    getCollection() {
-        return this.db.collection("orders");
     }
 
     async gerarPix(valor, userData) {
@@ -100,7 +91,7 @@ export default class OrderRepository extends BaseRepository {
         }
         try {
             const paymentId = String(id);
-            await this.getCollection().updateOne(
+            await this.collection.updateOne(
                 {
                     $or: [
                         { "payment.id": id },
@@ -154,12 +145,11 @@ export default class OrderRepository extends BaseRepository {
                 { "payment.id": Number(paymentId) }
             ]
         };
-        const collection = this.getCollection();
         let updatedOrder = null;
 
         try {
             for (let attempt = 0; attempt < 5; attempt++) {
-                const order = await collection.findOne(paymentQuery);
+                const order = await this.collection.findOne(paymentQuery);
                 if (!order) return null;
 
                 const incomingUpdatedAt = Date.parse(paymentInfo.date_last_updated || '');
@@ -208,9 +198,9 @@ export default class OrderRepository extends BaseRepository {
                 const currentVersion = order.stateVersion;
                 const filter = { _id: order._id };
                 filter.stateVersion = currentVersion === undefined ? { $exists: false } : currentVersion;
-                const result = await collection.updateOne(filter, update);
+                const result = await this.collection.updateOne(filter, update);
                 if (result.modifiedCount > 0) {
-                    updatedOrder = await collection.findOne({ _id: order._id });
+                    updatedOrder = await this.collection.findOne({ _id: order._id });
                     break;
                 }
             }
@@ -231,8 +221,7 @@ export default class OrderRepository extends BaseRepository {
     }
 
     async executarBaixaEstoque(order) {
-        const ordersCollection = this.getCollection();
-        const reservation = await ordersCollection.updateOne(
+        const reservation = await this.collection.updateOne(
             {
                 _id: order._id,
                 inventoryProcessed: { $ne: true },
@@ -243,7 +232,6 @@ export default class OrderRepository extends BaseRepository {
         );
         if (reservation.modifiedCount === 0) return;
 
-        const productsCollection = this.db.collection("products");
         const bulkOps = order.items.map(item => {
             const elemMatch = {
                 estoque: { $gte: Number(item.quantidade || 0) }
@@ -278,7 +266,7 @@ export default class OrderRepository extends BaseRepository {
         const appliedOps = [];
         try {
             for (const operation of bulkOps) {
-                const result = await productsCollection.updateOne(
+                const result = await this.collection.updateOne(
                     operation.updateOne.filter,
                     operation.updateOne.update
                 );
@@ -386,7 +374,7 @@ export default class OrderRepository extends BaseRepository {
             query["user._id"] = { $in: userIdVariants };
         }
 
-        const orders = await this.getCollection().find(query).sort({ createdAt: 1 }).limit(25).toArray();
+        const orders = await this.collection.find(query).sort({ createdAt: 1 }).limit(25).toArray();
         let synchronized = 0;
         for (const order of orders) {
             const result = await this.consultarPix(order.payment.id);
@@ -417,7 +405,7 @@ export default class OrderRepository extends BaseRepository {
             setFields["paymentSync.providerUpdatedAt"] = paymentResult.date_last_updated;
         }
 
-        return await this.getCollection().updateOne(
+        return await this.collection.updateOne(
             filter,
             {
                 $set: setFields
@@ -466,7 +454,7 @@ export default class OrderRepository extends BaseRepository {
     }
 
     async findUserOrders(userId) {
-        return await this.getCollection().find({
+        return await this.collection.find({
             $or: [
                 { "user._id": userId },
                 { "user._id": String(userId) },
@@ -476,7 +464,7 @@ export default class OrderRepository extends BaseRepository {
     }
 
     async cancelExpiredOrder(orderId) {
-        return await this.getCollection().updateOne(
+        return await this.collection.updateOne(
             { _id: new ObjectId(orderId) },
             {
                 $set: {
@@ -496,7 +484,7 @@ export default class OrderRepository extends BaseRepository {
         const dateThreshold = new Date();
         dateThreshold.setDate(dateThreshold.getDate() - days);
 
-        const salesStats = await this.getCollection().aggregate([
+        const salesStats = await this.collection.aggregate([
             {
                 $match: {
                     "payment.status": 'approved',
@@ -515,17 +503,17 @@ export default class OrderRepository extends BaseRepository {
     }
 
     async countByStatus(statusInterno) {
-        return await this.getCollection().countDocuments({ statusInterno });
+        return await this.collection.countDocuments({ statusInterno });
     }
 
     async getPaidOrders() {
-        return await this.getCollection().find({ 
+        return await this.collection.find({ 
             statusInterno: { $in: ['pago', 'preparado', 'em_rota'] } 
         }).sort({ createdAt: -1 }).toArray();
     }
 
     async getLogisticsDashboardData() {
-        const allOrders = await this.getCollection().find({}).sort({ createdAt: -1 }).toArray();
+        const allOrders = await this.collection.find({}).sort({ createdAt: -1 }).toArray();
         const stats = {
             total: allOrders.length,
             pendente: 0,
@@ -570,7 +558,7 @@ export default class OrderRepository extends BaseRepository {
             return { error: "ID de pedido inválido." };
         }
 
-        const order = await this.getCollection().findOne({ _id: new ObjectId(orderId) });
+        const order = await this.collection.findOne({ _id: new ObjectId(orderId) });
         if (!order) {
             return { error: "Pedido não encontrado." };
         }
@@ -581,7 +569,7 @@ export default class OrderRepository extends BaseRepository {
 
         const confirmationCode = order.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
 
-        await this.getCollection().updateOne(
+        await this.collection.updateOne(
             { _id: new ObjectId(orderId) },
             {
                 $set: {
@@ -606,14 +594,14 @@ export default class OrderRepository extends BaseRepository {
             ? [courierId, String(courierId), new ObjectId(courierId)]
             : [courierId, String(courierId)];
 
-        return await this.getCollection().find({
+        return await this.collection.find({
             "delivery.courierId": { $in: idVariants },
             statusInterno: { $in: ["pago", "em_transporte", "em_rota"] }
         }).sort({ updatedAt: -1, createdAt: -1 }).toArray();
     }
 
     async getAvailableDeliveries() {
-        return await this.getCollection().find({
+        return await this.collection.find({
             statusInterno: "preparado",
             $or: [
                 { "delivery.courierId": { $exists: false } },
@@ -633,11 +621,11 @@ export default class OrderRepository extends BaseRepository {
         }
 
         const courierId = courierUser._id;
-        const currentOrder = await this.getCollection().findOne({ _id: new ObjectId(orderId) });
+        const currentOrder = await this.collection.findOne({ _id: new ObjectId(orderId) });
         const confirmationCode = currentOrder?.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
 
         // Operação atômica: garante que o pedido está "preparado" e sem entregador associado
-        const updateResult = await this.getCollection().findOneAndUpdate(
+        const updateResult = await this.collection.findOneAndUpdate(
             {
                 _id: new ObjectId(orderId),
                 statusInterno: "preparado",
@@ -682,7 +670,7 @@ export default class OrderRepository extends BaseRepository {
             ? [courierId, String(courierId), new ObjectId(courierId)]
             : [courierId, String(courierId)];
 
-        const order = await this.getCollection().findOne({
+        const order = await this.collection.findOne({
             _id: new ObjectId(orderId),
             "delivery.courierId": { $in: idVariants }
         });
@@ -716,14 +704,14 @@ export default class OrderRepository extends BaseRepository {
 
         if (!isValid) {
             const nextAttempts = attempts + 1;
-            await this.getCollection().updateOne(
+            await this.collection.updateOne(
                 { _id: order._id },
                 { $inc: { "delivery.attempts": 1 } }
             );
             return { error: `Código incorreto. Tentativa ${nextAttempts} de 5.` };
         }
 
-        await this.getCollection().updateOne(
+        await this.collection.updateOne(
             { _id: order._id },
             {
                 $set: { statusInterno: "entregue", "delivery.deliveredAt": new Date(), updatedAt: new Date() },

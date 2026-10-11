@@ -75,7 +75,7 @@ export default class DeliveryService {
     // Preserva o código PIN se já existir, ou gera novo de 4 dígitos
     const confirmationCode = order.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
 
-    await this.repository.getCollection().updateOne(
+    await this.repository.collection().updateOne(
       { _id: new ObjectId(orderId) },
       {
         $set: {
@@ -125,7 +125,7 @@ export default class DeliveryService {
     const courierPhone = (typeof courierUser.phone === "object" ? courierUser.phone?.number : courierUser.phone) || "";
 
     // Operação atômica que previne race-condition caso 2 entregadores cliquem ao mesmo tempo
-    const updateResult = await this.repository.getCollection().findOneAndUpdate(
+    const updateResult = await this.repository.collection().findOneAndUpdate(
       {
         _id: new ObjectId(orderId),
         statusInterno: "preparado",
@@ -178,7 +178,7 @@ export default class DeliveryService {
       ? [courierId, String(courierId), new ObjectId(courierId)]
       : [courierId, String(courierId)];
 
-    const order = await this.repository.getCollection().findOne({
+    const order = await this.repository.collection().findOne({
       _id: new ObjectId(orderId),
       "delivery.courierId": { $in: idVariants }
     });
@@ -211,14 +211,14 @@ export default class DeliveryService {
 
     if (!isValid) {
       const nextAttempts = attempts + 1;
-      await this.repository.getCollection().updateOne(
+      await this.repository.collection().updateOne(
         { _id: order._id },
         { $inc: { "delivery.attempts": 1 } }
       );
       throw new ValidationError(`Código incorreto. Tentativa ${nextAttempts} de 5.`);
     }
 
-    await this.repository.getCollection().updateOne(
+    await this.repository.collection().updateOne(
       { _id: order._id },
       {
         $set: {

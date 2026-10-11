@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { DataBase } from "../config/db.js";
+import { DataBase, getGridFSBucket } from "../config/db.js";
 
 export default class BaseRepository {
   constructor(collectionName) {
@@ -13,6 +13,10 @@ export default class BaseRepository {
   get collection() {
     const db = DataBase();
     return db.collection(this.collectionName);
+  }
+  
+  get bucket() {
+    return getGridFSBucket();
   }
 
   async findById(id, projection = {}) {

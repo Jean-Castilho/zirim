@@ -41,7 +41,7 @@ export default class ProductController {
       }
     }
   }
-  
+
   async getImage(req, res) {
     return this.streamImage(req, res);
   }
@@ -54,7 +54,7 @@ export default class ProductController {
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       throw new ValidationError("Array de IDs é requerido para a projeção.");
     }
-    return await this.repository.findByIds(ids, projection);
+    return await this.repository.findById(ids, projection);
   }
 
   async uploadProductAndImage(req) {
