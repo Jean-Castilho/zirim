@@ -47,11 +47,14 @@ export const Products = async (req, res, next) => {
 export const ProductDetails = async (req, res, next) => {
   try {
     const { id } = req.params;
+    
     if (!id || id === 'null' || id === 'undefined') {
       return next(new NotFoundError("ID do produto inválido ou não fornecido."));
     }
 
     const product = await productService.getProductById(id, { projection: { _id: 1 } });
+    console.log(product)
+
     if (!product) {
       return next(new NotFoundError("O produto que você está procurando não existe ou foi removido."));
     }
@@ -349,8 +352,7 @@ export const EditProduct = async (req, res, next) => {
   }
 };
 
-export const EditPageHome = async (req, res, next) => {
-  try {
+export const EditPageHome = async (req, res, next) => {  try {
     const homePageData = await bannerControllers.getBannerPageEditHome();
 
     renderPage(req, res, "../pages/admin/edit-home", {

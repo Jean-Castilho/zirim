@@ -61,6 +61,7 @@
   .profile-avatar-container {
     display: flex;
     justify-content: center;
+    padding: 0rem 0rem 2rem;
     margin-bottom: var(--espacamento-grande);
   }
 
@@ -85,7 +86,7 @@
     flex-direction: column;
   }
 
-  .info-group label {
+  .info-group strong {
     color: var(--cor-texto-suave);
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -359,10 +360,6 @@
 
 <section class="profile-page">
   <div class="profile-container">
-    <h1 class="profile-title">
-      <%= titulo %>
-    </h1>
-
     <div class="profile-content">
       <div class="user-info-card">
         <div class="profile-avatar-container">
@@ -371,15 +368,15 @@
           </div>
         </div>
 
-        <h2>Informações do Usuário</h2>
         <div class="info-group">
-          <label>Nome:</label>
+          
+          <strong>Nome:</strong>
           <p>
             <%= user?.name || 'Não informado' %>
           </p>
         </div>
         <div class="info-group">
-          <label>Email:</label>
+          <strong>Email:</strong>
           <p>
             <%= user?.email?.endereco || 'Não informado' %>
             <% if (user?.email?.endereco) { %>
@@ -392,7 +389,7 @@
           </p>
         </div>
         <div class="info-group">
-          <label>Telefone:</label>
+          <strong>Telefone:</strong>
           <p>
             <%= user?.phone?.number || 'Não informado' %>
             <% if (user?.phone?.number) { %>
@@ -405,7 +402,7 @@
           </p>
         </div>
         <div class="info-group">
-          <label>Cargo:</label>
+          <strong>Cargo:</strong>
           <p>
             <%= user?.role ==='admin' ? 'Administrador' : ((user?.role === 'entregador' || user?.role === 'delivery') ? 'Entregador' : 'Usuário') %>
           </p>

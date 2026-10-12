@@ -14,8 +14,6 @@ const orderRepository = new OrderRepository();
 const port = process.env.PORT || 3090;
 const isProd = process.env.NODE_ENV === 'production';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-let expirationSyncTimer;
-let expirationSyncPromise;
 let httpServer;
 let isShuttingDown = false;
 
@@ -68,9 +66,6 @@ const start = async () => {
         await connectDataBase();
         httpServer = app.listen(port, () => {
             console.log(`Servidor rodando na porta: http://localhost:${port}`);
-            expirationSyncTimer = setInterval(synchronizeExpiredOrders, 60 * 1000);
-            expirationSyncTimer.unref();
-            void synchronizeExpiredOrders();
         });
     } catch (error) {
         console.error("Falha ao iniciar a aplicação.", error);
@@ -78,26 +73,11 @@ const start = async () => {
     }
 };
 
-const synchronizeExpiredOrders = () => {
-    if (isShuttingDown || expirationSyncPromise) return expirationSyncPromise;
-
-    expirationSyncPromise = orderRepository.syncExpiredPendingOrders()
-        .catch((error) => {
-            console.error('Falha ao sincronizar pagamentos vencidos:', error);
-        })
-        .finally(() => {
-            expirationSyncPromise = null;
-        });
-
-    return expirationSyncPromise;
-};
 
 const shutdown = async (signal) => {
     if (isShuttingDown) return;
     isShuttingDown = true;
     console.log(`Encerrando aplicação (${signal}). Fechando conexões...`);
-
-    if (expirationSyncTimer) clearInterval(expirationSyncTimer);
 
     try {
         if (httpServer?.listening) {
@@ -106,7 +86,6 @@ const shutdown = async (signal) => {
             });
         }
 
-        if (expirationSyncPromise) await expirationSyncPromise;
         await closeDataBase();
     } catch (error) {
         console.error('Erro ao encerrar a aplicação:', error);

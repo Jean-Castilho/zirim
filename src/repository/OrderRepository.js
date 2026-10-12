@@ -221,6 +221,7 @@ export default class OrderRepository extends BaseRepository {
     }
 
     async executarBaixaEstoque(order) {
+        // 1. Trava atômica utilizando `this.collection` (herdada de BaseRepository para a collection "orders")
         const reservation = await this.collection.updateOne(
             {
                 _id: order._id,
@@ -228,83 +229,89 @@ export default class OrderRepository extends BaseRepository {
                 inventoryProcessing: { $ne: true },
                 inventoryProcessingFailed: { $ne: true }
             },
-            { $set: { inventoryProcessing: true, inventoryProcessingAt: new Date() } }
+            { 
+                $set: {                      inventoryProcessing: true,                      inventoryProcessingAt: new Date(),                     updatedAt: new Date()                 },$inc: { stateVersion: 1 }
+            }
         );
+
         if (reservation.modifiedCount === 0) return;
 
-        const bulkOps = order.items.map(item => {
-            const elemMatch = {
-                estoque: { $gte: Number(item.quantidade || 0) }
-            };
+        const appliedOps = [];
+        const db = DataBase();
+        const productsCollection = db.collection("products"); // Acesso correto à collection de produtos
 
-            if (item.sku) {
-                elemMatch.sku = item.sku;
-            } else {
-                if (item.cor) {
-                    elemMatch.cores = { $in: [item.cor] };
-                }
-                if (item.tamanho) {
-                    elemMatch.tamanhos = { $in: [item.tamanho] };
-                }
-            }
+        try {
+            // 2. Loop de baixa atômica por item do pedido
+            for (const item of order.items) {
+                const quantityToSubtract = Number(item.quantidade || 0);
+                if (quantityToSubtract <= 0) continue;
 
-            return {
-                updateOne: {
-                    filter: {
+                const elemMatchFilter = {
+                    estoque: { $gte: quantityToSubtract }
+                };
+
+                if (item.sku) {
+                    elemMatchFilter.sku = item.sku;
+                } else {
+                    if (item.cor) elemMatchFilter.cores = { $in: [item.cor] };
+                    if (item.tamanho) elemMatchFilter.tamanhos = { $in: [String(item.tamanho)] };
+                }
+
+                // Atualização atômica estrita na collection de produtos
+                const updateResult = await productsCollection.updateOne(
+                    {
                         _id: new ObjectId(item.id),
-                        "variacoes": {
-                            $elemMatch: elemMatch
+                        variacoes: {
+                            $elemMatch: elemMatchFilter
                         }
                     },
-                    update: {
-                        $inc: { "variacoes.$.estoque": -Number(item.quantidade || 0) }
+                    {
+                        $inc: { "variacoes.$.estoque": -quantityToSubtract }
                     }
-                }
-            };
-        });
-
-        const appliedOps = [];
-        try {
-            for (const operation of bulkOps) {
-                const result = await this.collection.updateOne(
-                    operation.updateOne.filter,
-                    operation.updateOne.update
                 );
-                if (result.matchedCount !== 1) {
-                    throw new Error(`Estoque insuficiente ou variação indisponível no pedido ${order._id}.`);
+
+                if (updateResult.modifiedCount !== 1) {
+                    throw new Error(`Estoque insuficiente ou variação indisponível para o produto ID ${item.id}.`);
                 }
-                appliedOps.push(operation);
+
+                appliedOps.push({
+                    productId: item.id,
+                    filter: elemMatchFilter,
+                    quantity: quantityToSubtract
+                });
             }
 
-            await ordersCollection.updateOne(
+            // 3. Confirmação do processamento usando `this.collection`
+            await this.collection.updateOne(
                 { _id: order._id, inventoryProcessing: true },
                 {
-                    $set: {
-                        inventoryProcessed: true,
-                        inventoryProcessedAt: new Date()
-                    },
-                    $unset: { inventoryProcessing: "", inventoryProcessingAt: "", inventoryProcessingFailed: "", inventoryProcessingError: "" }
+                    $set: {                         inventoryProcessed: true,                         inventoryProcessedAt: new Date(),                         updatedAt: new Date()                     },$unset: { 
+                        inventoryProcessing: "", 
+                        inventoryProcessingAt: "", 
+                        inventoryProcessingFailed: "", 
+                        inventoryProcessingError: "" 
+                    }
                 }
             );
-        } catch (error) {
-            const rollbackErrors = [];
-            for (const operation of appliedOps.reverse()) {
-                const rollbackFilter = {
-                    ...operation.updateOne.filter,
-                    variacoes: {
-                        $elemMatch: { ...operation.updateOne.filter.variacoes.$elemMatch }
-                    }
-                };
-                delete rollbackFilter.variacoes.$elemMatch.estoque;
 
+        } catch (error) {
+            console.error(`[BaixaEstoque] Falha ao processar estoque para o pedido ${order._id}:`, error.message);
+
+            // 4. Rollback (compensação) dos itens debitados em caso de falha parcial
+            const rollbackErrors = [];
+            for (const op of appliedOps.reverse()) {
                 try {
-                    const quantity = Math.abs(operation.updateOne.update.$inc["variacoes.$.estoque"]);
                     const rollbackResult = await productsCollection.updateOne(
-                        rollbackFilter,
-                        { $inc: { "variacoes.$.estoque": quantity } }
+                        {
+                            _id: new ObjectId(op.productId),
+                            variacoes: { $elemMatch: { ...op.filter } }
+                        },
+                        {
+                            $inc: { "variacoes.$.estoque": op.quantity }
+                        }
                     );
-                    if (rollbackResult.matchedCount !== 1) {
-                        throw new Error("A variação não foi encontrada durante a compensação.");
+                    if (rollbackResult.modifiedCount !== 1) {
+                        console.warn(`[Rollback] Falha ao reverter estoque do produto ${op.productId}`);
                     }
                 } catch (rollbackError) {
                     rollbackErrors.push(rollbackError.message);
@@ -312,19 +319,24 @@ export default class OrderRepository extends BaseRepository {
             }
 
             const failureMessage = rollbackErrors.length > 0
-                ? `${error.message} Falha ao reverter parte do estoque: ${rollbackErrors.join('; ')}`
+                ? `${error.message} | Erros no rollback: ${rollbackErrors.join('; ')}`
                 : error.message;
-            await ordersCollection.updateOne(
+
+            // 5. Atualização do status de erro utilizando `this.collection`
+            await this.collection.updateOne(
                 { _id: order._id, inventoryProcessing: true },
                 {
                     $set: {
                         inventoryProcessingFailed: true,
                         inventoryProcessingError: failureMessage,
-                        inventoryProcessingFailedAt: new Date()
+                        inventoryProcessingFailedAt: new Date(),
+                        statusInterno: "erro_estoque",
+                        updatedAt: new Date()
                     },
                     $unset: { inventoryProcessing: "", inventoryProcessingAt: "" }
                 }
             );
+
             throw error;
         }
     }
