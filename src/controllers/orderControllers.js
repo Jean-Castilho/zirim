@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import OrderRepository from "../repository/OrderRepository.js";
-import { processCreateOrder } from "../services/orderService.js";
+import { processCreateOrder } from "../services/OrderService.js";
 import { UnauthorizedError, ValidationError } from "../utils/handleResponse.js";
 
 export default class OrderController {
