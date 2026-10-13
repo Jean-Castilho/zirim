@@ -1,87 +1,49 @@
 import express from "express";
-import { 
-  generateCsrfToken, 
-  requireAuth, 
-  requireAdmin, 
-  requireCourier 
-} from "../middleware/authMiddleware.js";
+import { generateCsrfToken, requireAuth, requireAdmin, requireCourier } from "../middleware/authMiddleware.js";
 
-import {
-  Home,
-  Products,
-  ProductDetails, 
-  Register, 
-  Login, 
-  ResetPassword,
-  Contact,
-  Favorites, 
-  Cart,
-  VerifyOtp,
-  VerifyContact,
-  Profile,
-  Users,
-  Dashboard,
-  Delivery,
-  Logistica,
-  Inventory,
-  AddProduct,
-  EditProduct,
-  Checkout,
-  EditPageHome
-} from "../controllers/pagesControllers.js";
+import PublicPagesController from "../controllers/PublicPagesController.js";
+import AuthPagesController from "../controllers/AuthPagesController.js";
+import AdminPagesController from "../controllers/AdminPagesController.js";
+import AuthController from "../controllers/AuthController.js";
+import ProductController from "../controllers/ProductController.js";
 
-import ProductController from "../controllers/productControllers.js";
-
+const publicPages = new PublicPagesController();
+const authPages = new AuthPagesController();
+const adminPages = new AdminPagesController();
+const authController = new AuthController();
 const productController = new ProductController();
 
 const router = express.Router();
 
-router.get('/image/:filename', (req, res) => productController.getImage(req, res));
-router.get("/", Home);
+// Mídia
+router.get("/image/:filename", productController.handle("image"));
 
+// Loja
+router.get("/", publicPages.handle("home"));
+router.get("/products", publicPages.handle("productList"));
+router.get("/product/:id", publicPages.handle("productDetails"));
+router.get("/contact", publicPages.handle("contact"));
+router.get("/favorites", publicPages.handle("favorites"));
+router.get("/cart", generateCsrfToken, publicPages.handle("cart"));
+router.get("/checkout/:id", publicPages.handle("checkout"));
 
-router.get("/products", Products);
-router.get("/product/:id", ProductDetails);
+// Conta
+router.get("/register", generateCsrfToken, authPages.handle("register"));
+router.get("/login", generateCsrfToken, authPages.handle("login"));
+router.get("/reset-password", generateCsrfToken, authPages.handle("resetPassword"));
+router.get("/verify-otp", generateCsrfToken, authPages.handle("verifyOtp"));
+router.get("/verify-contact", requireAuth, generateCsrfToken, authPages.handle("verifyContact"));
+router.get("/profile", requireAuth, generateCsrfToken, authPages.handle("profile"));
+router.get("/logout", authController.handle("logout"));
 
-router.get("/contact", Contact);
-
-router.get("/register", generateCsrfToken, Register); 
-router.get("/login", generateCsrfToken, Login); // verificar otp e-mail
-router.get("/reset-password", generateCsrfToken, ResetPassword);
-
-router.get("/verify-otp", generateCsrfToken, VerifyOtp);
-router.get("/verify-contact", requireAuth, generateCsrfToken, VerifyContact);
-
-router.get("/favorites", Favorites);
-router.get("/cart", generateCsrfToken, Cart);
-router.get("/checkout/:id", Checkout);
-
-router.get("/profile", requireAuth, generateCsrfToken, Profile);
-router.get("/dashboard", requireAdmin, Dashboard);
-router.get("/edit/home", requireAdmin, generateCsrfToken, EditPageHome);
-
-router.get("/users", requireAdmin, generateCsrfToken, Users);
-
-router.get("/delivery", requireCourier, generateCsrfToken, Delivery);
-router.get("/logistica", requireAdmin, generateCsrfToken, Logistica);
-
-router.get("/inventory", requireAdmin, generateCsrfToken, Inventory);
-router.get("/inventory/add", requireAdmin, generateCsrfToken, AddProduct);
-router.get("/inventory/edit/:id", requireAdmin, generateCsrfToken, EditProduct);
-
-router.get("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Erro ao destruir a sessão:", err);
-      return res.status(500).redirect('/');
-    }
-    res.clearCookie('connect.sid');
-    res.clearCookie('token');
-    if (req.headers['hx-request'] === 'true') {
-      return res.set('HX-Redirect', '/').status(200).send();
-    }
-    res.redirect('/');
-  });
-});
+// Administração e operação
+router.get("/dashboard", requireAdmin, adminPages.handle("dashboardPage"));
+router.get("/edit/home", requireAdmin, generateCsrfToken, adminPages.handle("editHome"));
+router.get("/users", requireAdmin, generateCsrfToken, adminPages.handle("usersPage"));
+router.get("/delivery", requireCourier, generateCsrfToken, adminPages.handle("deliveryMap"));
+router.get("/logistica", requireAdmin, generateCsrfToken, adminPages.handle("logistics"));
+router.get("/inventory", requireAdmin, generateCsrfToken, adminPages.handle("inventory"));
+router.get("/inventory/add", requireAdmin, generateCsrfToken, adminPages.handle("addProduct"));
+router.get("/inventory/edit/:id", requireAdmin, generateCsrfToken, adminPages.handle("editProduct"));
 
 export default router;

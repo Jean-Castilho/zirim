@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="/css/pages/cart.css">
 <section class="cart-page" aria-labelledby="cart-page-title" data-csrf-token="<%= csrfToken %>">
     <header class="cart-page-header">
         <div class="cart-page-title">
@@ -48,11 +49,11 @@
                         <span>Calcular</span>
                     </button>
                 </div>
-                <div id="cart-cep-loading" class="cart-cep-loading" style="display: none;">
+                <div id="cart-cep-loading" class="cart-cep-loading u-display-none">
                     <span class="material-icons rotating">sync</span>
                     <span>Buscando CEP e calculando rotas...</span>
                 </div>
-                <div id="cart-cep-error" class="cart-cep-error" style="display: none;"></div>
+                <div id="cart-cep-error" class="cart-cep-error u-display-none"></div>
             </div>
 
             <% if (!user) { %>
@@ -76,7 +77,7 @@
                 </div>
             <% } %>
 
-            <div id="cart-cep-result" class="cart-cep-result" style="display: none;">
+            <div id="cart-cep-result" class="cart-cep-result u-display-none">
                 <div class="cep-address-info">
                     <span class="material-icons">place</span>
                     <div class="cep-address-text">
@@ -89,8 +90,8 @@
 
             <div class="cart-maps"> 
                 <div class="cart-map-title">
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        <span class="material-icons" style="font-size: 1.1rem; color: var(--cor-secundaria);">pin_drop</span>
+                    <div class="u-display-flex-align-items-center-gap-4px">
+                        <span class="material-icons u-font-size-1-1rem-color-var-cor-secundaria">pin_drop</span>
                         <span>Mini-Mapa</span>
                     </div>
                     <span id="map-status-badge" class="map-status-badge">Aguardando CEP</span>

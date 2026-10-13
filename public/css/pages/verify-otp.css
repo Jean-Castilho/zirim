@@ -1,0 +1,119 @@
+/* Estilos da página auth/verify-otp.ejs (migrados do <style> inline da View) */
+  .verify-otp-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 78vh;
+    background-color: var(--cor-fundo-site);
+    padding: var(--espacamento-grande);
+  }
+
+  .verify-otp-container {
+    background-color: #fff;
+    padding: 3rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: var(--sombra-suave);
+    width: 100%;
+    max-width: 430px;
+    text-align: center;
+  }
+
+  .verify-otp-title {
+    color: var(--cor-primaria);
+    margin-bottom: 0.5rem;
+    font-size: 1.8rem;
+    font-family: var(--fonte-titulo);
+  }
+
+  .verify-otp-message {
+    color: var(--cor-texto-medio);
+    margin-bottom: var(--espacamento-grande);
+  }
+
+  .verify-otp-form .form-group {
+    margin-bottom: var(--espacamento-medio);
+    text-align: left;
+  }
+
+  .verify-otp-form label {
+    display: block;
+    margin-bottom: var(--espacamento-xs);
+    font-size: 0.9rem;
+    color: var(--cor-texto-escuro);
+    font-weight: bold;
+  }
+
+  .verify-otp-form input[type="email"],
+  .verify-otp-form input[type="text"] {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-padrao);
+    box-sizing: border-box;
+    background-color: #fafafa;
+    font-size: 1rem;
+    transition: var(--transicao-rapida);
+  }
+
+  .verify-otp-form input[readonly] {
+    background-color: var(--cor-fundo-neutro);
+    color: var(--cor-texto-suave);
+    cursor: not-allowed;
+    border-color: var(--cor-borda-forte);
+  }
+
+  #otp {
+    text-align: center;
+    font-size: 1.5rem;
+    letter-spacing: 0.5rem;
+    font-weight: bold;
+    color: var(--cor-primaria);
+    text-transform: uppercase;
+  }
+
+  .verify-otp-form input:focus {
+    border-color: var(--cor-secundaria);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(225, 7, 50, 0.1);
+  }
+
+  .btn-primary {
+    background-color: var(--cor-secundaria);
+    color: var(--cor-texto-claro);
+    padding: 1rem var(--espacamento-md);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(110%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  }
+
+  .resend-otp-prompt {
+    margin-top: var(--espacamento-grande);
+    color: var(--cor-texto-medio);
+  }
+
+  .resend-otp-link {
+    color: var(--cor-secundaria);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transicao-rapida);
+  }
+
+  .resend-otp-link:hover {
+    text-decoration: underline;
+  }

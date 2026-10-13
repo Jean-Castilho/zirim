@@ -1,6 +1,6 @@
 import { GridFSBucket } from "mongodb";
 import sharp from "sharp";
-import { DataBase, getGridFSBucket } from "../config/db.js";
+import { getGridFSBucket } from "../config/db.js";
 import BaseRepository from "./BaseRepository.js";
 
 export default class BannerRepository extends BaseRepository {
@@ -12,7 +12,7 @@ export default class BannerRepository extends BaseRepository {
         try {
             return getGridFSBucket();
         } catch {
-            return new GridFSBucket(DataBase(), { bucketName: "uploads" });
+            return new GridFSBucket(this.db, { bucketName: "uploads" });
         }
     }
 
@@ -83,8 +83,7 @@ export default class BannerRepository extends BaseRepository {
     async deleteImageFromGridFS(filename) {
         if (!filename) return;
         try {
-            const db = DataBase();
-            const file = await db.collection("uploads.files").findOne(
+            const file = await this.db.collection("uploads.files").findOne(
                 { filename },
                 { projection: { _id: 1 } }
             );

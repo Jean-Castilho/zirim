@@ -1,0 +1,140 @@
+/* Estilos da página auth/register.ejs (migrados do <style> inline da View) */
+  /* Ajustes para o intl-tel-input */
+  .iti { width: 100%; margin-bottom: 0.5rem; }
+  .iti__country-list { text-align: left; }
+  
+  /* Remove o ícone original apenas do campo de telefone para evitar sobreposição com a bandeira */
+  .form-group:has(#phone) .input-with-icon i {
+    display: none;
+  }
+
+  .register-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+    min-height: 78vh;
+    background-color: var(--cor-fundo-site);
+    padding: var(--espacamento-grande);
+  }
+
+  .register-container {
+    background-color: #fff;
+    padding:  1.5rem 2rem 2rem;
+    border-radius: 16px;
+    box-shadow: var(--sombra-suave);
+    width: 100%;
+    max-width: 430px;
+    text-align: center;
+  }
+
+  .register-title {
+    color: var(--cor-primaria);
+    margin-bottom: 0.8rem;
+    font-size: 1.8rem;
+    font-family: var(--fonte-titulo);
+  }
+
+  .register-message {
+    color: var(--cor-texto-medio);
+    margin-bottom: var(--espacamento-grande);
+  }
+
+  .register-form .form-group {
+    margin-bottom: 1.2rem;
+    text-align: left;
+    position: relative;
+  }
+
+  .register-form label {
+    display: block;
+    margin-bottom: var(--espacamento-xs);
+    color: var(--cor-texto-escuro);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-with-icon i {
+    position: absolute;
+    left: 12px;
+    color: #999;
+    font-size: 20px;
+  }
+
+  .register-form input[type="text"],
+  .register-form input[type="email"],
+  .register-form input[type="password"] {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 1rem;
+    transition: var(--transicao-suave);
+    background-color: #fafafa;
+  }
+
+  .register-form input[type="text"]:focus,
+  .register-form input[type="email"]:focus,
+  .register-form input[type="password"]:focus {
+    border-color: var(--cor-primaria);
+    outline: none;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(var(--cor-primaria-rgb, 0, 0, 0), 0.1);
+  }
+
+  .register-form input:focus + i {
+    color: var(--cor-primaria);
+  }
+
+  .btn-primary {
+    background-color: var(--cor-secundaria);
+    color: var(--cor-texto-claro);
+    padding: 1rem var(--espacamento-md);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(110%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .login-link {
+    color: var(--cor-primaria);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .login-link:hover {
+    text-decoration: underline;
+    color: var(--cor-secundaria);
+  }
+
+  .login-prompt {
+    margin-top: var(--espacamento-grande);
+    color: var(--cor-texto-medio);
+  }

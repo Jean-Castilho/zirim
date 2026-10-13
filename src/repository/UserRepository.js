@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import BaseRepository from "./BaseRepository.js";
+import { ValidationError } from "../utils/errors.js";
 
 export default class UserRepository extends BaseRepository {
   constructor() {
@@ -95,7 +96,7 @@ export default class UserRepository extends BaseRepository {
     updateFields.updatedAt = new Date();
 
     if (Object.keys(updateFields).length === 0) {
-      throw new Error("Nenhum dado para atualizar foi fornecido.");
+      throw new ValidationError("Nenhum dado para atualizar foi fornecido.");
     }
 
     return await this.update(id, updateFields);

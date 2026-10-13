@@ -1,75 +1,22 @@
 import { randomInt } from "crypto";
-import { DataBase } from "../config/db.js";
+import OtpRepository from "../repository/OtpRepository.js";
 
 const OTP_LIFETIME_MINUTES = 15;
+const otpRepository = new OtpRepository();
 
-const getOtpCollection = () => {
-  const db = DataBase();
-  return db.collection("otps");
-};
-
-/**
- * Gera um código OTP numérico de 6 dígitos seguro.
- * @returns {string} O código OTP gerado.
- */
-export const generateOtpCode = () => {
-  return randomInt(100000, 1000000).toString();
-};
+/** Gera um código OTP numérico de 6 dígitos seguro. */
+export const generateOtpCode = () => randomInt(100000, 1000000).toString();
 
 /**
- * Armazena um código OTP no banco de dados com um tempo de expiração.
- * Substitui qualquer OTP existente para o mesmo identificador (email/telefone).
- * @param {string} identifier - O identificador do usuário (e.g., 'user@example.com').
- * @param {string} otp - O código OTP a ser armazenado.
+ * Armazena um OTP com expiração, substituindo qualquer OTP anterior do identificador.
  */
 export const storeOtpCode = async (identifier, otp) => {
-  const collection = getOtpCollection();
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + OTP_LIFETIME_MINUTES * 60 * 1000);
-
-  await collection.updateOne(
-    { identifier: identifier.toLowerCase() },
-    {
-      $set: {
-        otp,
-        createdAt: now,
-        expiresAt,
-      },
-    },
-    { upsert: true }
-  );
+  const expiresAt = new Date(Date.now() + OTP_LIFETIME_MINUTES * 60 * 1000);
+  await otpRepository.upsertCode(identifier, otp, expiresAt);
 };
 
 /**
- * Verifica se um código OTP é válido e, em caso afirmativo, o invalida para uso futuro.
- * @param {string} identifier - O identificador do usuário (e.g., 'user@example.com').
- * @param {string} otp - O código OTP fornecido pelo usuário.
- * @returns {Promise<object|null>} Retorna o documento OTP se for válido, caso contrário, null.
+ * Verifica o OTP e, se válido, o invalida. Retorna o documento ou null.
  */
-export const verifyOtpCode = async (identifier, otp) => {
-  const collection = getOtpCollection();
-  const normalizedIdentifier = identifier.toLowerCase();
-
-  const otpEntry = await collection.findOne({
-    identifier: normalizedIdentifier,
-    otp: otp,
-    expiresAt: { $gt: new Date() },
-  });
-
-  if (!otpEntry) {
-    return null;
-  }
-
-  await collection.deleteOne({ _id: otpEntry._id });
-
-  return otpEntry;
-};
-
-// INSTRUÇÃO PARA OTIMIZAÇÃO DE BANCO DE DADOS (Índice TTL):
-// execute o seguinte comando uma vez no seu shell do MongoDB:
-//
-// db.otps.createIndex({ "expiresAt": 1 }, { expireAfterSeconds: 0 })
-//
-// Isso instrui o banco de dados a excluir automaticamente qualquer documento
-// da coleção 'otps' quando a data em 'expiresAt' for atingida.
-// Isso mantém sua coleção pequena e as consultas rápidas.
+export const verifyOtpCode = async (identifier, otp) =>
+  otpRepository.consumeValidCode(identifier, otp);

@@ -1,0 +1,150 @@
+/* Estilos da página public/favorites.ejs (migrados do <style> inline da View) */
+  .favorites-container {
+    padding: 15px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .favorites-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .favorites-header h1 {
+    font-size: 2.5rem;
+    color: #333;
+  }
+
+  .favorites-header p {
+    font-size: 1.1rem;
+    color: #666;
+  }
+
+  /* Grid de Produtos */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .product-card {
+    background: #fff;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+
+  .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .product-image-wrapper {
+    position: relative;
+  }
+
+  .product-image-wrapper img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+  }
+
+  .btn-favorite {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-favorite i {
+    color: #D2042D;
+    font-size: 20px;
+  }
+
+  .product-details {
+    padding: 15px;
+    text-align: center;
+  }
+
+  .product-category {
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .product-title {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    color: #333;
+  }
+
+  .product-price {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #D2042D;
+  }
+
+  .btn-add-cart {
+    margin-top: 15px;
+    width: 100%;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .btn-add-cart:hover {
+    background-color: #555;
+  }
+
+  .btn-view-details {
+    display: inline-block;
+    margin-bottom: 10px;
+    width: 80%;
+    padding: 7px;
+    background-color: transparent;
+    color: #D2042D;
+    border: 1px solid #D2042D;
+    border-radius: 4px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .btn-view-details:hover {
+    background-color: #D2042D;
+    color: #fff;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px 0;
+  }
+
+  .empty-state i {
+    font-size: 48px;
+    color: #ccc;
+  }
+
+  .empty-state p {
+    font-size: 1.2rem;
+    color: #777;
+    margin-top: 10px;
+  }

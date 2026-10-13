@@ -1,0 +1,173 @@
+/* Estilos da página admin/logistica/dashboard-logistica.ejs (migrados do <style> inline da View) */
+    :root {
+        --bg-main: var(--cor-fundo-site, #f8f9fa);
+        --bg-card: var(--cor-fundo-claro, #ffffff);
+        --border-color: var(--cor-borda, #e9ecef);
+        --text-primary: var(--cor-texto-escuro, #212529);
+        --text-secondary: var(--cor-texto-medio, #495057);
+        --accent-color: var(--cor-secundaria, #e10732);
+        --success: var(--cor-sucesso, #2b8a3e);
+        --warning: var(--cor-alerta, #e67e22);
+        --danger: var(--cor-erro, #c92a2a);
+        --info: #0ea5e9;
+    }
+
+    .logistica-container {
+        padding: 2rem;
+        background-color: var(--bg-main);
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .logistica-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logistica-header h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-card .label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .stat-card.accent { border-left: 4px solid var(--accent-color); }
+    .stat-card.success { border-left: 4px solid var(--success); }
+    .stat-card.warning { border-left: 4px solid var(--warning); }
+    .stat-card.info { border-left: 4px solid var(--info); }
+
+    .orders-panel {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .panel-header h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .orders-table th {
+        background: var(--cor-fundo-neutro, #f8f9fa);
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+
+    .orders-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.875rem;
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-pago { background: rgba(43, 138, 62, 0.1); color: var(--success); }
+    .status-preparado { background: rgba(230, 126, 34, 0.15); color: #d97706; }
+    .status-em_rota { background: rgba(14, 165, 233, 0.15); color: #0284c7; }
+    .status-entregue { background: rgba(43, 138, 62, 0.2); color: #166534; }
+    .status-pendente { background: rgba(230, 126, 34, 0.1); color: var(--warning); }
+    .status-cancelado { background: rgba(201, 42, 42, 0.1); color: var(--danger); }
+    .status-expirado { background: rgba(201, 42, 42, 0.1); color: var(--danger); }
+
+    .pin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 6px;
+        background: #f1f5f9;
+        border: 1px dashed #94a3b8;
+        border-radius: 4px;
+        font-family: monospace;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        text-decoration: none;
+        color: white;
+        background: var(--accent-color);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-action:hover {
+        opacity: 0.9;
+    }
+
+    .btn-prepare {
+        background: #d97706 !important;
+    }
+
+    .btn-prepare:hover {
+        background: #b45309 !important;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-weight: 500;
+        margin-top: 2rem;
+    }

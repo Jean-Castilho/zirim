@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="/css/pages/checkout.css">
 <div class="checkout-container">
     <div class="card" id="payment-card"
         data-payment-id="<%= order.payment?.id || '' %>"
@@ -7,24 +8,24 @@
         <% if (order.statusInterno === 'entregue') { %>
             <div class="success-checkmark material-icons">task_alt</div>
             <h2 class="status-heading">Pedido Entregue!</h2>
-            <p style="color: #6c757d; font-size: 0.95rem;">Seu pacote foi entregue com sucesso. Obrigado por comprar na Zirim!</p>
+            <p class="u-color-6c757d-font-size-0-95rem">Seu pacote foi entregue com sucesso. Obrigado por comprar na Zirim!</p>
             <div id="status-container">
                 <span class="status-badge status-approved">
-                    <span style="display: flex; align-items: center; gap: 8px;">
+                    <span class="u-display-flex-align-items-center-gap-8px">
                         <span class="material-icons">check_circle</span>
                         Entrega concluída <%= order.delivery?.deliveredAt ? 'em ' + new Date(order.delivery.deliveredAt).toLocaleDateString('pt-BR') : 'com sucesso' %>
                     </span>
                 </span>
             </div>
         <% } else if (order.statusInterno === 'em_rota') { %>
-            <div class="success-checkmark material-icons" style="color: #0284c7;">local_shipping</div>
+            <div class="success-checkmark material-icons u-color-0284c7">local_shipping</div>
             <h2 class="status-heading">Pedido a Caminho!</h2>
-            <p style="color: #6c757d; font-size: 0.95rem;">Seu pedido saiu para entrega e está a caminho do seu endereço.</p>
+            <p class="u-color-6c757d-font-size-0-95rem">Seu pedido saiu para entrega e está a caminho do seu endereço.</p>
             
             <% if (order.delivery?.courierName) { %>
                 <div>
                     <span class="courier-info-pill">
-                        <span class="material-icons" style="font-size: 16px; color: #0284c7;">two_wheeler</span>
+                        <span class="material-icons u-font-size-16px-color-0284c7">two_wheeler</span>
                         <span>Entregador: <strong><%= order.delivery.courierName %></strong></span>
                     </span>
                 </div>
@@ -33,7 +34,7 @@
             <% if (order.delivery?.confirmationCodePlain) { %>
                 <div class="delivery-pin-card">
                     <div class="delivery-pin-header">
-                        <span class="material-icons" style="font-size: 16px;">key</span>
+                        <span class="material-icons u-font-size-16px">key</span>
                         <span>Código de Confirmação da Entrega</span>
                     </div>
                     <div class="delivery-pin-number"><%= order.delivery.confirmationCodePlain %></div>
@@ -43,23 +44,23 @@
                 </div>
             <% } %>
 
-            <div id="status-container" style="margin-top: 15px;">
+            <div class="u-margin-top-15px" id="status-container">
                 <span class="status-badge status-transit">
-                    <span style="display: flex; align-items: center; gap: 8px;">
+                    <span class="u-display-flex-align-items-center-gap-8px">
                         <span class="material-icons spinning">autorenew</span>
                         Em Rota de Entrega
                     </span>
                 </span>
             </div>
         <% } else if (order.statusInterno === 'preparado') { %>
-            <div class="success-checkmark material-icons" style="color: #d97706;">inventory_2</div>
+            <div class="success-checkmark material-icons u-color-d97706">inventory_2</div>
             <h2 class="status-heading">Pedido Pronto para Envio!</h2>
-            <p style="color: #6c757d; font-size: 0.95rem;">Seu pacote já foi embalado e está aguardando a saída com o entregador.</p>
+            <p class="u-color-6c757d-font-size-0-95rem">Seu pacote já foi embalado e está aguardando a saída com o entregador.</p>
 
             <% if (order.delivery?.confirmationCodePlain) { %>
                 <div class="delivery-pin-card">
                     <div class="delivery-pin-header">
-                        <span class="material-icons" style="font-size: 16px;">key</span>
+                        <span class="material-icons u-font-size-16px">key</span>
                         <span>Código de Confirmação da Entrega</span>
                     </div>
                     <div class="delivery-pin-number"><%= order.delivery.confirmationCodePlain %></div>
@@ -69,9 +70,9 @@
                 </div>
             <% } %>
 
-            <div id="status-container" style="margin-top: 15px;">
+            <div class="u-margin-top-15px" id="status-container">
                 <span class="status-badge status-ready">
-                    <span style="display: flex; align-items: center; gap: 8px;">
+                    <span class="u-display-flex-align-items-center-gap-8px">
                         <span class="material-icons">check_circle</span>
                         Pronto para Retirada pelo Entregador
                     </span>
@@ -80,10 +81,10 @@
         <% } else if (order.statusInterno === 'cancelado' || order.statusInterno === 'expirado' || ['rejected', 'cancelled', 'expired', 'refunded', 'charged_back'].includes(order.payment?.status)) { %>
             <div class="error-cross material-icons">cancel</div>
             <h2 class="status-heading"><%= order.statusInterno === 'expirado' || order.payment?.status === 'expired' ? 'PIX Expirado' : (['refunded', 'charged_back'].includes(order.payment?.status) ? 'Pagamento Reembolsado' : 'Pagamento Cancelado') %></h2>
-            <p style="color: #6c757d; font-size: 0.95rem;"><%= order.statusInterno === 'expirado' || order.payment?.status === 'expired' ? 'O prazo para pagamento deste PIX terminou.' : 'Este pedido foi cancelado ou o pagamento foi estornado.' %></p>
+            <p class="u-color-6c757d-font-size-0-95rem"><%= order.statusInterno === 'expirado' || order.payment?.status === 'expired' ? 'O prazo para pagamento deste PIX terminou.' : 'Este pedido foi cancelado ou o pagamento foi estornado.' %></p>
             <div id="status-container">
                 <span class="status-badge status-cancelled">
-                    <span style="display: flex; align-items: center; gap: 8px;">
+                    <span class="u-display-flex-align-items-center-gap-8px">
                         <span class="material-icons">cancel</span>
                         O pedido não pode mais ser pago.
                     </span>
@@ -92,10 +93,10 @@
         <% } else if (order.statusInterno === 'pago' || order.payment?.status === 'approved' || order.payment?.status === 'authorized') { %>
             <div class="success-checkmark material-icons">check_circle</div>
             <h2 class="status-heading">Pagamento Confirmado!</h2>
-            <p style="color: #6c757d; font-size: 0.95rem;">Seu pedido está sendo preparado pela equipe e em breve será liberado para entrega.</p>
+            <p class="u-color-6c757d-font-size-0-95rem">Seu pedido está sendo preparado pela equipe e em breve será liberado para entrega.</p>
             <div id="status-container">
                 <span class="status-badge status-approved">
-                    <span style="display: flex; align-items: center; gap: 8px;">
+                    <span class="u-display-flex-align-items-center-gap-8px">
                         <span class="material-icons">check_circle</span>
                         Pagamento recebido com sucesso!
                     </span>
@@ -104,24 +105,24 @@
         <% } else if (order.statusInterno === 'pagamento_falhou' || (!order.payment?.qr_code && !order.payment?.qr_code_base64)) { %>
             <div class="error-cross material-icons">error_outline</div>
             <h2 class="status-heading">Falha ao Gerar Pagamento</h2>
-            <p style="color: #6c757d; font-size: 0.95rem;"><%= order.payment?.error || 'Não foi possível gerar os dados do PIX para este pedido.' %></p>
-            <div id="status-container" style="margin-top: 15px;">
+            <p class="u-color-6c757d-font-size-0-95rem"><%= order.payment?.error || 'Não foi possível gerar os dados do PIX para este pedido.' %></p>
+            <div class="u-margin-top-15px" id="status-container">
                 <span class="status-badge status-cancelled">
-                    <span style="display: flex; align-items: center; gap: 8px;">
+                    <span class="u-display-flex-align-items-center-gap-8px">
                         <span class="material-icons">warning</span>
                         Chave PIX indisponível
                     </span>
                 </span>
             </div>
-            <div style="margin-top: 25px;">
-                <a href="/cart" class="btn-copy" style="text-decoration: none; display: inline-flex; justify-content: center; align-items: center; background: #333; color: #fff;">
-                    <span class="material-icons" style="font-size: 1.2rem;">arrow_back</span>
+            <div class="u-margin-top-25px">
+                <a href="/cart" class="btn-copy u-text-decoration-none-display-inline-ab84c5">
+                    <span class="material-icons u-font-size-1-2rem">arrow_back</span>
                     Voltar ao Carrinho
                 </a>
             </div>
         <% } else { %>
             <h2 class="status-heading" id="checkout-title">Aguardando Pagamento PIX</h2>
-            <p style="color: #6c757d; font-size: 0.95rem;">Utilize o código abaixo no app do seu banco para confirmar o pedido.</p>
+            <p class="u-color-6c757d-font-size-0-95rem">Utilize o código abaixo no app do seu banco para confirmar o pedido.</p>
             
             <div id="pix-payment-area">
                 <div class="pix-qr-container">
@@ -131,15 +132,15 @@
                 <div class="pix-code-box" id="pix-code-text"><%= order.payment?.qr_code %></div>
                 
                 <button class="btn-copy" id="btn-copy-pix">
-                    <span class="material-icons" style="font-size: 1.3rem;">content_copy</span>
+                    <span class="material-icons u-font-size-1-3rem">content_copy</span>
                     Copiar Código PIX
                 </button>
             </div>
 
             <div id="status-container">
                 <span class="status-badge status-pending" id="payment-status-badge">
-                    <span style="display: flex; align-items: center; gap: 8px;">
-                        <span class="material-icons spinning" style="font-size: 1.1rem; animation: rotate 2s linear infinite;">sync</span>
+                    <span class="u-display-flex-align-items-center-gap-8px">
+                        <span class="material-icons spinning u-font-size-1-1rem-animation-rotate-2s-e6c23a">sync</span>
                         Aguardando confirmação...
                     </span>
                 </span>
@@ -147,28 +148,28 @@
         <% } %>
 
         <div class="order-items-summary">
-            <h3 style="margin-bottom: 20px; color: #222; font-weight: 700;">Resumo do Pedido</h3>
+            <h3 class="u-margin-bottom-20px-color-222-font-weight-700">Resumo do Pedido</h3>
 
             <% if (order.address && (order.address.cep || order.address.street)) { %>
-                <div style="background: #fdfdfd; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; text-align: left;">
-                    <div style="font-weight: 700; font-size: 0.88rem; color: #222; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="display: flex; align-items: center; gap: 6px;">
-                            <span class="material-icons" style="font-size: 1.1rem; color: #e10732;">local_shipping</span>
+                <div class="u-background-fdfdfd-border-1px-solid-e-3f6cf2">
+                    <div class="u-font-weight-700-font-size-0-88rem-co-7e55f8">
+                        <span class="u-display-flex-align-items-center-gap-6px">
+                            <span class="material-icons u-font-size-1-1rem-color-e10732">local_shipping</span>
                             <span>Endereço de Entrega</span>
                         </span>
                         <% if (order.shipping && order.shipping.method) { %>
-                            <span style="font-size: 0.72rem; background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; font-weight: 700;">
+                            <span class="u-font-size-0-72rem-background-e8f5e9-62c6b1">
                                 <%= order.shipping.method === 'expresso' ? 'Expressa' : 'Normal' %>
                             </span>
                         <% } %>
                     </div>
-                    <div style="font-size: 0.82rem; color: #555; line-height: 1.4;">
+                    <div class="u-font-size-0-82rem-color-555-line-height-1-4">
                         <%= order.address.street ? order.address.street : '' %>
                         <%= order.address.neighborhood ? ' - ' + order.address.neighborhood : '' %>
                         <% if (order.address.city || order.address.state) { %>
                             <br><%= order.address.city || '' %><%= order.address.state ? '/' + order.address.state : '' %>
                         <% } %>
-                        <br><strong style="color: #222;">CEP:</strong> <%= order.address.cep %>
+                        <br><strong class="u-color-222">CEP:</strong> <%= order.address.cep %>
                     </div>
                 </div>
             <% } %>
@@ -176,7 +177,7 @@
             <% order.items.forEach(item => { %>
                 <div class="summary-item-row">
                     <div class="summary-item-info">
-                        <img src="/image/<%= item.imagem %>" alt="<%= item.nome %>" class="summary-item-img" onerror="this.src='/img/placeholder-product.png'">
+                        <img src="/image/<%= item.imagem %>" alt="<%= item.nome %>" class="summary-item-img" data-fallback-src="/img/placeholder-product.svg">
                         <div class="summary-item-details">
                             <span class="summary-item-name"><%= item.nome %></span>
                             <span class="summary-item-meta">
@@ -186,13 +187,13 @@
                             </span>
                         </div>
                     </div>
-                    <strong style="color: #222;">R$ <%= (item.preco * item.quantidade).toFixed(2) %></strong>
+                    <strong class="u-color-222">R$ <%= (item.preco * item.quantidade).toFixed(2) %></strong>
                 </div>
             <% }) %>
             
             <div class="total-row">
-                <span style="color: #222; font-weight: 700;">Total do Pedido</span>
-                <strong style="color: #D2042D;">R$ <%= Number(order.payment?.transaction_amount ?? order.total ?? 0).toFixed(2) %></strong>
+                <span class="u-color-222-font-weight-700">Total do Pedido</span>
+                <strong class="u-color-d2042d">R$ <%= Number(order.payment?.transaction_amount ?? order.total ?? 0).toFixed(2) %></strong>
             </div>
         </div>
     </div>

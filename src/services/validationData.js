@@ -1,3 +1,5 @@
+import { ValidationError } from "../utils/errors.js";
+
 const nameRegex = /^[\p{L}\p{M}'\s-]+$/u;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
@@ -48,4 +50,31 @@ export const validateUser = (data) => {
     errors,
     data: normalizedData,
   };
+};
+
+export const PASSWORD_POLICY_MESSAGE =
+  "A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, minúscula e número.";
+
+export const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+
+/** Retorna o e-mail normalizado ou lança ValidationError. */
+export const assertEmail = (email) => {
+  const normalized = normalizeEmail(email);
+  if (!emailRegex.test(normalized)) {
+    throw new ValidationError("Informe um endereço de e-mail válido.");
+  }
+  return normalized;
+};
+
+/** Valida nova senha + confirmação (política única do sistema). */
+export const assertNewPassword = (password, confirmPassword) => {
+  if (!password || !confirmPassword) {
+    throw new ValidationError("Preencha a nova senha e a confirmação.");
+  }
+  if (password !== confirmPassword) {
+    throw new ValidationError("As senhas informadas não coincidem.");
+  }
+  if (!passwordRegex.test(password)) {
+    throw new ValidationError(PASSWORD_POLICY_MESSAGE);
+  }
 };

@@ -321,8 +321,8 @@
     margin-top: var(--espacamento-md);
 }
 
-.btn-primary,
-.btn-secondary {
+.action-buttons .btn-primary,
+.action-buttons .btn-secondary {
     flex: 1;
     padding: 18px 30px;
     border-radius: var(--raio-botao);
@@ -339,32 +339,32 @@
     letter-spacing: 1px;
 }
 
-.btn-primary {
+.action-buttons .btn-primary {
     background: var(--cor-secundaria);
     color: white;
     border: none;
     box-shadow: 0 4px 14px rgba(225, 7, 50, 0.2);
 }
 
-.btn-primary:hover:not(:disabled) {
+.action-buttons .btn-primary:hover:not(:disabled) {
     background: var(--cor-destaque);
     transform: translateY(-3px);
     box-shadow: var(--sombra-hover);
 }
 
-.btn-primary:disabled {
+.action-buttons .btn-primary:disabled {
     background: var(--cor-borda-forte);
     cursor: not-allowed;
     box-shadow: none;
 }
 
-.btn-secondary {
+.action-buttons .btn-secondary {
     background: transparent;
     color: var(--cor-primaria);
     border: 2px solid var(--cor-primaria);
 }
 
-.btn-secondary:hover {
+.action-buttons .btn-secondary:hover {
     background: var(--cor-primaria);
     color: white;
     transform: translateY(-3px);
@@ -491,9 +491,6 @@
     border-radius: var(--raio-padrao);
 }
 
-.skeleton .gallery-thumbnails {
-    height: 10vh;
-}
 
 @keyframes skeleton-loading {
     0% {
@@ -557,4 +554,33 @@
     .expanded-description {
         padding: var(--espacamento-lg);
     }
+}
+/* Imagem principal: transição de carregamento (antes feita via style inline) */
+.main-image {
+    opacity: 1;
+    transition: opacity 0.5s ease, var(--transicao-suave);
+}
+
+.main-image.is-loading,
+.main-image.is-switching {
+    opacity: 0;
+}
+
+/* O skeleton da galeria precisa de altura enquanto as miniaturas não existem */
+.gallery-thumbnails.skeleton {
+    min-height: 10vh;
+}
+
+.action-buttons .btn-primary .material-icons {
+    font-size: 1.3rem;
+}
+
+.retry-link {
+    color: var(--cor-secundaria);
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+.stock-badge.is-out {
+    background: var(--cor-erro);
 }

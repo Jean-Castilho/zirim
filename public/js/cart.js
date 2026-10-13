@@ -41,7 +41,7 @@
                             nome: String(item.nome ?? item.name ?? 'Produto'),
                             preco: parseCartNumber(item.preco ?? item.price ?? item.valor, 0),
                             quantidade: quantity >= 0 ? quantity : 1,
-                            imagem: item.imagem ?? item.image ?? '/img/placeholder-product.webp',
+                            imagem: item.imagem ?? item.image ?? '/img/placeholder-product.svg',
                             cor: item.cor ?? item.color ?? '',
                             tamanho: item.tamanho ?? item.size ?? '',
                             selected: item.selected !== false
@@ -595,7 +595,7 @@
                                 <input type="checkbox" class="item-checkbox" data-index="${index}" ${item.selected ? 'checked' : ''}>
                             </div>
                             <div class="item-image">
-                                <img src="${escapeHtml(item.imagem || '/img/placeholder-product.webp')}" alt="${escapeHtml(item.nome)}">
+                                <img src="${escapeHtml(item.imagem || '/img/placeholder-product.svg')}" alt="${escapeHtml(item.nome)}">
                             </div>
                             <div class="item-details">
                                 <h3 class="item-name">${escapeHtml(item.nome)}</h3>

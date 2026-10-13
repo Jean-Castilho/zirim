@@ -1,11 +1,13 @@
 import { createHash, randomBytes } from "node:crypto";
+import { ObjectId } from "mongodb";
 import UserRepository from "../repository/UserRepository.js";
-import { ValidationError, GeneralError, NotFoundError } from "../utils/handleResponse.js";
+import { ValidationError, GeneralError, NotFoundError, ConflictError, UnauthorizedError } from "../utils/errors.js";
 import { compararPassword, createHashPassword } from "./authServices.js";
-import { validateUser } from "./validationData.js";
-import { sendWhatsAppOtp } from "./contactService.js";
+import { validateUser, assertEmail, assertNewPassword, normalizeEmail } from "./validationData.js";
+import { sendWhatsAppOtp, sendEmailOtp, sendPasswordResetEmail } from "./contactService.js";
 import { verifyOtpCode } from "./otpService.js";
 
+const ALLOWED_ROLES = ["user", "entregador", "admin"];
 const PASSWORD_RESET_LIFETIME_MS = 30 * 60 * 1000;
 const hashResetToken = (token) => createHash("sha256").update(token).digest("hex");
 
@@ -37,10 +39,10 @@ export default class UserService {
         const data = validation.data;
 
         const emailExists = await this.repository.findByEmail(data.email);
-        if (emailExists) throw new GeneralError("Este e-mail já está sendo utilizado.", 409);
+        if (emailExists) throw new ConflictError("Este e-mail já está sendo utilizado.");
 
         const phoneExists = await this.repository.findByPhone(data.phone);
-        if (phoneExists) throw new GeneralError("Este número de telefone já está sendo utilizado.", 409);
+        if (phoneExists) throw new ConflictError("Este número de telefone já está sendo utilizado.");
 
         data.password = await createHashPassword(data.password);
         return await this.repository.create(data);
@@ -48,8 +50,8 @@ export default class UserService {
 
     async verifyAndUpgradeUser(userId) {
         const updated = await this.repository.updateProfile(userId, { emailVerified: true });
-        if (!updated) throw new Error("Falha ao atualizar status de verificação.");
-        return await this.repository.findById(userId);
+        if (!updated) throw new GeneralError("Falha ao atualizar status de verificação.", 500);
+        return await this.repository.findById(userId, { password: 0 });
     }
 
     async requestPhoneVerification(userId, phone) {
@@ -67,7 +69,7 @@ export default class UserService {
 
         const phoneOwner = await this.repository.findByPhone(normalizedPhone);
         if (phoneOwner && String(phoneOwner._id) !== String(userId)) {
-            throw new GeneralError("Este número de telefone já está sendo utilizado.", 409);
+            throw new ConflictError("Este número de telefone já está sendo utilizado.");
         }
 
         await sendWhatsAppOtp(normalizedPhone);
@@ -86,7 +88,7 @@ export default class UserService {
 
         const phoneOwner = await this.repository.findByPhone(normalizedPhone);
         if (phoneOwner && String(phoneOwner._id) !== String(userId)) {
-            throw new GeneralError("Este número de telefone já está sendo utilizado.", 409);
+            throw new ConflictError("Este número de telefone já está sendo utilizado.");
         }
 
         const otpEntry = await verifyOtpCode(normalizedPhone, normalizedOtp);
@@ -129,19 +131,22 @@ export default class UserService {
     }
 
     async countUsers() {
-        return await this.repository.collection.countDocuments({});
+        return await this.repository.count();
     }
 
     async getAllUsers(options = { projection: { password: 0 } }) {
         return await this.repository.findAll({}, options);
     }
 
+    /** Usuário sem o hash da senha (seguro para views/sessão). */
     async getUserById(id) {
-        return await this.repository.findById(id);
+        return await this.repository.findById(id, { password: 0 });
     }
 
     async deleteUser(id) {
-        return await this.repository.delete(id);
+        const deleted = await this.repository.delete(id);
+        if (!deleted) throw new NotFoundError("Usuário não encontrado.");
+        return true;
     }
 
     async updateUser(id, updateData) {
@@ -153,7 +158,12 @@ export default class UserService {
         return await this.repository.findById(id, { password: 0 });
     }
 
-    async changePassword(userId, currentPassword, newPassword) {
+    async changePassword(userId, currentPassword, newPassword, confirmPassword) {
+        if (!currentPassword) {
+            throw new ValidationError("Preencha a senha atual, a nova senha e a confirmação.");
+        }
+        assertNewPassword(newPassword, confirmPassword);
+
         const user = await this.repository.findById(userId);
         if (!user) throw new NotFoundError("Usuário não encontrado.");
         if (!await compararPassword(currentPassword, user.password)) {
@@ -162,5 +172,100 @@ export default class UserService {
 
         const passwordHash = await createHashPassword(newPassword);
         await this.repository.updateProfile(userId, { password: passwordHash });
+    }
+
+    // ------------------------------------------------------------------
+    // Perfil e administração de usuários
+    // ------------------------------------------------------------------
+
+    async updateOwnProfile(userId, { name } = {}) {
+        const cleanName = String(name || "").trim();
+        if (!cleanName) throw new ValidationError("O nome é obrigatório.");
+        return await this.updateUser(userId, { name: cleanName });
+    }
+
+    async adminUpdateUser(id, { name, phone, role, isActive } = {}) {
+        if (!id || !ObjectId.isValid(id)) {
+            throw new ValidationError("ID de usuário inválido.");
+        }
+        if (!name || !String(name).trim()) {
+            throw new ValidationError("O nome é obrigatório.");
+        }
+        if (role && !ALLOWED_ROLES.includes(role)) {
+            throw new ValidationError("Perfil/função inválida.");
+        }
+
+        return await this.updateUser(id, {
+            name: String(name).trim(),
+            phone: typeof phone === "string" ? phone.trim() : "",
+            role: role || "user",
+            isActive: typeof isActive === "boolean" ? isActive : isActive === "true",
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Recuperação de senha
+    // ------------------------------------------------------------------
+
+    /**
+     * Gera o token e dispara o e-mail em segundo plano. Nunca revela se o e-mail existe.
+     */
+    async requestPasswordReset(email) {
+        const normalized = assertEmail(email);
+        const token = await this.createPasswordResetToken(normalized);
+        if (!token) return;
+
+        void this.#sendResetEmail(normalized, token);
+    }
+
+    async #sendResetEmail(email, token) {
+        try {
+            const appUrl = process.env.APP_URL || (process.env.NODE_ENV === "production"
+                ? null
+                : `http://localhost:${process.env.PORT || 3090}`);
+            if (!appUrl) throw new Error("APP_URL deve estar configurado em produção.");
+
+            const resetUrl = new URL("/reset-password", appUrl);
+            resetUrl.searchParams.set("token", token);
+            await sendPasswordResetEmail(email, resetUrl.toString());
+        } catch (error) {
+            console.error("Falha ao enviar e-mail de redefinição de senha:", error);
+        }
+    }
+
+    async completePasswordReset(token, password, confirmPassword) {
+        if (!token) throw new ValidationError("Preencha todos os campos.");
+        assertNewPassword(password, confirmPassword);
+
+        const updated = await this.resetPassword(token, password);
+        if (!updated) {
+            throw new ValidationError("Este link é inválido ou expirou. Solicite uma nova redefinição.");
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Verificação de e-mail (OTP)
+    // ------------------------------------------------------------------
+
+    async sendEmailVerificationCode(sessionUser) {
+        const email = normalizeEmail(sessionUser?.email?.endereco);
+        if (!email) throw new ValidationError("Sua conta não possui um e-mail válido.");
+        await sendEmailOtp(email);
+    }
+
+    async verifyEmailCode(sessionUser, requestedEmail, otp) {
+        if (!sessionUser?._id) {
+            throw new UnauthorizedError("Sessão expirada ou usuário não autenticado.");
+        }
+
+        const accountEmail = normalizeEmail(sessionUser.email?.endereco);
+        if (!accountEmail || normalizeEmail(requestedEmail) !== accountEmail) {
+            throw new ValidationError("O código deve corresponder ao e-mail da sua conta.");
+        }
+
+        const otpEntry = await verifyOtpCode(accountEmail, otp);
+        if (!otpEntry) throw new GeneralError("Código OTP inválido ou expirado.", 400);
+
+        return await this.verifyAndUpgradeUser(sessionUser._id);
     }
 }

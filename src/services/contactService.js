@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 
-import { ValidationError } from "../utils/handleResponse.js";
+import { ValidationError, ExternalServiceError } from "../utils/errors.js";
 import { storeOtpCode, generateOtpCode } from "./otpService.js";
 
 dotenv.config();
@@ -65,9 +65,8 @@ export const sendWhatsAppOtp = async (number) => {
   }
 
   if (!WHATSAPP_TOKEN || !WHATSAPP_API_URL) {
-    throw new Error(
-      "A configuração do servidor para envio de mensagens está incompleta. Defina WHATSAPP_TOKEN e WHATSAPP_PHONE_NUMBER_ID no .env.",
-    );
+    console.error("WhatsApp não configurado: defina WHATSAPP_TOKEN e WHATSAPP_PHONE_NUMBER_ID no .env.");
+    throw new ExternalServiceError("Serviço de mensagens indisponível no momento.", 503);
   }
 
   try {
@@ -81,13 +80,13 @@ export const sendWhatsAppOtp = async (number) => {
     return data;
   } catch (error) {
     console.error("Erro ao enviar mensagem:", error);
-    throw new Error("Erro ao enviar mensagem.");
+    throw new ExternalServiceError("Erro ao enviar mensagem.");
   }
 };
 
 export const sendEmailOtp = async (email) => {
   if (!email) {
-    throw new Error("O endereço de e-mail é obrigatório para enviar o OTP.");
+    throw new ValidationError("O endereço de e-mail é obrigatório para enviar o OTP.");
   }
 
   const otp = generateOtpCode();
@@ -104,7 +103,7 @@ export const sendEmailOtp = async (email) => {
     await transporter.sendMail(mailOptions);
   } catch (error) {
     console.error("Erro ao enviar OTP por e-mail:", error);
-    throw error;
+    throw new ExternalServiceError("Não foi possível enviar o e-mail de verificação.");
   }
 };
 
@@ -118,24 +117,20 @@ export const sendPasswordResetEmail = async (email, resetUrl) => {
   });
 };
 
-export const sendFeedbackEmail = async (req, res) => {
-  const { email, subject, message } = req.body;
-
+export const sendFeedbackEmail = async ({ email, subject, message } = {}) => {
   if (!email || !subject || !message) {
-    return res.status(400).json({ mensagem: "Email, assunto e mensagem são obrigatórios." });
+    throw new ValidationError("Email, assunto e mensagem são obrigatórios.");
   }
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to: email,
-    subject,
-    text: message,
-  };
-
   try {
-    const emailSend = await transporter.sendMail(mailOptions);
-    return res.status(200).json({ mensagem: "feedback enviado com sucesso!", emailSend });
+    return await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject,
+      text: message,
+    });
   } catch (error) {
-    return res.status(500).json({ mensagem: "erro ao enviar email" });
+    console.error("Erro ao enviar feedback:", error);
+    throw new ExternalServiceError("Erro ao enviar e-mail.");
   }
 };

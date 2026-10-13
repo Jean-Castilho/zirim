@@ -91,9 +91,5 @@
     }
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPreload, { once: true });
-  } else {
-    initPreload();
-  }
+  window.onPageReady(initPreload);
 })();

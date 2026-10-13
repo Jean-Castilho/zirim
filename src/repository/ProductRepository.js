@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import sharp from 'sharp';
 import BaseRepository from "./BaseRepository.js";
 
-import { DataBase } from "../config/db.js";
+import { ValidationError, NotFoundError, GeneralError } from "../utils/errors.js";
 
 export default class ProductRepository extends BaseRepository {
   constructor() {
@@ -115,6 +115,10 @@ export default class ProductRepository extends BaseRepository {
     return { message: "Produto adicionado com sucesso!", productId: insertedId };
   }
 
+  async findLatest(limit = 5, projection = {}) {
+    return await this.collection.find({}, { projection }).sort({ _id: -1 }).limit(limit).toArray();
+  }
+
   async findByIds(ids, projection = {}) {
     const validIds = ids.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id));
     if (validIds.length === 0) return [];
@@ -122,10 +126,10 @@ export default class ProductRepository extends BaseRepository {
   }
 
   async updateProductWithImages(id, body, files = []) {
-    if (!ObjectId.isValid(id)) throw new Error("ID de produto invalido.");
+    if (!ObjectId.isValid(id)) throw new ValidationError("ID de produto inválido.");
 
     const existingProduct = await super.findById(id);
-    if (!existingProduct) throw new Error("Produto nao encontrado.");
+    if (!existingProduct) throw new NotFoundError("Produto não encontrado.");
 
     const filesByVariation = this.#mapVariationFiles(files);
     const submittedVariations = this.#extractVariations(body);
@@ -153,14 +157,14 @@ export default class ProductRepository extends BaseRepository {
   }
 
   async deleteProductAndImages(id) {
-    if (!ObjectId.isValid(id)) throw new Error("ID de produto invalido.");
+    if (!ObjectId.isValid(id)) throw new ValidationError("ID de produto inválido.");
 
     const product = await super.findById(id);
-    if (!product) throw new Error("Produto nao encontrado.");
+    if (!product) throw new NotFoundError("Produto não encontrado.");
 
     const imageNames = [...new Set((product.variacoes || []).flatMap(variation => variation.imagens || []))];
     if (imageNames.length > 0) {
-      const filesCollection = this.db.collection('fs.files');
+      const filesCollection = this.db.collection('uploads.files');
       const filesToDelete = await filesCollection.find({ filename: { $in: imageNames } }).toArray();
 
       const deletePromises = filesToDelete.map(file => this.bucket.delete(file._id));
@@ -168,15 +172,13 @@ export default class ProductRepository extends BaseRepository {
     }
 
     const isDeleted = await super.delete(id);
-    if (!isDeleted) throw new Error("Nao foi possivel deletar o produto.");
+    if (!isDeleted) throw new GeneralError("Não foi possível deletar o produto.", 500);
 
     return { success: true };
   }
 
   async getImageMetadata(filename) {
-    const db = DataBase();
-    const filesCollection = db.collection('uploads.files');
-    return await filesCollection.findOne({ filename });
+    return await this.db.collection('uploads.files').findOne({ filename });
   }
   
   getImageStream(filename) {

@@ -5,237 +5,134 @@ import {
   ValidationError,
   NotFoundError,
   UnauthorizedError,
-  GeneralError
-} from "../utils/handleResponse.js";
+  ForbiddenError,
+} from "../utils/errors.js";
+
+const MAX_PIN_ATTEMPTS = 5;
+const STAFF_ROLES = ["admin", "staff"];
+const COURIER_ROLES = ["entregador", "admin"];
+
+const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString();
+
+const assertOrderId = (orderId, message = "ID de pedido inválido.") => {
+  if (!orderId || !ObjectId.isValid(orderId)) throw new ValidationError(message);
+};
 
 /**
- * Camada de serviço de logística e entregas.
- * Desacopla regras de negócio, limites de tentativas e validações do repositório.
+ * Regras de negócio de logística e entregas.
+ * Persistência fica em OrderRepository (primitivas atômicas).
  */
 export default class DeliveryService {
   constructor(orderRepository = new OrderRepository()) {
     this.repository = orderRepository;
   }
 
-  /**
-   * Obtém dados do painel do entregador (entregas ativas do entregador + pedidos disponíveis para retirada)
-   */
   async getCourierDashboardData(userId) {
-    if (!userId) {
-      throw new UnauthorizedError("Sessão expirada. Faça login novamente.");
-    }
+    if (!userId) throw new UnauthorizedError("Sessão expirada. Faça login novamente.");
 
     const [deliveries, availableOrders] = await Promise.all([
       this.repository.getCourierDeliveries(userId),
-      this.repository.getAvailableDeliveries()
+      this.repository.getAvailableDeliveries(),
     ]);
-
     return { deliveries, availableOrders };
   }
 
-  /**
-   * Obtém pedidos ativos para plotagem no mapa de monitoramento
-   */
   async getActiveDeliveriesForMap() {
     return await this.repository.getPaidOrders();
   }
 
-  /**
-   * Obtém visão geral para o painel de logística do administrador
-   */
   async getLogisticsOverview() {
     return await this.repository.getLogisticsDashboardData();
   }
 
-  /**
-   * Prepara um pedido pago para entrega, gerando o PIN de 4 dígitos seguro
-   */
+  /** Prepara um pedido pago para entrega e gera/preserva o PIN de 4 dígitos. */
   async prepareOrder(orderId, user) {
-    if (!user) {
-      throw new UnauthorizedError("Usuário não autenticado.");
+    if (!user) throw new UnauthorizedError("Usuário não autenticado.");
+    if (!STAFF_ROLES.includes(user.role)) {
+      throw new ForbiddenError("Apenas administradores ou equipe de logística podem preparar pedidos.");
     }
-
-    if (user.role !== "admin" && user.role !== "staff") {
-      throw new GeneralError("Apenas administradores ou equipe de logística podem preparar pedidos.", 403);
-    }
-
-    if (!orderId || !ObjectId.isValid(orderId)) {
-      throw new ValidationError("ID de pedido inválido.");
-    }
+    assertOrderId(orderId);
 
     const order = await this.repository.findById(orderId);
-    if (!order) {
-      throw new NotFoundError("Pedido não encontrado.");
-    }
+    if (!order) throw new NotFoundError("Pedido não encontrado.");
 
     if (order.statusInterno !== "pago" && order.payment?.status !== "approved") {
       throw new ValidationError("Apenas pedidos com pagamento confirmado podem ser preparados para entrega.");
     }
 
-    // Preserva o código PIN se já existir, ou gera novo de 4 dígitos
-    const confirmationCode = order.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
+    const confirmationCode = order.delivery?.confirmationCodePlain || generatePin();
+    await this.repository.markPrepared(orderId, confirmationCode);
 
-    await this.repository.collection().updateOne(
-      { _id: new ObjectId(orderId) },
-      {
-        $set: {
-          statusInterno: "preparado",
-          "delivery.confirmationCodePlain": confirmationCode,
-          "delivery.preparedAt": new Date(),
-          updatedAt: new Date()
-        }
-      }
-    );
-
-    return {
-      success: true,
-      message: "Pedido preparado e liberado para entrega!",
-      orderId,
-      confirmationCode
-    };
+    return { message: "Pedido preparado e liberado para entrega!", data: { orderId, confirmationCode } };
   }
 
-  /**
-   * Permite que um entregador aceite um pedido preparado, transicionando para 'em_rota' de forma atômica
-   */
+  /** Entregador aceita um pedido preparado (transição atômica para 'em_rota'). */
   async selectOrderForDelivery(orderId, courierUser) {
-    if (!courierUser) {
-      throw new UnauthorizedError("Sessão expirada. Faça login novamente.");
+    if (!courierUser) throw new UnauthorizedError("Sessão expirada. Faça login novamente.");
+    if (!COURIER_ROLES.includes(courierUser.role)) {
+      throw new ForbiddenError("Apenas usuários com perfil de entregador podem aceitar entregas.");
     }
-
-    const role = courierUser.role;
-    if (role !== "entregador" && role !== "admin") {
-      throw new GeneralError("Apenas usuários com perfil de entregador podem aceitar entregas.", 403);
-    }
-
-    if (!orderId || !ObjectId.isValid(orderId)) {
-      throw new ValidationError("ID de pedido inválido.");
-    }
+    assertOrderId(orderId);
 
     const currentOrder = await this.repository.findById(orderId);
-    if (!currentOrder) {
-      throw new NotFoundError("Pedido não encontrado.");
-    }
-
+    if (!currentOrder) throw new NotFoundError("Pedido não encontrado.");
     if (currentOrder.statusInterno !== "preparado") {
       throw new ValidationError("O pedido precisa estar preparado antes de ser aceito para entrega.");
     }
 
-    const confirmationCode = currentOrder.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
-    const courierPhone = (typeof courierUser.phone === "object" ? courierUser.phone?.number : courierUser.phone) || "";
+    const confirmationCode = currentOrder.delivery?.confirmationCodePlain || generatePin();
+    const phone = (typeof courierUser.phone === "object" ? courierUser.phone?.number : courierUser.phone) || "";
 
-    // Operação atômica que previne race-condition caso 2 entregadores cliquem ao mesmo tempo
-    const updateResult = await this.repository.collection().findOneAndUpdate(
-      {
-        _id: new ObjectId(orderId),
-        statusInterno: "preparado",
-        $or: [
-          { "delivery.courierId": { $exists: false } },
-          { "delivery.courierId": null }
-        ]
-      },
-      {
-        $set: {
-          statusInterno: "em_rota",
-          "delivery.courierId": courierUser._id,
-          "delivery.courierName": courierUser.name || "Entregador",
-          "delivery.courierPhone": courierPhone,
-          "delivery.confirmationCodePlain": confirmationCode,
-          "delivery.startedAt": new Date(),
-          updatedAt: new Date()
-        }
-      },
-      { returnDocument: "after" }
+    const updated = await this.repository.claimForCourier(
+      orderId,
+      { id: courierUser._id, name: courierUser.name || "Entregador", phone },
+      confirmationCode
     );
-
-    const updatedOrder = updateResult?.value ?? updateResult;
-    if (!updatedOrder) {
+    if (!updated) {
       throw new ValidationError("Pedido indisponível: já foi aceito por outro entregador ou não está preparado.");
     }
 
     return {
-      success: true,
       message: "Pedido selecionado para entrega com sucesso!",
-      orderId: updatedOrder._id,
-      statusInterno: "em_rota"
+      data: { orderId: updated._id, statusInterno: "em_rota" },
     };
   }
 
-  /**
-   * Valida o código PIN fornecido pelo cliente e finaliza a entrega com status 'entregue'
-   */
+  /** Valida o PIN informado pelo cliente e finaliza a entrega. */
   async confirmDelivery(orderId, courierId, code) {
-    if (!orderId || !ObjectId.isValid(orderId)) {
-      throw new ValidationError("ID do pedido é obrigatório e deve ser válido.");
-    }
+    assertOrderId(orderId, "ID do pedido é obrigatório e deve ser válido.");
 
     const cleanCode = String(code || "").trim();
-    if (!cleanCode) {
-      throw new ValidationError("Código PIN é obrigatório.");
-    }
+    if (!cleanCode) throw new ValidationError("Código PIN é obrigatório.");
 
-    const idVariants = ObjectId.isValid(courierId)
-      ? [courierId, String(courierId), new ObjectId(courierId)]
-      : [courierId, String(courierId)];
-
-    const order = await this.repository.collection().findOne({
-      _id: new ObjectId(orderId),
-      "delivery.courierId": { $in: idVariants }
-    });
-
-    if (!order) {
-      throw new NotFoundError("Pedido não encontrado ou não atribuído a você.");
-    }
-
+    const order = await this.repository.findCourierOrder(orderId, courierId);
+    if (!order) throw new NotFoundError("Pedido não encontrado ou não atribuído a você.");
     if (order.statusInterno === "entregue") {
       throw new ValidationError("Este pedido já foi finalizado como entregue.");
     }
 
     const attempts = Number(order.delivery?.attempts || 0);
-    if (attempts >= 5) {
-      throw new ValidationError("Limite de tentativas excedido (5x). Contate a central de suporte.");
+    if (attempts >= MAX_PIN_ATTEMPTS) {
+      throw new ValidationError(`Limite de tentativas excedido (${MAX_PIN_ATTEMPTS}x). Contate a central de suporte.`);
     }
 
-    const expectedCode = order.delivery?.confirmationCodePlain || order.delivery?.confirmationCode;
-    const expectedHash = order.delivery?.confirmationCodeHash;
-
-    let isValid = false;
-    if (expectedCode && String(expectedCode).trim() === cleanCode) {
-      isValid = true;
-    } else if (expectedHash) {
-      const inputHash = crypto.createHash("sha256").update(cleanCode).digest("hex");
-      if (inputHash === expectedHash) {
-        isValid = true;
-      }
+    if (!this.#isPinValid(order.delivery, cleanCode)) {
+      await this.repository.incrementDeliveryAttempts(order._id);
+      throw new ValidationError(`Código incorreto. Tentativa ${attempts + 1} de ${MAX_PIN_ATTEMPTS}.`);
     }
 
-    if (!isValid) {
-      const nextAttempts = attempts + 1;
-      await this.repository.collection().updateOne(
-        { _id: order._id },
-        { $inc: { "delivery.attempts": 1 } }
-      );
-      throw new ValidationError(`Código incorreto. Tentativa ${nextAttempts} de 5.`);
+    await this.repository.markDelivered(order._id);
+    return { message: "Entrega confirmada com sucesso!" };
+  }
+
+  #isPinValid(delivery = {}, inputCode) {
+    const expectedCode = delivery.confirmationCodePlain || delivery.confirmationCode;
+    if (expectedCode && String(expectedCode).trim() === inputCode) return true;
+
+    if (delivery.confirmationCodeHash) {
+      const inputHash = crypto.createHash("sha256").update(inputCode).digest("hex");
+      return inputHash === delivery.confirmationCodeHash;
     }
-
-    await this.repository.collection().updateOne(
-      { _id: order._id },
-      {
-        $set: {
-          statusInterno: "entregue",
-          "delivery.deliveredAt": new Date(),
-          updatedAt: new Date()
-        },
-        $unset: {
-          "delivery.confirmationCodeHash": "",
-          "delivery.confirmationCodePlain": ""
-        }
-      }
-    );
-
-    return {
-      success: true,
-      message: "Entrega confirmada com sucesso!"
-    };
+    return false;
   }
 }

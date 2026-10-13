@@ -1,144 +1,110 @@
 <link rel="stylesheet" href="/css/pages/product-details.css">
 
 <section class="product-details-page" data-product-id="<%= product._id %>">
-        <div class="product-details-container">
-          <!-- Galeria de Imagens -->
-          <div class="product-gallery">
-            
-            <div class="main-image-container skeleton"> 
-              <img id="mainImage" 
-                   src="/img/placeholder-product.webp"
-                   alt="Carregando..."
-                   class="main-image" style="opacity: 0; transition: opacity 0.5s ease;">
-              <span class="stock-badge skeleton" id="stockBadgeDisplay">Carregando</span>
-            </div>
+  <div class="product-details-container">
 
-            <div class="skeleton gallery-thumbnails">
+    <!-- Galeria de imagens -->
+    <div class="product-gallery">
+      <div class="main-image-container skeleton">
+        <img id="mainImage" class="main-image is-loading" src="/img/placeholder-product.svg" alt="Carregando...">
+        <span class="stock-badge skeleton" id="stockBadgeDisplay">Carregando</span>
+      </div>
+      <div class="gallery-thumbnails skeleton" id="galleryThumbnails"></div>
+    </div>
 
-            </div>
+    <!-- Informações do produto -->
+    <div class="product-info">
+      <div class="breadcrumb">
+        <a href="/products">Produtos</a> / <span id="breadcrumbCategory" class="skeleton">Categoria</span>
+      </div>
 
-          </div>
+      <h1 class="product-title skeleton" id="productTitle">Nome do Produto</h1>
 
-          
-          <!-- Informações do Produto -->
-          <div class="product-info">
-            <div class="breadcrumb">
-              <a href="/products">Produtos</a> / <span id="breadcrumbCategory" class="skeleton">Categoria</span>
-            </div>
-            <h1 class="product-title skeleton" id="productTitle">
-              Nome do Produto
-            </h1>
+      <div class="price-section">
+        <div class="price skeleton" id="productPriceContainer">
+          <span class="currency">R$</span>
+          <span class="amount" id="productAmount">0,00</span>
+        </div>
+        <p class="price-note">Preço sujeito a alterações</p>
+      </div>
 
-            <div class="price-section">
-              <div class="price skeleton" id="productPriceContainer">
-                <span class="currency"></span>
-                <span class="amount" id="productAmount"></span>
-              </div>
-              <p class="price-note">Preço sujeito a alterações</p>
-            </div>
+      <div class="specifications">
+        <h3>Especificações</h3>
+        <div class="spec-item">
+          <span class="spec-label">Categoria:</span>
+          <span class="spec-value skeleton" id="specCategory">Carregando...</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Estoque:</span>
+          <span class="spec-value skeleton" id="specStock">0 unidades</span>
+        </div>
+      </div>
 
-            <!-- Especificações -->
-            <div class="specifications">
-              <h3>Especificações</h3>
-              <div class="spec-item">
-                <span class="spec-label">Categoria:</span>
-                <span class="spec-value skeleton" id="specCategory">Carregando...</span>
-              </div>
-
-          <div class="spec-item">
-            <span class="spec-label">Estoque:</span>
-            <span class="spec-value skeleton" id="specStock">0 unidades</span>
-          </div>
-            </div>
-
-            <div class="selectors">
-                <div class="variation-section" id="colorSelectorSection" style="display: none;">
-                  <label>Cor:</label> 
-                  <div class="pill-selector" id="colorPillSelector"></div>
-                  <div id="colorError" class="validation-error" style="display:none">Selecione uma cor</div>
-                  <input type="hidden" id="selectedColor" name="color">
-                </div>
-
-                <div class="variation-section" id="sizeSelectorSection" style="display: none;">
-                  <label>Tamanho:</label> 
-                  <div class="pill-selector" id="sizePillSelector"></div>
-                  <div id="sizeError" class="validation-error" style="display:none">Selecione um tamanho</div>
-                  <input type="hidden" id="selectedSize" name="size">
-                </div>
-              
-                      <!-- Seletor de Quantidade -->
-                      <div class="quantity-section">
-                        <div class="quantity-control">
-                          <button type="button" id="decreaseQtyBtn" class="qty-btn" disabled>-</button>
-                          <input type="number" id="quantity" value="0" min="0" max="0" readonly>
-                          <button type="button" id="increaseQtyBtn" class="qty-btn" disabled>+</button>
-                        </div>
-                      </div>
-            </div>
-            
-            <!-- Garantia -->
-            <div class="guarantee-section">
-              <div class="guarantee-item">
-                <i class="material-icons">local_shipping</i>
-                <div>
-                  <strong>Frete Grátis</strong>
-                  <p>Em compras acima de R$ 100</p>
-                </div>
-              </div>
-              <div class="guarantee-item">
-                <i class="material-icons">shield_check</i>
-                <div>
-                  <strong>Garantia</strong>
-                  <p>12 meses de cobertura</p>
-                </div>
-              </div>
-              <div class="guarantee-item">
-                <i class="material-icons">undo</i>
-                <div>
-                  <strong>Devolução</strong>
-                  <p>30 dias para trocar</p>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div class="selectors">
+        <div class="variation-section" id="colorSelectorSection" hidden>
+          <label for="colorPillSelector">Cor:</label>
+          <div class="pill-selector" id="colorPillSelector"></div>
+          <div id="colorError" class="validation-error" hidden>Selecione uma cor</div>
         </div>
 
-           <!-- 
-            <div class="rating-section">
-              <div class="stars">
-                <% for(let i=0; i < 5; i++) { %>
-                  <i class="material-icons">star</i>
-                  <% } %>
-              </div>
-              <span class="rating-text">5.0 (45 avaliações)</span>
-            </div>
-
-     Seção de Descrição Expandida -->
-        <div class="expanded-description">
-          <h2>Sobre este Produto</h2>
-          <p id="productDescription" class="skeleton">Carregando descrição detalhada do produto...</p>
-          <p>Este produto foi cuidadosamente selecionado para atender aos mais altos padrões de qualidade e design.
-            Perfeito para quem busca estilo e conforto em uma única peça.</p>
+        <div class="variation-section" id="sizeSelectorSection" hidden>
+          <label for="sizePillSelector">Tamanho:</label>
+          <div class="pill-selector" id="sizePillSelector"></div>
+          <div id="sizeError" class="validation-error" hidden>Selecione um tamanho</div>
         </div>
 
-        <div class="related-products">
-          <h2>Você pode gostar também</h2>
-          <div class="related-grid">
-            <div class="related-card">
-              <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=400&q=80"
-                alt="Produto relacionado" loading="lazy">
-              <h4>Produto Relacionado 1</h4>
-              <p class="price">R$ 199.99</p>
-            </div>
-            <div class="related-card">
-              <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80"
-                alt="Produto relacionado" loading="lazy">
-              <h4>Produto Relacionado 2</h4>
-              <p class="price">R$ 249.99</p>
-            </div>
+        <div class="quantity-section">
+          <div class="quantity-control">
+            <button type="button" id="decreaseQtyBtn" class="qty-btn" aria-label="Diminuir quantidade" disabled>-</button>
+            <input type="number" id="quantity" value="0" min="0" max="0" aria-label="Quantidade" readonly>
+            <button type="button" id="increaseQtyBtn" class="qty-btn" aria-label="Aumentar quantidade" disabled>+</button>
           </div>
         </div>
+      </div>
+
+      <div class="action-buttons">
+        <button type="button" id="addToCartButton" class="btn-primary" disabled>
+          <i class="material-icons" aria-hidden="true">shopping_cart</i>
+          Adicionar ao carrinho
+        </button>
+      </div>
+
+      <p id="productError" class="validation-error" role="alert" hidden>
+        Não foi possível carregar as informações do produto.
+        <a href="" class="retry-link">Tentar novamente</a>
+      </p>
+
+      <!-- Garantias -->
+      <div class="guarantee-section">
+        <div class="guarantee-item">
+          <i class="material-icons" aria-hidden="true">local_shipping</i>
+          <div>
+            <strong>Frete Grátis</strong>
+            <p>Em compras acima de R$ 100</p>
+          </div>
+        </div>
+        <div class="guarantee-item">
+          <i class="material-icons" aria-hidden="true">verified_user</i>
+          <div>
+            <strong>Garantia</strong>
+            <p>12 meses de cobertura</p>
+          </div>
+        </div>
+        <div class="guarantee-item">
+          <i class="material-icons" aria-hidden="true">undo</i>
+          <div>
+            <strong>Devolução</strong>
+            <p>30 dias para trocar</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="expanded-description">
+    <h2>Sobre este Produto</h2>
+    <p id="productDescription" class="skeleton">Carregando descrição detalhada do produto...</p>
+  </div>
 </section>
 
 <script src="/js/product-details.js"></script>
-<script src="/js/favorited.js"></script>

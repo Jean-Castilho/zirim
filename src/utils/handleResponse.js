@@ -1,143 +1,174 @@
 /**
- * Módulo centralizado de gerenciamento de respostas HTTP
- * Combina funcionalidades de respostas JSON, páginas EJS e tratamento de erros.
+ * Módulo único de respostas HTTP.
+ *
+ * - Helpers de sucesso (JSON, vazio, HTMX, redirect adaptativo)
+ * - Renderização de páginas (layout completo ou fragmento HTMX)
+ * - asyncHandler: encaminha qualquer erro (sync ou async) ao errorMiddleware
+ * - errorMiddleware: ÚNICO ponto de conversão de erro -> resposta HTTP
+ *
+ * Controllers não montam respostas de erro: lançam (ou deixam propagar) erros de domínio.
  */
 
+import {
+  GeneralError,
+  ValidationError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+  ExternalServiceError,
+} from "./errors.js";
+
+// Re-export para manter compatibilidade com os imports existentes
+export {
+  GeneralError,
+  ValidationError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+  ExternalServiceError,
+};
+
+const ERROR_VIEW = "../pages/partials/Error";
+
 // ============================================================================
-// UTILITÁRIOS INTERNOS
+// DETECÇÃO DO TIPO DE REQUISIÇÃO
 // ============================================================================
+
+export const isHtmxRequest = (req) => req.headers?.["hx-request"] === "true";
+
+/** Cliente espera JSON (fetch/XHR/Accept json/body JSON). Não inclui HTMX. */
+export const wantsJson = (req) =>
+  Boolean(req.xhr || req.headers?.accept?.includes("json") || req.is?.("json"));
+
+// ============================================================================
+// RESPOSTAS DE SUCESSO
+// ============================================================================
+
+/** JSON padrão de sucesso: { success: true, message?, ...data } */
+export const sendSuccess = (res, { status = 200, message, data = {} } = {}) => {
+  const body = { success: true, ...(message ? { message } : {}), ...data };
+  return res.status(status).json(body);
+};
+
+/** JSON cru (arrays/objetos que o front consome diretamente). */
+export const sendData = (res, data, status = 200) => res.status(status).json(data);
+
+/** Resposta vazia (usada por HTMX para remover/limpar elementos). */
+export const sendEmpty = (res, status = 200) => res.status(status).send("");
+
+/** Texto simples (usado por fragmentos HTMX de feedback). */
+export const sendText = (res, text, status = 200) => res.status(status).send(text);
+
+/** Dispara toast no front via HX-Trigger. */
+export const setHtmxNotification = (res, message, type = "success") => {
+  res.setHeader("HX-Trigger", JSON.stringify({ showNotification: { message, type } }));
+};
 
 /**
- * Normaliza qualquer erro capturado para um formato de resposta padrão.
- * @param {Error} error - O erro capturado.
- * @returns {{ statusCode: number, payload: object }}
+ * Resposta que se adapta ao tipo de cliente:
+ *  - HTMX            -> corpo vazio (+ toast opcional / refresh opcional)
+ *  - JSON/XHR        -> sendSuccess
+ *  - navegação comum -> redirect (se informado) ou JSON
  */
-const parseErrorData = (error) => {
-  if (error instanceof GeneralError) {
-    return { statusCode: error.getCode(), payload: error.toJSON() };
+export const respond = (req, res, {
+  status = 200,
+  message,
+  data = {},
+  redirectTo = null,
+  htmx = {},
+} = {}) => {
+  if (isHtmxRequest(req)) {
+    if (htmx.notify && message) setHtmxNotification(res, message, "success");
+    if (htmx.refresh) res.setHeader("HX-Refresh", "true");
+    if (htmx.redirect) res.setHeader("HX-Redirect", htmx.redirect);
+    return sendEmpty(res, 200);
   }
 
-  const statusCode = error.statusCode || 500;
-  const message = error.message || 'Ocorreu um erro interno no servidor.';
-  const payload = {
-    message,
-    error: message,
-    type: error.name || 'Error',
-    code: statusCode,
-  };
+  if (!wantsJson(req) && redirectTo) {
+    return res.redirect(redirectTo);
+  }
 
-  if (error.errors) payload.details = error.errors;
-
-  return { statusCode, payload };
+  return sendSuccess(res, { status, message, data });
 };
 
 // ============================================================================
-// FUNÇÕES DE RESPOSTA HTTP
+// PÁGINAS
 // ============================================================================
-
-export const sendResponse = (res, statusCode, data) => {
-  res.status(statusCode).json(data);
-};
 
 export const renderPage = (req, res, page, options = {}) => {
-  const isHtmxRequest = req.headers["hx-request"] === "true";
-  
-  if (isHtmxRequest) {
-    // Evita manipulação frágil de strings. Substitui o prefixo explícito caso exista.
+  if (isHtmxRequest(req)) {
     const htmxPage = page.startsWith("../") ? page.substring(3) : page;
-    res.render(htmxPage, options);
-  } else {
-    res.render(res.locals.layout || './layout/main', { page, ...options });
+    return res.render(htmxPage, options);
   }
+  return res.render(res.locals.layout || "./layout/main", { page, ...options });
 };
 
-export const handleResponse = async (res, servicePromise, successStatusCode = 200) => {
-  try {
-    const result = await servicePromise;
-    sendResponse(res, successStatusCode, result);
-  } catch (error) {
-    const { statusCode, payload } = parseErrorData(error);
-    sendResponse(res, statusCode, payload);
-  }
-};
-
-export const renderPageWithData = async (req, res, page, dataPromise, defaultOptions = {}) => {
-  try {
-    const data = await dataPromise;
-    renderPage(req, res, page, { ...defaultOptions, ...data });
-  } catch (error) {
-    const { statusCode, payload } = parseErrorData(error);
-    
-    renderPage(req, res, "../pages/partials/Error", {
-      titulo: "Erro",
-      statusCode,
-      errorMessage: payload.error,
-    });
-  }
-};
-
-/**
- * Middleware global de tratamento de erros para Express.
- */
-export const errorMiddleware = (err, req, res, next) => {
-  const { statusCode, payload } = parseErrorData(err);
-  
-  // Se for uma requisição que espera JSON ou HTMX
-  if (req.xhr || req.headers.accept?.includes('json') || req.headers['hx-request']) {
-    return res.status(statusCode).json(payload);
-  }
-  
-  // Caso contrário, tenta renderizar uma página de erro amigável
-  renderPage(req, res, "../pages/partials/Error", {
+export const renderError = (req, res, statusCode, message) => {
+  res.status(statusCode);
+  return renderPage(req, res, ERROR_VIEW, {
     titulo: "Erro",
     statusCode,
-    errorMessage: payload.message || payload.error,
+    errorMessage: message,
   });
 };
 
 // ============================================================================
-// SISTEMA DE ERROS CUSTOMIZADOS
+// TRATAMENTO DE ERROS
 // ============================================================================
 
-export class GeneralError extends Error {
-  constructor(message, code = 500, errors = null) {
-    super(message);
-    this.name = this.constructor.name;
-    this.code = code;
-    this.errors = errors;
+/**
+ * Normaliza qualquer erro capturado (domínio, driver do Mongo, parser JSON...)
+ * para { statusCode, payload }.
+ */
+export const parseErrorData = (error) => {
+  if (error instanceof GeneralError) {
+    return { statusCode: error.getCode(), payload: error.toJSON() };
   }
 
-  getCode() {
-    return this.code;
+  let statusCode = error?.statusCode || error?.status || 500;
+  let message = error?.message || "Ocorreu um erro interno no servidor.";
+
+  if (error?.name === "CastError" || /ObjectId/i.test(message)) {
+    statusCode = 400;
+    message = "Identificador inválido.";
   }
 
-  toJSON() {
-    const result = {
-      message: this.message,
-      error: this.message,
-      type: this.name,
-      code: this.getCode(),
-    };
-    if (this.errors) result.details = this.errors;
-    
-    return result;
+  // Não vaza detalhes internos em erros 5xx inesperados
+  if (statusCode >= 500 && process.env.NODE_ENV === "production") {
+    message = "Ocorreu um erro interno no servidor.";
   }
-}
 
-export class ValidationError extends GeneralError {
-  constructor(message = "Falha na validação de dados", errors = []) {
-    super(message, 400, Array.isArray(errors) ? errors : [errors]);
-  }
-}
+  const payload = {
+    success: false,
+    message,
+    error: message,
+    type: error?.name || "Error",
+    code: statusCode,
+  };
+  if (error?.errors) payload.details = error.errors;
 
-export class NotFoundError extends GeneralError {
-  constructor(message = "Recurso não encontrado") {
-    super(message, 404);
-  }
-}
+  return { statusCode, payload };
+};
 
-export class UnauthorizedError extends GeneralError {
-  constructor(message = "Não autorizado") {
-    super(message, 401);
+/** Envolve um handler (sync/async) e encaminha rejeições ao errorMiddleware. */
+export const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve().then(() => fn(req, res, next)).catch(next);
+
+/** Middleware global de tratamento de erros do Express. */
+export const errorMiddleware = (err, req, res, next) => {
+  const { statusCode, payload } = parseErrorData(err);
+
+  if (statusCode >= 500) {
+    console.error(`[${req.method} ${req.originalUrl}]`, err);
   }
-}
+
+  if (res.headersSent) return next(err);
+
+  if (wantsJson(req) || isHtmxRequest(req)) {
+    return res.status(statusCode).json(payload);
+  }
+
+  return renderError(req, res, statusCode, payload.message);
+};

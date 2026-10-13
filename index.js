@@ -7,10 +7,8 @@ import { fileURLToPath } from 'url';
 import Server from "./src/server.js";
 import { connectDataBase, closeDataBase } from './src/config/db.js';
 import { errorMiddleware } from "./src/utils/handleResponse.js";
-import OrderRepository from './src/repository/OrderRepository.js';
 
 const app = express();
-const orderRepository = new OrderRepository();
 const port = process.env.PORT || 3090;
 const isProd = process.env.NODE_ENV === 'production';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

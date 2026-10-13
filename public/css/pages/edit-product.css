@@ -1,0 +1,60 @@
+/* Estilos da página admin/inventory/edit-product.ejs (migrados do <style> inline da View) */
+  .edit-container { padding: 40px 20px; max-width: 900px; margin: 0 auto; }
+  .form-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--cor-texto-escuro); }
+  .form-control { width: 100%; padding: 12px; border: 1px solid var(--cor-borda); border-radius: 4px; }
+  .variation-card { 
+    border: 1px solid #eee; 
+    padding: 20px; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    background: #f9f9f9;
+  }
+  .variation-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+  }
+  .image-preview-list { display: flex; gap: 10px; margin-top: 10px; }
+  .image-preview-item { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+  .btn-submit { background: var(--cor-primaria); color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+  .btn-back { color: #666; text-decoration: none; margin-left: 15px; }
+  .btn-danger { background-color: #d32f2f; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+  .image-upload-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer; margin-top: 10px; border-radius: 4px; }
+  .image-preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .btn-add-variation {
+    width: 100%;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    color: #4a5568;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 25px;
+  }
+  .btn-add-variation:hover {
+    background-color: #edf2f7;
+    border-color: var(--cor-primaria);
+    color: var(--cor-primaria);
+  }
+
+/* Grids das variações (antes definidos via style inline no template JS) */
+.variation-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+}
+
+.variation-fields--two {
+    grid-template-columns: 1fr 1fr;
+}

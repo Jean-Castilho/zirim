@@ -1,12 +1,9 @@
 import { ObjectId } from "mongodb";
-import { MercadoPagoConfig, Payment } from 'mercadopago';
-import crypto from 'crypto';
 import { mapPaymentStatus, normalizePaymentStatus, resolveOrderStatus, isTerminalPaymentStatus } from '../services/paymentState.js';
+import { ValidationError, GeneralError } from "../utils/errors.js";
 
 import BaseRepository from "./BaseRepository.js";
 
-const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN });
-const paymentClient = new Payment(client);
 const paymentFields = [
     "id",
     "status",
@@ -24,113 +21,82 @@ const buildPaymentData = (paymentResult = {}) => Object.fromEntries(
         .map((field) => [field, paymentResult[field]])
 );
 
+const idVariants = (id) => ObjectId.isValid(id)
+    ? [id, String(id), new ObjectId(id)]
+    : [id, String(id)];
+
+/**
+ * Repository de pedidos: SOMENTE acesso a dados (queries, updates atômicos).
+ */
 export default class OrderRepository extends BaseRepository {
-  
+
     constructor() {
         super("orders");
     }
 
-    async gerarPix(valor, userData) {
-        if (!valor) {
-            return { error: 'O campo "valor" é obrigatório.' };
-        }
-
-        const valorInteiro = parseFloat(valor).toFixed(2);
-        const [firstName, ...lastNameParts] = (userData.name || 'Cliente').split(' ');
-        
-        // Define a expiração do PIX para 60 minutos a partir de agora
-        const expirationDate = new Date();
-        expirationDate.setMinutes(expirationDate.getMinutes() + 60);
-
-        const payment_data = {
-            transaction_amount: parseFloat(valorInteiro),
-            description: 'Pagamento PIX - Zirim Store',
-            payment_method_id: 'pix', // Always PIX for this function
-            notification_url: process.env.MERCADOPAGO_WEBHOOK_URL || 'https://zirim.onrender.com/orders/webhook', // Use env var for webhook URL
-            date_of_expiration: expirationDate.toISOString(),
-            payer: {
-                email: userData.email?.endereco || userData.email || "contato@zirim.com",
-                first_name: firstName,
-                last_name: lastNameParts.join(' ') || 'Zirim',
-                identification: {
-                    type: 'CPF',
-                    number: userData.cpf || "17984881758", // Fallback para CPF de teste
-                },
-            },
-        };
-
-        try {
-            const result = await paymentClient.create({ body: payment_data });
-
-            const transactionData = result.point_of_interaction?.transaction_data ?? result.transaction_data ?? {};
-            const { qr_code, qr_code_base64 } = transactionData;
-
-            return {
-                id: result.id,
-                status: result.status,
-                status_detail: result.status_detail,
-                transaction_amount: result.transaction_amount,
-                date_of_expiration: new Date(result.date_of_expiration || expirationDate),
-                date_last_updated: result.date_last_updated,
-                qr_code,
-                qr_code_base64,
-            };
-        } catch (error) {
-            console.error('Erro ao gerar PIX:', error);
-            return { error: 'Erro ao gerar PIX: ' + error.message };
-        }
-    }
-
+    /** Pagamento -> status interno (default 'pendente'). */
     mapStatus(mpStatus) {
         return mapPaymentStatus(mpStatus) || 'pendente';
     }
 
-    async consultarPix(id) {
-        if (!id) {
-            return { error: 'O campo "id" é obrigatório.' };
-        }
-        try {
-            const paymentId = String(id);
-            await this.collection.updateOne(
-                {
-                    $or: [
-                        { "payment.id": id },
-                        { "payment.id": paymentId },
-                        { "payment.id": Number(id) }
-                    ]
-                },
-                { $set: { "paymentSync.lastAttemptAt": new Date() }, $unset: { "payment.lastSyncAttemptAt": "" } }
-            );
-            const paymentInfo = await paymentClient.get({ id });
-            if (paymentInfo) {
-                await this.sincronizarStatusPedido(paymentInfo);
-            }
-            return paymentInfo;
-        } catch (error) {
-            console.error('Erro ao consultar PIX:', error);
-            return { error: 'Erro ao consultar PIX' };
-        }
+    async findByPaymentId(paymentId) {
+        return await this.collection.findOne({ "payment.id": { $in: [paymentId, String(paymentId), Number(paymentId)] } });
     }
 
-    /**
-     * Atualiza o status do pedido manualmente (ex: cancelamento via API)
-     * @param {string} orderId 
-     * @param {string} mpStatus Status bruto do Mercado Pago (ex: 'cancelled')
-     */
-    async updateOrderStatus(orderId) {
-        const order = await this.findById(orderId);
-        if (!order) {
-            return { error: 'Pedido não encontrado.' };
-        }
+    /** Marca a última tentativa de sincronização do pagamento. */
+    async touchPaymentSync(paymentId) {
+        return await this.collection.updateOne(
+            { "payment.id": { $in: [paymentId, String(paymentId), Number(paymentId)] } },
+            { $set: { "paymentSync.lastAttemptAt": new Date() }, $unset: { "payment.lastSyncAttemptAt": "" } }
+        );
+    }
 
-        const paymentId = order.payment?.id;
-        if (!paymentId) {
-            return { error: 'Pagamento não associado a este pedido.' };
-        }
+    /** Pedidos pendentes cujo PIX expirou e ainda precisam ser reconciliados. */
+    async findExpiredPendingOrders(userId = null, limit = 25) {
+        const now = new Date();
+        const fallbackExpiration = new Date(now.getTime() - 60 * 60 * 1000);
+        const retryCutoff = new Date(now.getTime() - 5 * 60 * 1000);
+        const query = {
+            "payment.id": { $exists: true, $ne: null },
+            $and: [
+                {
+                    $or: [
+                        { statusInterno: 'pendente' },
+                        {
+                            statusInterno: { $in: ['cancelado', 'expirado'] },
+                            "paymentSync.lastSyncedAt": { $exists: false },
+                            "payment.lastSyncedAt": { $exists: false }
+                        }
+                    ]
+                },
+                {
+                    $or: [
+                        { "payment.date_of_expiration": { $lte: now } },
+                        { "payment.date_of_expiration": { $exists: false }, createdAt: { $lte: fallbackExpiration } }
+                    ]
+                },
+                {
+                    $or: [
+                        { "paymentSync.lastAttemptAt": { $lte: retryCutoff } },
+                        {
+                            "paymentSync.lastAttemptAt": { $exists: false },
+                            $or: [
+                                { "payment.lastSyncAttemptAt": { $exists: false } },
+                                { "payment.lastSyncAttemptAt": { $lte: retryCutoff } }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
 
-        const paymentInfo = await paymentClient.get({ id: paymentId });
-        await this.sincronizarStatusPedido(paymentInfo);
-        return { success: true, status: this.mapStatus(paymentInfo.status) };
+        if (userId) {
+            const userIdVariants = ObjectId.isValid(userId)
+                ? [userId, String(userId), new ObjectId(userId)]
+                : [String(userId)];
+            query["user._id"] = { $in: userIdVariants };
+        }
+        return await this.collection.find(query).sort({ createdAt: 1 }).limit(limit).toArray();
     }
 
     async sincronizarStatusPedido(paymentInfo) {
@@ -206,7 +172,7 @@ export default class OrderRepository extends BaseRepository {
             }
 
             if (!updatedOrder) {
-                throw new Error(`Não foi possível sincronizar o pagamento ${paymentId} após conflitos concorrentes.`);
+                throw new GeneralError(`Não foi possível sincronizar o pagamento ${paymentId} após conflitos concorrentes.`, 409);
             }
 
             if (paymentStatus === 'approved' || paymentStatus === 'authorized') {
@@ -237,7 +203,7 @@ export default class OrderRepository extends BaseRepository {
         if (reservation.modifiedCount === 0) return;
 
         const appliedOps = [];
-        const db = DataBase();
+        const db = this.db;
         const productsCollection = db.collection("products"); // Acesso correto à collection de produtos
 
         try {
@@ -271,7 +237,7 @@ export default class OrderRepository extends BaseRepository {
                 );
 
                 if (updateResult.modifiedCount !== 1) {
-                    throw new Error(`Estoque insuficiente ou variação indisponível para o produto ID ${item.id}.`);
+                    throw new ValidationError(`Estoque insuficiente ou variação indisponível para o produto ID ${item.id}.`);
                 }
 
                 appliedOps.push({
@@ -341,60 +307,6 @@ export default class OrderRepository extends BaseRepository {
         }
     }
 
-    async syncExpiredPendingOrders(userId = null) {
-        const now = new Date();
-        const fallbackExpiration = new Date(now.getTime() - 60 * 60 * 1000);
-        const retryCutoff = new Date(now.getTime() - 5 * 60 * 1000);
-        const query = {
-            "payment.id": { $exists: true, $ne: null },
-            $and: [
-                {
-                    $or: [
-                        { statusInterno: 'pendente' },
-                        {
-                            statusInterno: { $in: ['cancelado', 'expirado'] },
-                            "paymentSync.lastSyncedAt": { $exists: false },
-                            "payment.lastSyncedAt": { $exists: false }
-                        }
-                    ]
-                },
-                {
-                    $or: [
-                        { "payment.date_of_expiration": { $lte: now } },
-                        { "payment.date_of_expiration": { $exists: false }, createdAt: { $lte: fallbackExpiration } }
-                    ]
-                },
-                {
-                    $or: [
-                        { "paymentSync.lastAttemptAt": { $lte: retryCutoff } },
-                        {
-                            "paymentSync.lastAttemptAt": { $exists: false },
-                            $or: [
-                                { "payment.lastSyncAttemptAt": { $exists: false } },
-                                { "payment.lastSyncAttemptAt": { $lte: retryCutoff } }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        };
-
-        if (userId) {
-            const userIdVariants = ObjectId.isValid(userId)
-                ? [userId, String(userId), new ObjectId(userId)]
-                : [String(userId)];
-            query["user._id"] = { $in: userIdVariants };
-        }
-
-        const orders = await this.collection.find(query).sort({ createdAt: 1 }).limit(25).toArray();
-        let synchronized = 0;
-        for (const order of orders) {
-            const result = await this.consultarPix(order.payment.id);
-            if (!result.error) synchronized++;
-        }
-        return synchronized;
-    }
-
     /**
      * Atualiza os dados de pagamento e o status interno do pedido
      * @param {string|ObjectId} orderId 
@@ -403,7 +315,7 @@ export default class OrderRepository extends BaseRepository {
      */
     async updateOrderPayment(orderId, paymentResult, statusInterno) {
         if (!orderId) {
-            throw new Error("ID do pedido é obrigatório para atualizar o pagamento.");
+            throw new ValidationError("ID do pedido é obrigatório para atualizar o pagamento.");
         }
         const filter = ObjectId.isValid(orderId) ? { _id: new ObjectId(orderId) } : { _id: orderId };
         const novoStatus = statusInterno || (paymentResult?.status ? this.mapStatus(paymentResult.status) : 'pendente');
@@ -423,46 +335,6 @@ export default class OrderRepository extends BaseRepository {
                 $set: setFields
             }
         );
-    }
-
-    async handleWebhook(req) {
-        const { type, data } = req.body;
-        const xSignature = req.headers['x-signature'];
-        const xRequestId = req.headers['x-request-id'];
-
-        // Validação de Assinatura
-        if (xSignature && process.env.MERCADOPAGO_WEBHOOK_SECRET) {
-            try {
-                const parts = xSignature.split(',');
-                const ts = parts.find(p => p.startsWith('ts=')).split('=')[1];
-                const hash = parts.find(p => p.startsWith('v1=')).split('=')[1];
-                
-                const manifest = `id:${data.id};request-id:${xRequestId};ts:${ts};`;
-                const hmac = crypto.createHmac('sha256', process.env.MERCADOPAGO_WEBHOOK_SECRET)
-                    .update(manifest)
-                    .digest('hex');
-
-                if (hmac !== hash) {
-                    console.error('Assinatura do webhook inválida!');
-                    throw new Error('Invalid signature');
-                }
-            } catch (err) {
-                console.error('Erro ao validar assinatura:', err.message);
-                throw err; // Evita o processamento de payloads maliciosos caso a assinatura falhe
-            }
-        }
-
-        if (type === 'payment' && data && data.id) {
-            try {
-                const paymentInfo = await this.consultarPix(data.id);
-                return paymentInfo;
-            } catch (error) {
-                console.error('Erro ao processar webhook de pagamento:', error);
-                throw error;
-            }
-        }
-
-        return { message: 'Evento ignorado' };
     }
 
     async findUserOrders(userId) {
@@ -565,42 +437,6 @@ export default class OrderRepository extends BaseRepository {
         return { orders: allOrders, stats };
     }
 
-    async prepareOrderForDelivery(orderId) {
-        if (!orderId || !ObjectId.isValid(orderId)) {
-            return { error: "ID de pedido inválido." };
-        }
-
-        const order = await this.collection.findOne({ _id: new ObjectId(orderId) });
-        if (!order) {
-            return { error: "Pedido não encontrado." };
-        }
-
-        if (order.statusInterno !== "pago" && order.payment?.status !== "approved") {
-            return { error: "Apenas pedidos pagos podem ser preparados para entrega." };
-        }
-
-        const confirmationCode = order.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
-
-        await this.collection.updateOne(
-            { _id: new ObjectId(orderId) },
-            {
-                $set: {
-                    statusInterno: "preparado",
-                    "delivery.confirmationCodePlain": confirmationCode,
-                    "delivery.preparedAt": new Date(),
-                    updatedAt: new Date()
-                }
-            }
-        );
-
-        return {
-            success: true,
-            message: "Pedido preparado e liberado para entrega!",
-            orderId,
-            confirmationCode
-        };
-    }
-
     async getCourierDeliveries(courierId) {
         const idVariants = ObjectId.isValid(courierId)
             ? [courierId, String(courierId), new ObjectId(courierId)]
@@ -622,22 +458,27 @@ export default class OrderRepository extends BaseRepository {
         }).sort({ createdAt: 1 }).toArray();
     }
 
-    async selectOrderForDelivery(orderId, courierUser) {
-        if (!orderId || !ObjectId.isValid(orderId)) {
-            return { error: "ID de pedido inválido." };
-        }
+    // ------------------------------------------------------------------
+    // Entregas: primitivas de persistência (regras vivem em DeliveryService)
+    // ------------------------------------------------------------------
 
-        const courierRole = courierUser.role;
-        if (courierRole !== "entregador" && courierRole !== "admin") {
-            return { error: "Apenas usuários com perfil de entregador podem aceitar entregas." };
-        }
+    async markPrepared(orderId, confirmationCode) {
+        return await this.collection.updateOne(
+            { _id: new ObjectId(orderId) },
+            {
+                $set: {
+                    statusInterno: "preparado",
+                    "delivery.confirmationCodePlain": confirmationCode,
+                    "delivery.preparedAt": new Date(),
+                    updatedAt: new Date()
+                }
+            }
+        );
+    }
 
-        const courierId = courierUser._id;
-        const currentOrder = await this.collection.findOne({ _id: new ObjectId(orderId) });
-        const confirmationCode = currentOrder?.delivery?.confirmationCodePlain || Math.floor(1000 + Math.random() * 9000).toString();
-
-        // Operação atômica: garante que o pedido está "preparado" e sem entregador associado
-        const updateResult = await this.collection.findOneAndUpdate(
+    /** Atribuição atômica: só um entregador consegue pegar o pedido 'preparado'. */
+    async claimForCourier(orderId, courier, confirmationCode) {
+        const result = await this.collection.findOneAndUpdate(
             {
                 _id: new ObjectId(orderId),
                 statusInterno: "preparado",
@@ -649,9 +490,9 @@ export default class OrderRepository extends BaseRepository {
             {
                 $set: {
                     statusInterno: "em_rota",
-                    "delivery.courierId": courierId,
-                    "delivery.courierName": courierUser.name || "Entregador",
-                    "delivery.courierPhone": (typeof courierUser.phone === "object" ? courierUser.phone?.number : courierUser.phone) || "",
+                    "delivery.courierId": courier.id,
+                    "delivery.courierName": courier.name,
+                    "delivery.courierPhone": courier.phone,
                     "delivery.confirmationCodePlain": confirmationCode,
                     "delivery.startedAt": new Date(),
                     updatedAt: new Date()
@@ -659,78 +500,30 @@ export default class OrderRepository extends BaseRepository {
             },
             { returnDocument: "after" }
         );
-
-        const updatedOrder = updateResult?.value ?? updateResult;
-        if (!updatedOrder) {
-            return { error: "Pedido indisponível: não está pronto para entrega ou já foi aceito por outro entregador." };
-        }
-
-        return {
-            success: true,
-            message: "Pedido selecionado para entrega com sucesso!",
-            orderId: updatedOrder._id,
-            statusInterno: "em_rota"
-        };
+        return result?.value ?? result;
     }
 
-    async confirmDelivery(orderId, courierId, code) {
-        if (!orderId || !code) {
-            return { error: "ID do pedido e código são obrigatórios." };
-        }
-
-        const idVariants = ObjectId.isValid(courierId)
-            ? [courierId, String(courierId), new ObjectId(courierId)]
-            : [courierId, String(courierId)];
-
-        const order = await this.collection.findOne({
+    async findCourierOrder(orderId, courierId) {
+        return await this.collection.findOne({
             _id: new ObjectId(orderId),
-            "delivery.courierId": { $in: idVariants }
+            "delivery.courierId": { $in: idVariants(courierId) }
         });
+    }
 
-        if (!order) {
-            return { error: "Pedido não encontrado ou não atribuído a você." };
-        }
+    async incrementDeliveryAttempts(orderId) {
+        return await this.collection.updateOne(
+            { _id: new ObjectId(orderId) },
+            { $inc: { "delivery.attempts": 1 } }
+        );
+    }
 
-        if (order.statusInterno === "entregue") {
-            return { error: "Este pedido já foi finalizado como entregue." };
-        }
-
-        const attempts = Number(order.delivery?.attempts || 0);
-        if (attempts >= 5) {
-            return { error: "Limite de tentativas excedido (5x). Contate a central de suporte." };
-        }
-
-        const cleanInput = String(code).trim();
-        const expectedCode = order.delivery?.confirmationCodePlain || order.delivery?.confirmationCode;
-        const expectedHash = order.delivery?.confirmationCodeHash;
-
-        let isValid = false;
-        if (expectedCode && String(expectedCode).trim() === cleanInput) {
-            isValid = true;
-        } else if (expectedHash) {
-            const inputHash = crypto.createHash("sha256").update(cleanInput).digest("hex");
-            if (inputHash === expectedHash) {
-                isValid = true;
-            }
-        }
-
-        if (!isValid) {
-            const nextAttempts = attempts + 1;
-            await this.collection.updateOne(
-                { _id: order._id },
-                { $inc: { "delivery.attempts": 1 } }
-            );
-            return { error: `Código incorreto. Tentativa ${nextAttempts} de 5.` };
-        }
-
-        await this.collection.updateOne(
-            { _id: order._id },
+    async markDelivered(orderId) {
+        return await this.collection.updateOne(
+            { _id: new ObjectId(orderId) },
             {
                 $set: { statusInterno: "entregue", "delivery.deliveredAt": new Date(), updatedAt: new Date() },
                 $unset: { "delivery.confirmationCodeHash": "", "delivery.confirmationCodePlain": "" }
             }
         );
-
-        return { success: true, message: "Entrega confirmada com sucesso!" };
     }
 }

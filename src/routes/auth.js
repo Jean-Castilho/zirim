@@ -1,71 +1,54 @@
 import express from "express";
 import multer from "multer";
-import { validateCsrfToken, requireAuth, requireAdmin } from "../middleware/authMiddleware.js"; 
+import { validateCsrfToken, requireAuth, requireAdmin } from "../middleware/authMiddleware.js";
 
-// Separação de domínios em controllers distintos
-import UserController from "../controllers/userControllers.js";
-import BannerControllers from "../controllers/bannerControllers.js";
+import AuthController from "../controllers/AuthController.js";
+import VerificationController from "../controllers/VerificationController.js";
+import UserController from "../controllers/UserController.js";
+import BannerController from "../controllers/BannerController.js";
 
-const userController = new UserController();
-const bannerController = new BannerControllers();
+const auth = new AuthController();
+const verification = new VerificationController();
+const users = new UserController();
+const banners = new BannerController();
+
 const upload = multer({ storage: multer.memoryStorage() });
-
 const router = express.Router();
 
-router.post("/login", validateCsrfToken, (req, res, next) => userController.login(req, res, next));
-router.post("/register", validateCsrfToken, (req, res, next) => userController.register(req, res, next));
-router.post("/forgotPassword", validateCsrfToken, (req, res, next) => userController.forgotPassword(req, res, next));
-router.post("/PasswordReset", validateCsrfToken, (req, res, next) => userController.PasswordReset(req, res, next));
+// Autenticação e senha
+router.post("/login", validateCsrfToken, auth.handle("login"));
+router.post("/register", validateCsrfToken, auth.handle("register"));
+router.post("/forgotPassword", validateCsrfToken, auth.handle("forgotPassword"));
+router.post("/PasswordReset", validateCsrfToken, auth.handle("passwordReset"));
+router.post("/updatePassword", requireAuth, validateCsrfToken, auth.handle("updatePassword"));
 
-router.post("/updatePassword", requireAuth, validateCsrfToken, (req, res, next) => userController.updatePassword(req, res, next));
+// Verificação de contato (OTP)
+router.post("/verify-otp", validateCsrfToken, verification.handle("verifyEmailOtp"));
+router.post("/email/send-otp", requireAuth, validateCsrfToken, verification.handle("sendEmailOtp"));
+router.post("/phone/send-otp", requireAuth, validateCsrfToken, verification.handle("sendPhoneOtp"));
+router.post("/phone/verify-otp", requireAuth, validateCsrfToken, verification.handle("verifyPhoneOtp"));
 
-router.post("/verify-otp", validateCsrfToken, (req, res, next) => userController.verifyOtp(req, res, next));
-router.post("/email/send-otp", requireAuth, validateCsrfToken, (req, res, next) => userController.sendEmailOtp(req, res, next));
-router.post("/phone/send-otp", requireAuth, validateCsrfToken, (req, res, next) => userController.sendPhoneOtp(req, res, next));
-router.post("/phone/verify-otp", requireAuth, validateCsrfToken, (req, res, next) => userController.verifyPhoneOtp(req, res, next));
+// Usuários
+router.post("/updateProfile", requireAuth, validateCsrfToken, users.handle("updateProfile"));
+router.post("/deleteUser/:id", requireAuth, requireAdmin, validateCsrfToken, users.handle("deleteUser"));
+router.post("/users/edit/:id", requireAuth, requireAdmin, validateCsrfToken, users.handle("updateUser"));
+router.delete("/users/edit/:id", requireAuth, requireAdmin, validateCsrfToken, users.handle("deleteUser"));
 
-router.post("/deleteUser/:id", requireAuth, requireAdmin, validateCsrfToken, (req, res, next) => userController.deleteUser(req, res, next));
-router.post("/updateProfile", requireAuth, validateCsrfToken, (req, res, next) => userController.updateProfile(req, res, next));
-
-router.post(
-    "/users/edit/:id",
-    requireAuth,
-    requireAdmin,
-    validateCsrfToken,
-    (req, res, next) => userController.updateUser(req, res, next)
-);
-router.delete(
-    "/users/edit/:id",
-    requireAuth,
-    requireAdmin,
-    validateCsrfToken,
-    (req, res, next) => userController.deleteUser(req, res, next)
-);
-
+// Conteúdo da home (admin)
 router.post(
     "/updateBannerHome",
-    requireAuth,
-    requireAdmin,
+    requireAuth, requireAdmin,
     upload.single("bannerImage"),
     validateCsrfToken,
-    (req, res, next) => bannerController.updateBannerHome(req, res, next)
+    banners.handle("updateMain")
 );
-
 router.post(
     "/updateCategoryHome",
-    requireAuth,
-    requireAdmin,
+    requireAuth, requireAdmin,
     upload.single("categoryImage"),
     validateCsrfToken,
-    (req, res, next) => bannerController.updateCategoryHome(req, res, next)
+    banners.handle("addCategory")
 );
-
-router.post(
-    "/deleteCategoryHome/:id",
-    requireAuth,
-    requireAdmin,
-    validateCsrfToken,
-    (req, res, next) => bannerController.deleteCategoryHome(req, res, next)
-);
+router.post("/deleteCategoryHome/:id", requireAuth, requireAdmin, validateCsrfToken, banners.handle("removeCategory"));
 
 export default router;
