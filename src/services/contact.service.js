@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 
 import { ValidationError, ExternalServiceError } from "../utils/errors.js";
-import { storeOtpCode, generateOtpCode } from "./otpService.js";
+import { storeOtpCode, generateOtpCode } from "./otp.service.js";
 
 dotenv.config();
 

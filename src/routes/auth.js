@@ -1,11 +1,11 @@
 import express from "express";
 import multer from "multer";
-import { validateCsrfToken, requireAuth, requireAdmin } from "../middleware/authMiddleware.js";
+import { validateCsrfToken, requireAuth, requireAdmin } from "../middleware/auth.middleware.js";
 
-import AuthController from "../controllers/AuthController.js";
-import VerificationController from "../controllers/VerificationController.js";
-import UserController from "../controllers/UserController.js";
-import BannerController from "../controllers/BannerController.js";
+import AuthController from "../controllers/auth.controller.js";
+import VerificationController from "../controllers/verification.controller.js";
+import UserController from "../controllers/user.controller.js";
+import BannerController from "../controllers/banner.controller.js";
 
 const auth = new AuthController();
 const verification = new VerificationController();

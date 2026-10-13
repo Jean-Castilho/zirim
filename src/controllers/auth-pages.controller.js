@@ -1,6 +1,6 @@
-import BaseController from "./BaseController.js";
-import UserService from "../services/UserService.js";
-import OrderService from "../services/OrderService.js";
+import BaseController from "./base.controller.js";
+import UserService from "../services/user.service.js";
+import OrderService from "../services/order.service.js";
 import { requireSessionUser } from "../utils/session.js";
 
 /**

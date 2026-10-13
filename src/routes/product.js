@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
-import ProductController from "../controllers/ProductController.js";
-import { requireAuth, requireAdmin, validateCsrfToken } from "../middleware/authMiddleware.js";
+import ProductController from "../controllers/product.controller.js";
+import { requireAuth, requireAdmin, validateCsrfToken } from "../middleware/auth.middleware.js";
 
 const products = new ProductController();
 const upload = multer({ storage: multer.memoryStorage() });

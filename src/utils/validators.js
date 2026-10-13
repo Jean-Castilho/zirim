@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { ValidationError } from "./handleResponse.js";
+import { ValidationError } from "./handle-response.js";
 
 /**
  * Utilitários e regras de validação padronizados

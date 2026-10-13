@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 
 import Server from "./src/server.js";
 import { connectDataBase, closeDataBase } from './src/config/db.js';
-import { errorMiddleware } from "./src/utils/handleResponse.js";
+import { errorMiddleware } from "./src/utils/handle-response.js";
 
 const app = express();
 const port = process.env.PORT || 3090;
@@ -18,7 +18,7 @@ let isShuttingDown = false;
 // 1. Configurações de Template e Assets
 app.set('trust proxy', 1); 
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'Views'));
+app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 2. Middlewares de Parseamento

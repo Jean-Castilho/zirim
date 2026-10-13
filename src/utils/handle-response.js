@@ -30,7 +30,7 @@ export {
   ExternalServiceError,
 };
 
-const ERROR_VIEW = "../pages/partials/Error";
+const ERROR_VIEW = "../pages/partials/error";
 
 // ============================================================================
 // DETECÇÃO DO TIPO DE REQUISIÇÃO

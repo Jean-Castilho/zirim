@@ -8,7 +8,7 @@
       <%= message %>
     </p>
 
-    <form id="loginForm" class="login-form">
+    <form id="loginForm" hx-boost="false" class="login-form" method="post" action="/login">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label for="email">E-mail ou Usuário</label>

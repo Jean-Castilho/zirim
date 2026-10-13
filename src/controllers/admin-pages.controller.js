@@ -1,9 +1,9 @@
-import BaseController from "./BaseController.js";
-import UserService from "../services/UserService.js";
-import ProductService from "../services/ProductService.js";
-import BannerService from "../services/BannerService.js";
-import DeliveryService from "../services/DeliveryService.js";
-import DashboardService from "../services/DashboardService.js";
+import BaseController from "./base.controller.js";
+import UserService from "../services/user.service.js";
+import ProductService from "../services/product.service.js";
+import BannerService from "../services/banner.service.js";
+import DeliveryService from "../services/delivery.service.js";
+import DashboardService from "../services/dashboard.service.js";
 
 /**
  * Painéis administrativos e operacionais (admin / logística / entregador).

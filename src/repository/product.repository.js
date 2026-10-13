@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import sharp from 'sharp';
-import BaseRepository from "./BaseRepository.js";
+import BaseRepository from "./base.repository.js";
 
 import { ValidationError, NotFoundError, GeneralError } from "../utils/errors.js";
 

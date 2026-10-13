@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { requireCourier, requireAdmin, generateCsrfToken, validateCsrfToken } from "../middleware/authMiddleware.js";
+import { requireCourier, requireAdmin, generateCsrfToken, validateCsrfToken } from "../middleware/auth.middleware.js";
 import { validateBody, rules } from "../utils/validators.js";
-import AdminPagesController from "../controllers/AdminPagesController.js";
-import DeliveryController from "../controllers/DeliveryController.js";
+import AdminPagesController from "../controllers/admin-pages.controller.js";
+import DeliveryController from "../controllers/delivery.controller.js";
 
 const adminPages = new AdminPagesController();
 const delivery = new DeliveryController();

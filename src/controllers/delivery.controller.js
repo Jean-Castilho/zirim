@@ -1,5 +1,5 @@
-import BaseController from "./BaseController.js";
-import DeliveryService from "../services/DeliveryService.js";
+import BaseController from "./base.controller.js";
+import DeliveryService from "../services/delivery.service.js";
 
 /**
  * Ações de entrega (preparar, aceitar e confirmar com PIN).

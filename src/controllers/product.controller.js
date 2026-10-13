@@ -1,5 +1,5 @@
-import BaseController from "./BaseController.js";
-import ProductService from "../services/ProductService.js";
+import BaseController from "./base.controller.js";
+import ProductService from "../services/product.service.js";
 
 /**
  * Produtos: CRUD e entrega de imagens.

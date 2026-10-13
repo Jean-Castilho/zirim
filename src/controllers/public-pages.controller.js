@@ -1,7 +1,7 @@
-import BaseController from "./BaseController.js";
-import ProductService from "../services/ProductService.js";
-import BannerService from "../services/BannerService.js";
-import OrderService from "../services/OrderService.js";
+import BaseController from "./base.controller.js";
+import ProductService from "../services/product.service.js";
+import BannerService from "../services/banner.service.js";
+import OrderService from "../services/order.service.js";
 
 /**
  * Páginas públicas da loja (somente renderização: dados vêm dos services).

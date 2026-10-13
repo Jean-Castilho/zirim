@@ -1,6 +1,6 @@
 /**
  * Hierarquia única de erros de domínio.
- * Services e repositories lançam estes erros; o errorMiddleware (handleResponse.js)
+ * Services e repositories lançam estes erros; o errorMiddleware (handle-response.js)
  * é o único ponto que os converte em resposta HTTP.
  */
 

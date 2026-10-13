@@ -1,8 +1,7 @@
-
 import { ObjectId } from "mongodb";
-import ProductRepository from "../repository/ProductRepository.js";
-import OrderRepository from "../repository/OrderRepository.js";
-import PaymentService from "./PaymentService.js";
+import ProductRepository from "../repository/product.repository.js";
+import OrderRepository from "../repository/order.repository.js";
+import PaymentService from "./payment.service.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
 
 const SHIPPING_PRICES = { padrao: 0, expresso: 14.9 };

@@ -1,4 +1,4 @@
-import ProductRepository from "../repository/ProductRepository.js";
+import ProductRepository from "../repository/product.repository.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
 
 const isBlankId = (id) => !id || id === "null" || id === "undefined";

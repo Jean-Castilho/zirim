@@ -1,5 +1,5 @@
-import BaseController from "./BaseController.js";
-import UserService from "../services/UserService.js";
+import BaseController from "./base.controller.js";
+import UserService from "../services/user.service.js";
 import { ValidationError } from "../utils/errors.js";
 import { requireSessionUser, saveSession, toSessionUser } from "../utils/session.js";
 

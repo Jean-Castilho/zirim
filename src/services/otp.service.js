@@ -1,5 +1,5 @@
 import { randomInt } from "crypto";
-import OtpRepository from "../repository/OtpRepository.js";
+import OtpRepository from "../repository/otp.repository.js";
 
 const OTP_LIFETIME_MINUTES = 15;
 const otpRepository = new OtpRepository();

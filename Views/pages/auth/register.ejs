@@ -6,7 +6,7 @@
   <div class="register-container">
     <h1 class="register-title"><%= titulo %></h1>
 
-    <form id="registerForm" class="register-form">
+    <form id="registerForm" hx-boost="false" class="register-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label for="name">Nome Completo</label>

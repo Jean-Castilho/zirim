@@ -1,7 +1,7 @@
-import BaseController from "./BaseController.js";
-import UserService from "../services/UserService.js";
-import { createToken } from "../services/authServices.js";
-import { isHtmxRequest, sendSuccess } from "../utils/handleResponse.js";
+import BaseController from "./base.controller.js";
+import UserService from "../services/user.service.js";
+import { createToken } from "../services/auth.service.js";
+import { isHtmxRequest, sendSuccess } from "../utils/handle-response.js";
 import { regenerateSession, saveSession, requireSessionUser, toSessionUser } from "../utils/session.js";
 
 /**

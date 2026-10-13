@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import BaseRepository from "./BaseRepository.js";
+import BaseRepository from "./base.repository.js";
 import { ValidationError } from "../utils/errors.js";
 
 export default class UserRepository extends BaseRepository {

@@ -1,6 +1,6 @@
-import BaseController from "./BaseController.js";
-import OrderService from "../services/OrderService.js";
-import { wantsJson } from "../utils/handleResponse.js";
+import BaseController from "./base.controller.js";
+import OrderService from "../services/order.service.js";
+import { wantsJson } from "../utils/handle-response.js";
 
 /**
  * Pedidos e pagamentos (checkout, status do PIX e webhook).

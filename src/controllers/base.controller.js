@@ -6,7 +6,7 @@ import {
   sendEmpty,
   sendText,
   renderPage,
-} from "../utils/handleResponse.js";
+} from "../utils/handle-response.js";
 
 /**
  * Base de todos os controllers.

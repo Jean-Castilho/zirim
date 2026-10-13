@@ -1,5 +1,5 @@
-import OrderRepository from "../repository/OrderRepository.js";
-import * as gateway from "./gateways/mercadoPagoGateway.js";
+import OrderRepository from "../repository/order.repository.js";
+import * as gateway from "./gateways/mercado-pago.gateway.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
 
 /**

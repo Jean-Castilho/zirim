@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
-import { mapPaymentStatus, normalizePaymentStatus, resolveOrderStatus, isTerminalPaymentStatus } from '../services/paymentState.js';
+import { mapPaymentStatus, normalizePaymentStatus, resolveOrderStatus, isTerminalPaymentStatus } from '../services/payment-state.js';
 import { ValidationError, GeneralError } from "../utils/errors.js";
 
-import BaseRepository from "./BaseRepository.js";
+import BaseRepository from "./base.repository.js";
 
 const paymentFields = [
     "id",
@@ -27,6 +27,7 @@ const idVariants = (id) => ObjectId.isValid(id)
 
 /**
  * Repository de pedidos: SOMENTE acesso a dados (queries, updates atômicos).
+ * Chamadas ao gateway de pagamento ficam em PaymentService; regras de entrega em DeliveryService.
  */
 export default class OrderRepository extends BaseRepository {
 

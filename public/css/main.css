@@ -82,3 +82,37 @@ button,
     height: 0px;
     display: none;
 }
+
+/* ---------------------------------------------------------------------------
+ * Carregamento inicial: estabilidade do layout
+ * ---------------------------------------------------------------------------
+ * Enquanto a fonte Material Icons não chega, o nome do ícone ("favorite_border",
+ * "inventory"...) aparecia como texto e alargava o menu, quebrando o header e
+ * sobrepondo o conteúdo. Cada ícone agora ocupa sempre uma caixa de 1em x 1em;
+ * o texto excedente é cortado e fica transparente até a fonte estar pronta.
+ */
+.material-icons {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    overflow: hidden;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+html:not(.icons-ready) .material-icons {
+    color: transparent !important;
+}
+
+/* Âncoras e foco não ficam escondidos atrás do header sticky */
+html {
+    scroll-padding-top: var(--altura-header, 70px);
+}
+
+/* O conteúdo principal sempre começa abaixo do header */
+#main-content {
+    position: relative;
+    z-index: 0;
+    min-height: calc(100vh - var(--altura-header, 70px));
+}

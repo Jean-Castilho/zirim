@@ -1,5 +1,5 @@
 import { randomBytes, timingSafeEqual } from "crypto";
-import { GeneralError } from "../utils/handleResponse.js"; 
+import { GeneralError } from "../utils/handle-response.js"; 
 
 const expectsJson = (req) =>
   Boolean(req.xhr || req.headers.accept?.includes("json") || req.headers["hx-request"]);

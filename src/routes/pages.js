@@ -1,11 +1,11 @@
 import express from "express";
-import { generateCsrfToken, requireAuth, requireAdmin, requireCourier } from "../middleware/authMiddleware.js";
+import { generateCsrfToken, requireAuth, requireAdmin, requireCourier } from "../middleware/auth.middleware.js";
 
-import PublicPagesController from "../controllers/PublicPagesController.js";
-import AuthPagesController from "../controllers/AuthPagesController.js";
-import AdminPagesController from "../controllers/AdminPagesController.js";
-import AuthController from "../controllers/AuthController.js";
-import ProductController from "../controllers/ProductController.js";
+import PublicPagesController from "../controllers/public-pages.controller.js";
+import AuthPagesController from "../controllers/auth-pages.controller.js";
+import AdminPagesController from "../controllers/admin-pages.controller.js";
+import AuthController from "../controllers/auth.controller.js";
+import ProductController from "../controllers/product.controller.js";
 
 const publicPages = new PublicPagesController();
 const authPages = new AuthPagesController();

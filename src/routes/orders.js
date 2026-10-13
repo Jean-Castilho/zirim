@@ -1,6 +1,6 @@
 import express from "express";
-import OrderController from "../controllers/OrderController.js";
-import { validateCsrfToken } from "../middleware/authMiddleware.js";
+import OrderController from "../controllers/order.controller.js";
+import { validateCsrfToken } from "../middleware/auth.middleware.js";
 
 const orders = new OrderController();
 const router = express.Router();

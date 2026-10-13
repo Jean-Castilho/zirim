@@ -4,7 +4,7 @@
     <h1 class="verify-otp-title"><%= titulo %></h1>
     <p class="verify-otp-message"><%= message %></p>
 
-    <form id="verifyOtpForm" class="verify-otp-form">
+    <form id="verifyOtpForm" hx-boost="false" class="verify-otp-form">
       <div class="form-group">
         <label for="email">E-mail</label>
         <input type="email" id="email" name="email" value="<%= email %>" readonly required>

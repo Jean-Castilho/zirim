@@ -1,4 +1,4 @@
-import BaseRepository from "./BaseRepository.js";
+import BaseRepository from "./base.repository.js";
 
 export default class OtpRepository extends BaseRepository {
   constructor() {

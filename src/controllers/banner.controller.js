@@ -1,5 +1,5 @@
-import BaseController from "./BaseController.js";
-import BannerService from "../services/BannerService.js";
+import BaseController from "./base.controller.js";
+import BannerService from "../services/banner.service.js";
 
 /**
  * Banner principal e categorias da página inicial (área administrativa).

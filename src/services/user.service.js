@@ -1,11 +1,11 @@
 import { createHash, randomBytes } from "node:crypto";
 import { ObjectId } from "mongodb";
-import UserRepository from "../repository/UserRepository.js";
+import UserRepository from "../repository/user.repository.js";
 import { ValidationError, GeneralError, NotFoundError, ConflictError, UnauthorizedError } from "../utils/errors.js";
-import { compararPassword, createHashPassword } from "./authServices.js";
-import { validateUser, assertEmail, assertNewPassword, normalizeEmail } from "./validationData.js";
-import { sendWhatsAppOtp, sendEmailOtp, sendPasswordResetEmail } from "./contactService.js";
-import { verifyOtpCode } from "./otpService.js";
+import { compararPassword, createHashPassword } from "./auth.service.js";
+import { validateUser, assertEmail, assertNewPassword, normalizeEmail } from "./validation-data.js";
+import { sendWhatsAppOtp, sendEmailOtp, sendPasswordResetEmail } from "./contact.service.js";
+import { verifyOtpCode } from "./otp.service.js";
 
 const ALLOWED_ROLES = ["user", "entregador", "admin"];
 const PASSWORD_RESET_LIFETIME_MS = 30 * 60 * 1000;

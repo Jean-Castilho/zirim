@@ -1,6 +1,6 @@
-import ProductService from "./ProductService.js";
-import UserService from "./UserService.js";
-import OrderService from "./OrderService.js";
+import ProductService from "./product.service.js";
+import UserService from "./user.service.js";
+import OrderService from "./order.service.js";
 
 /** Agrega os indicadores do painel administrativo. */
 export default class DashboardService {

@@ -1,7 +1,7 @@
 import { GridFSBucket } from "mongodb";
 import sharp from "sharp";
 import { getGridFSBucket } from "../config/db.js";
-import BaseRepository from "./BaseRepository.js";
+import BaseRepository from "./base.repository.js";
 
 export default class BannerRepository extends BaseRepository {
     constructor() {

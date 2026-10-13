@@ -1,4 +1,4 @@
-import BannerRepository from "../repository/BannerRepository.js";
+import BannerRepository from "../repository/banner.repository.js";
 import { ValidationError } from "../utils/errors.js";
 
 const DEFAULT_LINK = "/products";
