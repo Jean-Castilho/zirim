@@ -16,9 +16,17 @@
   align-items: center;
   text-align: center;
   padding: 40px 20px;
-  margin: 20px 0 40px 0;
+  /* Espaço mínimo entre o header sticky e o banner (fluido: menor em telas pequenas) */
+  margin: var(--hero-gap-top, clamp(8px, 1.2vw, 12px)) 0 40px 0;
   overflow: hidden;
   color: #fff;
+}
+
+@media (max-width: 560px) {
+  .hero {
+    --hero-gap-top: 8px;
+    margin-bottom: 28px;
+  }
 }
 
 .hero.preload-bg {
@@ -210,7 +218,7 @@
   .hero.preload-bg {
     min-height: 320px;
     padding: 30px 15px;
-    margin: 15px 0 30px 0;
+    margin: var(--hero-gap-top, clamp(8px, 1.2vw, 12px)) 0 30px 0;
   }
 
 .view-details-btn {
