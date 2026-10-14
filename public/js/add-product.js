@@ -8,7 +8,7 @@
       .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 
-    function addVariationBlock(sku = '', cores = '', tamanhos = '', preco = '', estoque = '', ativo = false) {
+    function addVariationBlock(sku = '', cores = '', tamanhos = '', preco = '', estoque = '', ativo = true) {
       const container = document.getElementById('variations-container');
       const variationBlock = document.createElement('div');
       variationBlock.classList.add('variation-block');

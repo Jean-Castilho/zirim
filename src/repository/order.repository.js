@@ -229,7 +229,8 @@ export default class OrderRepository extends BaseRepository {
                     {
                         _id: new ObjectId(item.id),
                         variacoes: {
-                            $elemMatch: elemMatchFilter
+                            // Nunca debita variação desativada (mesmo que tenha sido desativada após o checkout)
+                            $elemMatch: { ...elemMatchFilter, ativo: { $ne: false } }
                         }
                     },
                     {
@@ -385,6 +386,31 @@ export default class OrderRepository extends BaseRepository {
         ]).toArray();
 
         return salesStats[0]?.totalVolume || 0;
+    }
+
+    /** Faturamento aprovado do período atual e do anterior (mesma duração), numa só consulta. */
+    async getSalesComparison(days = 30) {
+        const now = Date.now();
+        const currentStart = new Date(now - days * 24 * 60 * 60 * 1000);
+        const previousStart = new Date(now - 2 * days * 24 * 60 * 60 * 1000);
+
+        const rows = await this.collection.aggregate([
+            { $match: { "payment.status": 'approved', createdAt: { $gte: previousStart } } },
+            {
+                $group: {
+                    _id: { $cond: [{ $gte: ["$createdAt", currentStart] }, "current", "previous"] },
+                    total: { $sum: "$payment.transaction_amount" },
+                    count: { $sum: 1 }
+                }
+            }
+        ]).toArray();
+
+        const byPeriod = Object.fromEntries(rows.map((r) => [r._id, r]));
+        return {
+            current: byPeriod.current?.total || 0,
+            previous: byPeriod.previous?.total || 0,
+            ordersCurrent: byPeriod.current?.count || 0,
+        };
     }
 
     async countByStatus(statusInterno) {

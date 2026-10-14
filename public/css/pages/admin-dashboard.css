@@ -284,3 +284,35 @@
             grid-template-columns: 1fr 2fr;
         }
     }
+
+/* ==========================================
+   Dados dinâmicos do painel
+   ========================================== */
+.dashboard-updated {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.stat-meta {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.badge-trend.is-up {
+    color: var(--success);
+    background-color: rgba(43, 138, 62, 0.12);
+}
+.badge-trend.is-down {
+    color: var(--danger);
+    background-color: rgba(201, 42, 42, 0.12);
+}
+
+.status-pill.is-active {
+    color: var(--success);
+    background-color: rgba(43, 138, 62, 0.12);
+}
+.status-pill.is-inactive {
+    color: var(--text-secondary);
+    background-color: var(--bg-card-hover);
+}

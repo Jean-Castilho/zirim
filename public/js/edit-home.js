@@ -107,7 +107,7 @@
           }
 
           // Integração com evento HX-Trigger para executar showNotification padrão
-          document.body.addEventListener('showNotification', function (e) {
+          const onHxNotification = function (e) {
               const data = e.detail?.value || e.detail;
               if (typeof showNotification === 'function' && data) {
                   showNotification(data.message || data, data.type || 'success');
@@ -134,7 +134,7 @@
               if (noCategoryImageWarning) {
                   noCategoryImageWarning.style.display = 'flex';
               }
-          });
+          };
 
           // Fallback resiliente: impede recarregamento mesmo se o HTMX não estiver ativo
           const formUpdateBanner = document.getElementById('formUpdateBanner');
@@ -228,11 +228,11 @@
               });
           }
 
-          // Captura erros de resposta HTTP vindos do HTMX sem recarregar a tela
-          document.body.addEventListener('htmx:responseError', function (event) {
-              if (typeof showNotification === 'function') {
-                  showNotification('Falha ao processar a requisição. Verifique os dados.', 'error');
-              }
+          // HX-Trigger "showNotification" é disparado no próprio <form> (hx-post) e borbulha até aqui.
+          // Escutar nos forms (recriados a cada visita) evita acumular handlers no <body> entre navegações.
+          // Erros HTTP do HTMX são tratados globalmente em main.js.
+          [formUpdateBanner, formUpdateCategory].forEach((form) => {
+              form?.addEventListener('showNotification', onHxNotification);
           });
       };
 

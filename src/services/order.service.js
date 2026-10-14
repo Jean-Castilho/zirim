@@ -3,6 +3,7 @@ import ProductRepository from "../repository/product.repository.js";
 import OrderRepository from "../repository/order.repository.js";
 import PaymentService from "./payment.service.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
+import { isVariationActive } from "../utils/product-visibility.js";
 
 const SHIPPING_PRICES = { padrao: 0, expresso: 14.9 };
 const REFRESHABLE_STATUSES = ["pendente", "cancelado", "expirado"];
@@ -85,13 +86,14 @@ export default class OrderService {
       const product = productMap.get(cartItem.id);
 
       const variation = product.variacoes?.find((v) => {
+        if (!isVariationActive(v)) return false;
         const matchColor = !cartItem.cor || v.cores?.some((c) => c.trim() === cartItem.cor);
         const matchSize = !cartItem.tamanho || v.tamanhos?.some((s) => String(s).trim() === cartItem.tamanho);
         return matchColor && matchSize;
       });
 
       if (!variation) {
-        throw new ValidationError(`Variação do produto ${product.nome} (${variationLabel(cartItem)}) não encontrada.`);
+        throw new ValidationError(`Variação do produto ${product.nome} (${variationLabel(cartItem)}) indisponível ou não encontrada.`);
       }
       if (variation.estoque < cartItem.quantity) {
         throw new ValidationError(
@@ -101,7 +103,7 @@ export default class OrderService {
       }
 
       const imagem = variation.imagens?.[0]
-        || product.variacoes?.find((v) => v.imagens?.length > 0)?.imagens?.[0]
+        || product.variacoes?.find((v) => isVariationActive(v) && v.imagens?.length > 0)?.imagens?.[0]
         || "default-product.png";
 
       return {
@@ -277,5 +279,9 @@ export default class OrderService {
 
   async countByStatus(status) {
     return await this.repository.countByStatus(status);
+  }
+
+  async getSalesComparison(days = 30) {
+    return await this.repository.getSalesComparison(days);
   }
 }

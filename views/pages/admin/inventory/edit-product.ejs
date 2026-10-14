@@ -8,8 +8,11 @@
   </header>
 
   <div class="form-card">
+    <!-- hx-target/hx-swap/hx-push-url deste form são herdados por TODOS os filhos (inclusive o link
+         "Cancelar e Voltar"). Por isso o link declara seu próprio alvo; e o PUT não altera a URL. -->
     <form hx-put="/products/<%= product._id %>"
-          hx-encoding="multipart/form-data" 
+          hx-encoding="multipart/form-data"
+          hx-push-url="false"
           hx-headers='{"x-csrf-token": "<%= csrfToken %>"}'
           hx-target="#form-feedback"
           hx-swap="innerHTML">
@@ -36,6 +39,9 @@
       </div>
 
       <h3 class="form-section-title">Variações</h3>
+      <p id="store-visibility-hint" class="store-visibility-hint" hidden>
+        Nenhuma variação ativa: este produto ficará oculto na loja.
+      </p>
       
       <div id="variations-container" data-initial="<%= JSON.stringify(product.variacoes || []) %>"></div>
       <button type="button" id="add-variation-btn" class="btn-add-variation">
@@ -50,7 +56,11 @@
           <i class="material-icons u-vertical-align-middle-font-size-18px">save</i>
           Salvar Alterações
         </button>
-        <a href="/inventory" class="btn-back">Cancelar e Voltar</a>
+        <a href="/inventory" class="btn-back"
+           hx-get="/inventory"
+           hx-target="#main-content"
+           hx-swap="innerHTML"
+           hx-push-url="true">Cancelar e Voltar</a>
       </div>
     </form>
   </div>

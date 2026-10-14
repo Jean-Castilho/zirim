@@ -11,7 +11,7 @@ export default class ProductController extends BaseController {
   }
 
   async list(req, res) {
-    return this.json(res, await this.products.getAllProducts());
+    return this.json(res, await this.products.getStorefrontProducts());
   }
 
   async projectionByIds(req, res) {

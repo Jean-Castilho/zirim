@@ -134,14 +134,22 @@ export default class ProductRepository extends BaseRepository {
     const filesByVariation = this.#mapVariationFiles(files);
     const submittedVariations = this.#extractVariations(body);
     const rawVariations = submittedVariations.length ? submittedVariations : existingProduct.variacoes || [];
+    // Imagens já existentes do produto: só podem ser reaproveitadas, nunca referenciadas de outro produto.
+    const existingImageNames = new Set((existingProduct.variacoes || []).flatMap(v => v.imagens || []));
     const processedVariations = [];
 
     for (let index = 0; index < rawVariations.length; index++) {
       const variation = rawVariations[index];
       const variationFiles = filesByVariation.get(index) || [];
+      // O formulário envia as imagens atuais de CADA variação (imagensAtuais), para que a
+      // remoção/renumeração de variações no front não troque imagens entre variações.
+      // Sem o campo (clientes da API), mantém o comportamento anterior por índice.
+      const keptImages = variation.imagensAtuais !== undefined
+        ? String(variation.imagensAtuais).split(',').map(name => name.trim()).filter(name => existingImageNames.has(name))
+        : existingProduct.variacoes?.[index]?.imagens || [];
       const images = variationFiles.length
         ? await Promise.all(variationFiles.map(file => this.#uploadFileWithRetry(file)))
-        : existingProduct.variacoes?.[index]?.imagens || [];
+        : keptImages;
       processedVariations.push(this.#processVariationObject({ ...variation, imagens: images }));
     }
 

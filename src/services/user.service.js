@@ -134,6 +134,10 @@ export default class UserService {
         return await this.repository.count();
     }
 
+    async countUsersSince(date) {
+        return await this.repository.count({ createdAt: { $gte: date } });
+    }
+
     async getAllUsers(options = { projection: { password: 0 } }) {
         return await this.repository.findAll({}, options);
     }

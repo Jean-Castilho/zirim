@@ -14,9 +14,12 @@
       variationBlock.classList.add('variation-card');
       variationBlock.dataset.index = variationIndex;
 
+      const isActive = data.ativo !== false;
+
       variationBlock.innerHTML = `
         <div class="variation-header">
           <h4>Variação #${variationIndex + 1}</h4>
+          <span class="variation-status ${isActive ? 'is-active' : 'is-inactive'}">${isActive ? 'Ativa' : 'Inativa'}</span>
           <button type="button" class="btn-danger" data-action="remove-variation">Remover</button>
         </div>
         <div class="variation-fields">
@@ -49,16 +52,40 @@
             <span>Clique para selecionar novas imagens (substituirá as atuais se enviado)</span>
             <input type="file" id="file_${variationIndex}" name="variacoes[${variationIndex}][imagens]" multiple hidden data-variation-index="${variationIndex}">
           </div>
+          <input type="hidden" name="variacoes[${variationIndex}][imagensAtuais]" value="${escapeAttr((data.imagens || []).join(','))}">
           <div id="preview-${variationIndex}" class="image-preview-container">
             ${(data.imagens || []).map(img => `<img src="/image/${encodeURIComponent(img)}" class="image-preview-item" alt="">`).join('')}
           </div>
         </div>
-        <div class="form-group">
-          <label><input type="checkbox" name="variacoes[${variationIndex}][ativo]" value="true" ${data.ativo !== false ? 'checked' : ''}> Ativo</label>
+        <div class="form-group variation-active-toggle">
+          <label><input type="checkbox" name="variacoes[${variationIndex}][ativo]" value="true" ${isActive ? 'checked' : ''}> Variação ativa</label>
+          <small class="form-hint">Desmarcada: a variação some da loja e não pode ser comprada.</small>
         </div>
       `;
       container.appendChild(variationBlock);
       variationIndex++;
+      updateStoreVisibility();
+    }
+
+    /** Atualiza o rótulo de status da variação e o aviso de produto sem nenhuma variação ativa. */
+    function updateVariationStatus(block) {
+      const active = Boolean(block.querySelector('input[name$="[ativo]"]')?.checked);
+      const pill = block.querySelector('.variation-status');
+      if (pill) {
+        pill.textContent = active ? 'Ativa' : 'Inativa';
+        pill.classList.toggle('is-active', active);
+        pill.classList.toggle('is-inactive', !active);
+      }
+      updateStoreVisibility();
+    }
+
+    function updateStoreVisibility() {
+      const hint = document.getElementById('store-visibility-hint');
+      if (!hint) return;
+      const anyActive = Array.from(document.querySelectorAll('.variation-card input[name$="[ativo]"]'))
+        .some(input => input.checked);
+      // Sem nenhuma variação ativa (inclusive sem variações) o produto não aparece na loja
+      hint.hidden = anyActive;
     }
 
     function removeVariationBlock(button) {
@@ -77,6 +104,7 @@
         });
       });
       variationIndex = blocks.length;
+      updateStoreVisibility();
     }
 
     function previewImages(input) {
@@ -113,6 +141,8 @@
       container.addEventListener('change', (event) => {
         if (event.target.matches('input[type="file"]')) {
           previewImages(event.target);
+        } else if (event.target.matches('input[name$="[ativo]"]')) {
+          updateVariationStatus(event.target.closest('.variation-card'));
         }
       });
 

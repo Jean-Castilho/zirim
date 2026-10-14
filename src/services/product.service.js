@@ -1,5 +1,6 @@
 import ProductRepository from "../repository/product.repository.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
+import { ACTIVE_VARIATION_QUERY, toStorefrontProducts } from "../utils/product-visibility.js";
 
 const isBlankId = (id) => !id || id === "null" || id === "undefined";
 
@@ -8,21 +9,24 @@ export default class ProductService {
         this.repository = new ProductRepository();
     }
 
+    /** Vitrine: só produtos com variação ativa, e só as variações ativas. */
     async listProductsForHome() {
-        return await this.repository.findAll({}, {
-            projection: { nome: 1, 'variacoes.imagens': { $slice: 1 } },
+        const products = await this.repository.findAll(ACTIVE_VARIATION_QUERY, {
+            projection: { nome: 1, 'variacoes.imagens': { $slice: 1 }, 'variacoes.ativo': 1 },
             limit: 6
         });
+        return toStorefrontProducts(products);
     }
 
     async searchProducts({ q, category } = {}) {
-        const filter = {};
+        const filter = { ...ACTIVE_VARIATION_QUERY };
         const options = {
             projection: {
                 nome: 1,
                 categoria: 1,
                 'variacoes.imagens': { $slice: 1 },
-                'variacoes.preco': 1
+                'variacoes.preco': 1,
+                'variacoes.ativo': 1
             },
             sort: { _id: -1 }
         };
@@ -34,11 +38,21 @@ export default class ProductService {
         if (category && category !== 'Todos') {
             filter.categoria = category;
         }
-        return await this.repository.findAll(filter, options);
+        return toStorefrontProducts(await this.repository.findAll(filter, options));
+    }
+
+    /** Lista pública (loja): produtos com variações ativas, sem as inativas. */
+    async getStorefrontProducts() {
+        return toStorefrontProducts(await this.repository.findAll(ACTIVE_VARIATION_QUERY, {}));
     }
 
     async countProducts() {
         return await this.repository.count();
+    }
+
+    /** Produtos com pelo menos uma variação ativa (visíveis na loja). */
+    async countActiveProducts() {
+        return await this.repository.count(ACTIVE_VARIATION_QUERY);
     }
 
     async getLatestProducts(limit = 5) {
@@ -58,11 +72,28 @@ export default class ProductService {
         return product;
     }
 
+    /**
+     * Consulta pública por IDs (detalhe, favoritos). Garante `variacoes.ativo` na projeção
+     * quando o cliente pede variações, para que as inativas sejam descartadas no servidor.
+     */
     async getProductsByIds(ids, projection = {}) {
         if (!Array.isArray(ids) || ids.length === 0) {
             throw new ValidationError("IDs são requeridos para obter dados.");
         }
-        return await this.repository.findByIds(ids, projection);
+        const keys = Object.keys(projection);
+        const safeProjection = keys.length > 0 && keys.some((k) => k.startsWith('variacoes'))
+            ? { ...projection, 'variacoes.ativo': 1 }
+            : projection;
+        return toStorefrontProducts(await this.repository.findByIds(ids, safeProjection));
+    }
+
+    /** Detalhe público: produto inexistente OU sem nenhuma variação ativa vira 404. */
+    async getVisibleProductById(id) {
+        const product = await this.getProductById(id, { _id: 1, 'variacoes.ativo': 1 });
+        if (toStorefrontProducts([product]).length === 0) {
+            throw new NotFoundError("O produto que você está procurando não existe ou foi removido.");
+        }
+        return product;
     }
 
     async createProduct(body, files = []) {

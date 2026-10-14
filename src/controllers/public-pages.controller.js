@@ -42,7 +42,7 @@ export default class PublicPagesController extends BaseController {
   }
 
   async productDetails(req, res) {
-    const product = await this.products.getProductById(req.params.id, { _id: 1 });
+    const product = await this.products.getVisibleProductById(req.params.id);
     return this.render(req, res, "../pages/public/product-details", {
       titulo: "Carregando Produto...",
       product: { _id: product._id },

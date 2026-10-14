@@ -70,6 +70,27 @@ function updateActiveNavigation() {
 document.addEventListener('DOMContentLoaded', updateActiveNavigation);
 document.body.addEventListener('htmx:afterSwap', updateActiveNavigation);
 
+// Erros de requisições htmx (hx-put/hx-delete/hx-post e navegações boostadas).
+// O htmx não troca o conteúdo em respostas 4xx/5xx; sem este handler a falha ficava silenciosa.
+// Registrado uma única vez (main.js não é recarregado nas navegações).
+function getHtmxErrorMessage(xhr, fallback) {
+    try {
+        const data = JSON.parse(xhr?.responseText || '');
+        return data.message || data.error || fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+document.body.addEventListener('htmx:responseError', (event) => {
+    const message = getHtmxErrorMessage(event.detail?.xhr, 'Não foi possível concluir a ação. Tente novamente.');
+    showNotification(message, 'error');
+});
+
+document.body.addEventListener('htmx:sendError', () => {
+    showNotification('Sem conexão com o servidor. Verifique sua internet e tente novamente.', 'error');
+});
+
 // ---------------------------------------------------------------------------
 // Comportamentos declarativos (substituem handlers inline on* nas Views).
 // Delegação no document: funcionam com conteúdo trazido pelo HTMX.

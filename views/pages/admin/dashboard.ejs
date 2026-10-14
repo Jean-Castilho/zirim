@@ -4,6 +4,7 @@
         <div class="header-info">
             <h1><%= titulo %></h1>
             <p><%= message %></p>
+            <p class="dashboard-updated">Atualizado às <span data-stat="updatedAt"><%= new Date(updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) %></span></p>
         </div>
 
         <div class="u-display-flex-gap-0-75rem-flex-wrap-wrap">
@@ -22,35 +23,38 @@
         <div class="stat-card">
             <div class="stat-header">
                 <div class="icon-box"><i data-lucide="package"></i></div>
-                <span class="badge-trend">+12%</span>
+                <span class="badge-trend" data-stat="activeProductsBadge"><%= activeProducts %> ativos</span>
             </div>
             <div class="stat-label">Total de Produtos</div>
-            <div class="stat-value"><%= totalProducts %></div>
+            <div class="stat-value" data-stat="totalProducts"><%= totalProducts %></div>
+            <div class="stat-meta"><span data-stat="inactiveProducts"><%= inactiveProducts %></span> inativos na loja</div>
         </div>
 
         <div class="stat-card">
             <div class="stat-header">
                 <div class="icon-box success"><i data-lucide="shopping-cart"></i></div>
+                <span class="badge-trend" data-stat="salesDelta">—</span>
             </div>
-            <div class="stat-label">Vendas Mensais (30d)</div>
-            <div class="stat-value">R$ <%= monthlySales.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %></div>
+            <div class="stat-label">Vendas Aprovadas (<%= periodDays %>d)</div>
+            <div class="stat-value" data-stat="monthlySales">R$ <%= monthlySales.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %></div>
         </div>
 
         <div class="stat-card">
             <div class="stat-header">
                 <div class="icon-box warning"><i data-lucide="truck"></i></div>
-                <span class="badge-trend warning"><%= activeDeliveries %> pendentes</span>
+                <span class="badge-trend warning" data-stat="pendingPreparation"><%= pendingPreparation %> aguardando</span>
             </div>
-            <div class="stat-label">Entregas Ativas</div>
-            <div class="stat-value"><%= activeDeliveries %></div>
+            <div class="stat-label">Entregas em Andamento</div>
+            <div class="stat-value" data-stat="activeDeliveries"><%= activeDeliveries %></div>
         </div>
 
         <div class="stat-card">
             <div class="stat-header">
                 <div class="icon-box danger"><i data-lucide="users"></i></div>
+                <span class="badge-trend" data-stat="newUsers">+<%= newUsers %> em <%= periodDays %>d</span>
             </div>
-            <div class="stat-label">Clientes Ativos</div>
-            <div class="stat-value"><%= totalUsers %></div>
+            <div class="stat-label">Clientes Cadastrados</div>
+            <div class="stat-value" data-stat="totalUsers"><%= totalUsers %></div>
         </div>
     </section>
 
@@ -75,7 +79,7 @@
             </nav>
         </aside>
 
-        <main class="panel">
+        <section class="panel">
             <div class="panel-header">
                 <h2>Últimas Atualizações</h2>
                 <a class="u-color-var-accent-color-font-size-0-8-fbd132" href="/inventory">Ver tudo</a>
@@ -93,10 +97,10 @@
                     </thead>
                     <tbody id="latest-products-rows">
                         <% latestProducts.forEach(product => { %>
-                            <tr>
+                            <tr data-product-id="<%= product._id %>">
                                 <td>
-                                    <% if (product.variacoes && product.variacoes.length > 0 && product.variacoes[0].imagens && product.variacoes[0].imagens.length > 0) { %>
-                                        <img class="u-width-45px-height-45px-object-fit-co-fd9367" src="/image/<%= product.variacoes[0].imagens[0] %>" alt="<%= product.nome %>">
+                                    <% if (product.imagem) { %>
+                                        <img class="u-width-45px-height-45px-object-fit-co-fd9367" src="/image/<%= product.imagem %>" alt="<%= product.nome %>">
                                     <% } else { %>
                                         <div class="u-width-45px-height-45px-background-va-facb5e">
                                             <i class="u-width-18px-color-var-text-secondary" data-lucide="image"></i>
@@ -105,14 +109,14 @@
                                 </td>
                                 <td class="u-color-var-text-primary-font-weight-500"><%= product.nome %></td>
                                 <td><%= product.categoria || 'Geral' %></td>
-                                <td class="u-text-align-right">R$ <%= (product.variacoes && product.variacoes.length > 0 ? product.variacoes[0].preco || 0 : 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %></td>
-                                <td class="u-text-align-center"><span class="status-pill">Ativo</span></td>
+                                <td class="u-text-align-right">R$ <%= Number(product.preco || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %></td>
+                                <td class="u-text-align-center"><span class="status-pill <%= product.ativo ? 'is-active' : 'is-inactive' %>"><%= product.ativo ? 'Ativo' : 'Inativo' %></span></td>
                             </tr>
                         <% }) %>
                     </tbody>
                 </table>
             </div>
-        </main>
+        </section>
     </div>
 </div>
 
