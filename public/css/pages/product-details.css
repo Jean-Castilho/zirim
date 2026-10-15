@@ -550,10 +550,15 @@
         grid-template-columns: 1fr;
     }
 
+    .quantity-section {
+        justify-content: flex-end;
+    }
+
     .expanded-description {
         padding: var(--espacamento-lg);
     }
 }
+
 /* Imagem principal: transição de carregamento (antes feita via style inline) */
 .main-image {
     opacity: 1;
