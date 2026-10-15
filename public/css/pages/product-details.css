@@ -490,7 +490,6 @@
     border-radius: var(--raio-padrao);
 }
 
-
 @keyframes skeleton-loading {
     0% {
         background-position: -200px 0;
@@ -520,11 +519,9 @@
 
 @media (max-width: 768px) {
 
-
     .main-image-container {
         width: 80vw;
     }
-
 
     .product-gallery {
         width: 80vw;
