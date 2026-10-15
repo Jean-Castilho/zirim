@@ -366,7 +366,7 @@
   min-width: 0;
   flex: 1;
   height: 44px;
-  padding: 8px 13px;
+  padding: 13px 13px;
   border: 1px solid var(--cor-borda-forte);
   border-radius: 10px;
   color: var(--cor-primaria);
