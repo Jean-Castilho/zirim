@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { MongoClient, GridFSBucket } from "mongodb";
+import { backfillProductSearchText } from "../utils/search-text.js";
 dotenv.config();
 
 const uri = process.env.DATABASE_URL;
@@ -85,6 +86,14 @@ export const connectDataBase = async () => {
     } catch (indexError) {
       console.warn("Aviso na criação de índice:", indexError.message);
       // Não bloqueia a inicialização se for apenas um aviso de índice
+    }
+
+    // Campo de busca normalizado: preenche produtos cadastrados antes dessa versão
+    try {
+      const updated = await backfillProductSearchText(productsCollection);
+      if (updated) console.log(`Campo de busca preenchido em ${updated} produto(s).`);
+    } catch (err) {
+      console.warn("Aviso ao preencher o campo de busca:", err.message);
     }
 
     bucket = new GridFSBucket(db, { bucketName: "uploads" });

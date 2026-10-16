@@ -38,6 +38,9 @@ export default class PublicPagesController extends BaseController {
       titulo: "Produtos",
       message: "Confira nossos produtos!",
       products,
+      // Estado da busca vai para a view: o campo e o filtro sobrevivem a recarregar a página
+      query: String(req.query.q || "").slice(0, 100),
+      category: String(req.query.category || ""),
     });
   }
 

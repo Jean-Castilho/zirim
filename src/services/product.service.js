@@ -1,6 +1,7 @@
 import ProductRepository from "../repository/product.repository.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
 import { ACTIVE_VARIATION_QUERY, toStorefrontProducts } from "../utils/product-visibility.js";
+import { parseSearchTerms } from "../utils/search-text.js";
 
 const isBlankId = (id) => !id || id === "null" || id === "undefined";
 
@@ -18,8 +19,19 @@ export default class ProductService {
         return toStorefrontProducts(products);
     }
 
+    /**
+     * Busca da loja: cada termo digitado deve aparecer (substring, sem acentos) no texto do produto.
+     * Só produtos com variação ativa; categoria opcional.
+     */
     async searchProducts({ q, category } = {}) {
+        const terms = parseSearchTerms(q);
         const filter = { ...ACTIVE_VARIATION_QUERY };
+        if (terms.length > 0) {
+            filter.$and = terms.map((term) => ({ searchText: { $regex: term } }));
+        }
+        if (category && category !== 'Todos') {
+            filter.categoria = category;
+        }
         const options = {
             projection: {
                 nome: 1,
@@ -28,16 +40,8 @@ export default class ProductService {
                 'variacoes.preco': 1,
                 'variacoes.ativo': 1
             },
-            sort: { _id: -1 }
+            sort: { nome: 1 }
         };
-        if (q) {
-            filter.$text = { $search: q };
-            options.projection.score = { $meta: "textScore" };
-            options.sort = { score: { $meta: "textScore" } };
-        }
-        if (category && category !== 'Todos') {
-            filter.categoria = category;
-        }
         return toStorefrontProducts(await this.repository.findAll(filter, options));
     }
 

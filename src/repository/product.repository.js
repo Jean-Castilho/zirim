@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import sharp from 'sharp';
 import BaseRepository from "./base.repository.js";
+import { buildSearchText } from "../utils/search-text.js";
 
 import { ValidationError, NotFoundError, GeneralError } from "../utils/errors.js";
 
@@ -110,6 +111,7 @@ export default class ProductRepository extends BaseRepository {
       descricao: body.descricao,
       comentarios: [],
     };
+    productData.searchText = buildSearchText(productData);
 
     const insertedId = await super.create(productData);
     return { message: "Produto adicionado com sucesso!", productId: insertedId };
@@ -159,6 +161,7 @@ export default class ProductRepository extends BaseRepository {
       categoria: body.categoria,
       descricao: body.descricao,
     };
+    productData.searchText = buildSearchText(productData);
 
     await super.update(id, productData);
     return await super.findById(id);
