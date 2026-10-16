@@ -111,7 +111,7 @@
 .breadcrumb {
     font-size: 0.9em;
     color: var(--cor-texto-escuro);
-    margin-bottom: 20px;
+    margin-top: 20px;
     font-family: var(--fonte-principal);
 }
 
