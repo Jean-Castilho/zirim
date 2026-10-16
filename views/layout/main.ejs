@@ -1,4 +1,14 @@
 <!DOCTYPE html>
+<%
+  // As views declaram seus próprios <link rel="stylesheet"> no topo do arquivo.
+  // Se eles ficarem dentro do <main>, o navegador já pinta o <body> sem CSS e
+  // depois aplica o estilo (FOUC). Aqui os movemos para o <head>, para que o CSS
+  // da página esteja carregado antes da primeira pintura.
+  const STYLESHEET_LINK_RE = /<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi;
+  const pageHtml = include(page);
+  const pageStyleLinks = pageHtml.match(STYLESHEET_LINK_RE) || [];
+  const pageBodyHtml = pageHtml.replace(STYLESHEET_LINK_RE, '');
+%>
 <html lang="pt-BR">
 
 <head>
@@ -11,20 +21,22 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/utilities.css">
-    <script src="/js/core/ready.js"></script>
 
     <% if (locals.pageStyles && Array.isArray(pageStyles)) { %>
         <% pageStyles.forEach(function(styleSheet) { %>
             <link rel="stylesheet" href="/css/pages/<%= styleSheet %>.css">
         <% }); %>
     <% } %>
+    <%- pageStyleLinks.join('\n    ') %>
+
+    <script src="/js/core/ready.js"></script>
 </head>
 
 <body hx-boost="true" hx-target="#main-content" hx-push-url="true" hx-swap="innerHTML">
     <div id="notification-container"></div>
     <%- include('../pages/partials/header') %>
     <main id="main-content">
-        <%- include(page) %>
+        <%- pageBodyHtml %>
     </main>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="/js/main.js"></script>
