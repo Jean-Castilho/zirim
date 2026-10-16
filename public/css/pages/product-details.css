@@ -18,12 +18,13 @@
 /* Gallery Section */
 .product-gallery {
     display: flex;
+    align-items: center;
     flex-direction: column;
     gap: var(--espacamento-md);
 }
 
 .main-image-container {
-    width: 100%;
+    width: 75%;
     background-color: var(--cor-fundo-claro);
     display: flex;
     align-items: center;
@@ -525,6 +526,10 @@
         width: 80vw;
     }
 
+    .thumbnail {
+        width: 65px;
+        height: 65px;
+    }
 
     .product-gallery {
         width: 80vw;
@@ -554,6 +559,7 @@
         padding: var(--espacamento-lg);
     }
 }
+
 /* Imagem principal: transição de carregamento (antes feita via style inline) */
 .main-image {
     opacity: 1;
