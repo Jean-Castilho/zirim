@@ -78,18 +78,17 @@ document.body.addEventListener('htmx:afterSwap', updateActiveNavigation);
 // oculta até essas folhas carregarem (com timeout de segurança).
 // O fluxo do htmx (histórico, eventos, processamento) não é alterado.
 // ---------------------------------------------------------------------------
-const STYLE_WAIT_TIMEOUT_MS = 3000;
+// Salvaguarda: se uma folha travar, a página é mostrada após este tempo
+const STYLE_WAIT_SAFETY_MS = 3000;
 
-// Folhas já presentes na carga inicial já foram carregadas (main.js roda no fim do <body>)
-const loadedStylesheets = new Set(
-    [...document.querySelectorAll('link[rel="stylesheet"]')].map(link => link.getAttribute('href'))
-);
-
+// Um <link> recém-inserido só recebe `sheet` quando o CSS termina de carregar.
+// Não usamos cache de URLs: ao voltar para uma página, o link é recriado e
+// precisa ser esperado de novo (o CSS anterior saiu do DOM junto com ele).
 function waitForStylesheet(link) {
     return new Promise(resolve => {
-        if (link.sheet) return resolve(true);
-        link.addEventListener('load', () => resolve(true), { once: true });
-        link.addEventListener('error', () => resolve(false), { once: true });
+        if (link.sheet) return resolve();
+        link.addEventListener('load', () => resolve(), { once: true });
+        link.addEventListener('error', () => resolve(), { once: true });
     });
 }
 
@@ -98,19 +97,33 @@ document.body.addEventListener('htmx:afterSwap', (event) => {
     if (!target || typeof target.querySelectorAll !== 'function') return;
 
     const pending = [...target.querySelectorAll('link[rel="stylesheet"]')]
-        .filter(link => !loadedStylesheets.has(link.getAttribute('href')));
-    if (pending.length === 0) return;
+        .filter(link => !link.sheet);
+    if (pending.length === 0) {
+        // Nada a esperar nesta troca: cancela espera de navegação anterior nesta área
+        target._styleWaitToken = null;
+        target.style.visibility = '';
+        delete target.dataset.styleWait;
+        return;
+    }
 
     // Esta tarefa ainda não pintou a tela: ocultar agora impede o flash sem estilo
+    const token = {};
     target.style.visibility = 'hidden';
+    target.dataset.styleWait = 'true';
+    target._styleWaitToken = token;
 
-    const timeout = new Promise(resolve => window.setTimeout(() => resolve(false), STYLE_WAIT_TIMEOUT_MS));
-
-    Promise.race([Promise.all(pending.map(waitForStylesheet)), timeout]).then(() => {
-        pending.forEach(link => {
-            if (link.sheet) loadedStylesheets.add(link.getAttribute('href'));
-        });
+    const release = () => {
+        // Só libera se nenhuma navegação mais nova assumiu esta área
+        if (target._styleWaitToken !== token) return;
+        target._styleWaitToken = null;
         target.style.visibility = '';
+        delete target.dataset.styleWait;
+    };
+
+    const safety = window.setTimeout(release, STYLE_WAIT_SAFETY_MS);
+    Promise.all(pending.map(waitForStylesheet)).then(() => {
+        window.clearTimeout(safety);
+        release();
     });
 });
 
