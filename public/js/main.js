@@ -70,6 +70,50 @@ function updateActiveNavigation() {
 document.addEventListener('DOMContentLoaded', updateActiveNavigation);
 document.body.addEventListener('htmx:afterSwap', updateActiveNavigation);
 
+// ---------------------------------------------------------------------------
+// Estilos das páginas trocadas pelo htmx (navegações hx-boost / hx-get).
+// A resposta parcial traz o <link rel="stylesheet"> da página junto com o HTML.
+// Se o conteúdo aparecer antes desse CSS, a página "pisca" sem estilo.
+// Aqui, quando a troca traz folhas ainda não carregadas, a área trocada fica
+// oculta até essas folhas carregarem (com timeout de segurança).
+// O fluxo do htmx (histórico, eventos, processamento) não é alterado.
+// ---------------------------------------------------------------------------
+const STYLE_WAIT_TIMEOUT_MS = 3000;
+
+// Folhas já presentes na carga inicial já foram carregadas (main.js roda no fim do <body>)
+const loadedStylesheets = new Set(
+    [...document.querySelectorAll('link[rel="stylesheet"]')].map(link => link.getAttribute('href'))
+);
+
+function waitForStylesheet(link) {
+    return new Promise(resolve => {
+        if (link.sheet) return resolve(true);
+        link.addEventListener('load', () => resolve(true), { once: true });
+        link.addEventListener('error', () => resolve(false), { once: true });
+    });
+}
+
+document.body.addEventListener('htmx:afterSwap', (event) => {
+    const target = event.detail?.target;
+    if (!target || typeof target.querySelectorAll !== 'function') return;
+
+    const pending = [...target.querySelectorAll('link[rel="stylesheet"]')]
+        .filter(link => !loadedStylesheets.has(link.getAttribute('href')));
+    if (pending.length === 0) return;
+
+    // Esta tarefa ainda não pintou a tela: ocultar agora impede o flash sem estilo
+    target.style.visibility = 'hidden';
+
+    const timeout = new Promise(resolve => window.setTimeout(() => resolve(false), STYLE_WAIT_TIMEOUT_MS));
+
+    Promise.race([Promise.all(pending.map(waitForStylesheet)), timeout]).then(() => {
+        pending.forEach(link => {
+            if (link.sheet) loadedStylesheets.add(link.getAttribute('href'));
+        });
+        target.style.visibility = '';
+    });
+});
+
 // Erros de requisições htmx (hx-put/hx-delete/hx-post e navegações boostadas).
 // O htmx não troca o conteúdo em respostas 4xx/5xx; sem este handler a falha ficava silenciosa.
 // Registrado uma única vez (main.js não é recarregado nas navegações).
