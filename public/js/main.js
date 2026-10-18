@@ -71,61 +71,89 @@ document.addEventListener('DOMContentLoaded', updateActiveNavigation);
 document.body.addEventListener('htmx:afterSwap', updateActiveNavigation);
 
 // ---------------------------------------------------------------------------
-// Estilos das páginas trocadas pelo htmx (navegações hx-boost / hx-get).
-// A resposta parcial traz o <link rel="stylesheet"> da página junto com o HTML.
-// Se o conteúdo aparecer antes desse CSS, a página "pisca" sem estilo.
-// Aqui, quando a troca traz folhas ainda não carregadas, a área trocada fica
-// oculta até essas folhas carregarem (com timeout de segurança).
-// O fluxo do htmx (histórico, eventos, processamento) não é alterado.
+// Estilo primeiro, conteúdo imediato (navegações hx-boost / hx-get).
+// Antes de trocar a área, carregamos as folhas de estilo da página nova.
+// Quando estão prontas, a troca acontece de uma vez: o HTML já aparece
+// estilizado, na posição final, sem ser ocultado e sem expandir depois.
+// Folhas de páginas anteriores são removidas na troca seguinte.
 // ---------------------------------------------------------------------------
-// Salvaguarda: se uma folha travar, a página é mostrada após este tempo
 const STYLE_WAIT_SAFETY_MS = 3000;
+const PAGE_STYLE_RE = /<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi;
 
-// Um <link> recém-inserido só recebe `sheet` quando o CSS termina de carregar.
-// Não usamos cache de URLs: ao voltar para uma página, o link é recriado e
-// precisa ser esperado de novo (o CSS anterior saiu do DOM junto com ele).
-function waitForStylesheet(link) {
+function ensurePageStyle(href) {
+    const existing = [...document.head.querySelectorAll('link[data-page-css]')]
+        .find(link => link.getAttribute('href') === href);
+    if (existing && existing.sheet) return Promise.resolve();
+
     return new Promise(resolve => {
-        if (link.sheet) return resolve();
+        const link = existing || document.createElement('link');
+        if (!existing) {
+            link.rel = 'stylesheet';
+            link.href = href;
+            link.dataset.pageCss = 'true';
+            document.head.appendChild(link);
+        }
         link.addEventListener('load', () => resolve(), { once: true });
         link.addEventListener('error', () => resolve(), { once: true });
     });
 }
 
-document.body.addEventListener('htmx:afterSwap', (event) => {
-    const target = event.detail?.target;
-    if (!target || typeof target.querySelectorAll !== 'function') return;
+function syncPageStyles(hrefs) {
+    document.head.querySelectorAll('link[data-page-css]').forEach(link => {
+        if (!hrefs.includes(link.getAttribute('href'))) link.remove();
+    });
+}
 
-    const pending = [...target.querySelectorAll('link[rel="stylesheet"]')]
-        .filter(link => !link.sheet);
-    if (pending.length === 0) {
-        // Nada a esperar nesta troca: cancela espera de navegação anterior nesta área
-        target._styleWaitToken = null;
-        target.style.visibility = '';
-        delete target.dataset.styleWait;
+const styleReady = new WeakSet();
+
+document.body.addEventListener('htmx:beforeSwap', (event) => {
+    const detail = event.detail;
+    if (!detail?.target || typeof detail.serverResponse !== 'string' || detail.isError) return;
+    if (styleReady.has(detail)) return;
+    if (detail.requestConfig?.verb !== 'get') return;
+
+    const hrefs = [...detail.serverResponse.matchAll(PAGE_STYLE_RE)]
+        .map(match => match[0].match(/href=["']([^"']+)["']/i)?.[1])
+        .filter(Boolean);
+    if (hrefs.length === 0) {
+        syncPageStyles([]);
         return;
     }
 
-    // Esta tarefa ainda não pintou a tela: ocultar agora impede o flash sem estilo
-    const token = {};
-    target.style.visibility = 'hidden';
-    target.dataset.styleWait = 'true';
-    target._styleWaitToken = token;
+    // Segura a troca padrão do htmx e faz a troca manualmente quando o CSS estiver pronto
+    detail.shouldSwap = false;
+    styleReady.add(detail);
 
-    const release = () => {
-        // Só libera se nenhuma navegação mais nova assumiu esta área
-        if (target._styleWaitToken !== token) return;
-        target._styleWaitToken = null;
-        target.style.visibility = '';
-        delete target.dataset.styleWait;
-    };
+    const content = detail.serverResponse.replace(PAGE_STYLE_RE, '');
+    const target = detail.target;
+    const isRestore = detail.requestConfig?.headers?.['HX-History-Restore-Request'];
+    const finalPath = detail.pathInfo?.finalRequestPath || detail.requestConfig?.path;
 
-    const safety = window.setTimeout(release, STYLE_WAIT_SAFETY_MS);
-    Promise.all(pending.map(waitForStylesheet)).then(() => {
-        window.clearTimeout(safety);
-        release();
+    const safety = new Promise(resolve => window.setTimeout(resolve, STYLE_WAIT_SAFETY_MS));
+    Promise.race([Promise.all(hrefs.map(ensurePageStyle)), safety]).then(() => {
+        syncPageStyles(hrefs);
+        hrefs.forEach(href => {
+            if (!document.head.querySelector(`link[data-page-css][href="${href}"]`)) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = href;
+                link.dataset.pageCss = 'true';
+                document.head.appendChild(link);
+            }
+        });
+
+        const title = new DOMParser().parseFromString(detail.serverResponse, 'text/html').querySelector('title');
+        if (title) document.title = title.textContent;
+
+        if (!isRestore && finalPath && window.location.pathname !== finalPath) {
+            window.history.pushState({ htmx: true }, '', finalPath);
+        }
+
+        window.htmx.swap(target, content, { swapStyle: 'innerHTML' });
+        updateActiveNavigation();
     });
 });
+
 
 // Erros de requisições htmx (hx-put/hx-delete/hx-post e navegações boostadas).
 // O htmx não troca o conteúdo em respostas 4xx/5xx; sem este handler a falha ficava silenciosa.
