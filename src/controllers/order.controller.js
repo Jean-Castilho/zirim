@@ -32,6 +32,13 @@ export default class OrderController extends BaseController {
         return this.json(res, status);
     }
 
+    async orderStatus(req, res) {
+        // Status muda com o pagamento: nunca deixar o navegador guardar esta resposta
+        res.set("Cache-Control", "no-store");
+        const status = await this.orders.getOrderStatus(req.params.id, req.session);
+        return this.json(res, status);
+    }
+
     async webhook(req, res) {
         await this.orders.handleWebhook(req);
         return this.text(res, "OK");

@@ -247,6 +247,22 @@ export default class OrderService {
     return order;
   }
 
+  /**
+   * Status atual de um pedido para quem tem acesso a ele (dono, admin ou convidado da sessão).
+   * Usa a mesma regra de posse de getCheckoutOrder, então quem não tem acesso recebe 404.
+   */
+  async getOrderStatus(orderId, session) {
+    const order = await this.getCheckoutOrder(orderId, session);
+
+    return {
+      orderId: String(order._id),
+      statusInterno: order.statusInterno || "pendente",
+      paymentStatus: order.payment?.status || null,
+      total: Number(order.total) || 0,
+      updatedAt: order.updatedAt || order.createdAt || null,
+    };
+  }
+
   /** Pedidos do usuário no formato resumido usado no perfil. */
   async getUserOrderSummaries(userId) {
     await this.payments.syncExpiredPendingOrders(userId);

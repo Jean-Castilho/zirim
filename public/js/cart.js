@@ -656,6 +656,38 @@
                 }
             },
 
+            /** Guarda no navegador uma cópia do pedido, só para clientes não cadastrados. */
+            saveGuestOrder(orderId, selectedItems, savedCepData, customer) {
+                if (!this.elements.guestName || !orderId || !window.GuestOrders) return;
+
+                const items = selectedItems.map(item => ({
+                    nome: String(item.nome ?? 'Produto'),
+                    preco: parseCartNumber(item.preco, 0),
+                    quantidade: Number(item.quantidade) || 0,
+                    imagem: item.imagem || '/img/placeholder-product.svg',
+                    cor: item.cor || '',
+                    tamanho: item.tamanho || ''
+                }));
+
+                const total = items.reduce((sum, item) => sum + item.preco * item.quantidade, 0);
+
+                window.GuestOrders.add({
+                    orderId: String(orderId),
+                    createdAt: new Date().toISOString(),
+                    customer: { name: customer.name || '', email: customer.email || '', phone: customer.phone || '' },
+                    items,
+                    total: Math.round(total * 100) / 100,
+                    shipping: { method: 'padrao', cost: 0 },
+                    address: {
+                        cep: savedCepData.formattedCep || savedCepData.cep || '',
+                        street: savedCepData.street || '',
+                        neighborhood: savedCepData.neighborhood || '',
+                        city: savedCepData.city || '',
+                        state: savedCepData.state || ''
+                    }
+                });
+            },
+
             async handleCheckout() {
                 const cart = window.CartStorage.read();
                 const selectedItems = cart.filter(item => item.selected !== false && Number(item.quantidade) > 0);
@@ -754,6 +786,7 @@
 
                     if (response.ok && (data.redirectUrl || data.orderId)) {
                         const targetUrl = data.redirectUrl || `/checkout/${data.orderId}`;
+                        this.saveGuestOrder(data.orderId || targetUrl.split('/checkout/')[1], selectedItems, savedCepData, customer);
                         const remainingCart = cart.filter(item => item.selected === false);
                         if (remainingCart.length > 0) {
                             window.CartStorage.write(remainingCart);
@@ -766,6 +799,7 @@
                     }
 
                     if (response.redirected && response.url.includes('/checkout/')) {
+                        this.saveGuestOrder(response.url.split('/checkout/')[1]?.split(/[?#]/)[0], selectedItems, savedCepData, customer);
                         const remainingCart = cart.filter(item => item.selected === false);
                         if (remainingCart.length > 0) {
                             window.CartStorage.write(remainingCart);

@@ -1,0 +1,18 @@
+<link rel="stylesheet" href="/css/pages/orders.css">
+<section class="orders-page" aria-labelledby="orders-page-title">
+    <header class="orders-page-header">
+        <h1 id="orders-page-title">Meus Pedidos</h1>
+        <p class="orders-page-subtitle">
+            Pedidos feitos neste navegador. A lista fica salva aqui, mesmo sem login.
+        </p>
+    </header>
+
+    <div id="guest-orders-list" class="orders-list" aria-live="polite"></div>
+
+    <div id="guest-orders-empty" class="orders-empty" hidden>
+        <span class="material-icons" aria-hidden="true">receipt_long</span>
+        <p>Você ainda não fez nenhum pedido neste navegador.</p>
+        <a href="/products" class="btn-primary orders-empty-action">Ver produtos</a>
+    </div>
+</section>
+<script src="/js/orders.js"></script>

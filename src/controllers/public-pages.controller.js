@@ -74,6 +74,23 @@ export default class PublicPagesController extends BaseController {
     });
   }
 
+  /** Lista de pedidos de convidado (os dados vêm do navegador, via orders.js). */
+  async guestOrders(req, res) {
+    return this.render(req, res, "../pages/public/orders", {
+      titulo: "Meus Pedidos",
+      message: "Pedidos feitos neste navegador.",
+    });
+  }
+
+  /** Detalhe de um pedido de convidado (o registro vem do navegador, via orders.js). */
+  async guestOrderDetails(req, res) {
+    return this.render(req, res, "../pages/public/order-details", {
+      titulo: "Detalhes do Pedido",
+      message: "Detalhes do seu pedido.",
+      orderId: String(req.params.id || ""),
+    });
+  }
+
   async checkout(req, res) {
     const order = await this.orders.getCheckoutOrder(req.params.id, req.session);
     return this.render(req, res, "../pages/public/checkout", {

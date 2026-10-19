@@ -13,7 +13,7 @@
         <li><a href="/contact" class="nav-link <%= isActive('/contact') ? 'active' : '' %>">Contato</a>
         </li>
         <% } %>
-          <!-- Icons are now inside the nav-menu -->
+          <!-- Ícones ficam dentro do menu (o carrinho fica fora, em .header-actions) -->
           <li class="header-icons-container">
             <div class="header-icons">
               <% if (user) { %>
@@ -52,24 +52,32 @@
                                 aria-label="Login">
                                 <span class="material-icons notranslate md-22">person</span>
                               </a>
+                              <a href="/pedidos" class="nav-link <%= isActive('/pedidos') ? 'active' : '' %>"
+                                aria-label="Meus Pedidos" title="Meus Pedidos">
+                                <span class="material-icons notranslate md-22">receipt_long</span>
+                              </a>
                               <% } %>
                                 <a href="/favorites" class="nav-link <%= isActive('/favorites') ? 'active' : '' %>"
                                   aria-label="Meus Favoritos">
                                   <span class="material-icons notranslate md-22">favorite_border</span>
                                 </a>
-                                <a href="/cart" class="nav-link <%= isActive('/cart') ? 'active' : '' %>"
-                                  aria-label="Meu Carrinho">
-                                  <span class="material-icons notranslate md-22">shopping_cart</span>
-                                  <span id="cart-badge" class="cart-badge">0</span>
-                                </a>
             </div>
           </li>
     </ul>
 
-    <div class="hamburger">
-      <span class="bar"></span>
-      <span class="bar"></span>
-      <span class="bar"></span>
+    <!-- Carrinho e hambúrguer ficam sempre visíveis na barra (inclusive no celular) -->
+    <div class="header-actions">
+      <a href="/cart" class="nav-link nav-cart <%= isActive('/cart') ? 'active' : '' %>"
+        aria-label="Meu Carrinho">
+        <span class="material-icons notranslate md-22">shopping_cart</span>
+        <span id="cart-badge" class="cart-badge">0</span>
+      </a>
+
+      <div class="hamburger" role="button" tabindex="0" aria-label="Abrir menu" aria-expanded="false">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </div>
     </div>
   </nav>
 
@@ -77,4 +85,5 @@
 
 </header>
 <script src="/js/cart-storage.js"></script>
+<script src="/js/guest-orders.js"></script>
 <script src="/js/header.js"></script>

@@ -26,6 +26,8 @@ router.get("/contact", publicPages.handle("contact"));
 router.get("/favorites", publicPages.handle("favorites"));
 router.get("/cart", generateCsrfToken, publicPages.handle("cart"));
 router.get("/checkout/:id", publicPages.handle("checkout"));
+router.get("/pedidos", publicPages.handle("guestOrders"));
+router.get("/pedidos/:id", publicPages.handle("guestOrderDetails"));
 
 // Conta
 router.get("/register", generateCsrfToken, authPages.handle("register"));

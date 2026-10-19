@@ -1,0 +1,18 @@
+<link rel="stylesheet" href="/css/pages/orders.css">
+<section class="order-detail-page" aria-labelledby="order-detail-title" data-order-id="<%= orderId %>">
+    <a href="/pedidos" class="order-back-link">
+        <span class="material-icons" aria-hidden="true">arrow_back</span>
+        Meus pedidos
+    </a>
+
+    <h1 id="order-detail-title" class="order-detail-title">Detalhes do pedido</h1>
+
+    <article id="guest-order-detail" class="order-detail-card" hidden></article>
+
+    <div id="guest-order-missing" class="orders-empty" hidden>
+        <span class="material-icons" aria-hidden="true">search_off</span>
+        <p>Não encontramos este pedido neste navegador.</p>
+        <a href="/pedidos" class="btn-primary orders-empty-action">Voltar para meus pedidos</a>
+    </div>
+</section>
+<script src="/js/orders.js"></script>

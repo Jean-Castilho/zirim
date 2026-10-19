@@ -36,6 +36,7 @@
     flex-wrap: nowrap;
     gap: var(--espacamento-lg);
     align-items: center;
+    margin-left: auto;
 }
 
 .nav-link {
@@ -107,6 +108,38 @@
 .header-icons .nav-link.active {
     color: var(--cor-destaque);
     background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Ações da barra: carrinho + hambúrguer (o hambúrguer só aparece no celular) */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--espacamento-md);
+    margin-left: var(--espacamento-md);
+    flex-shrink: 0;
+}
+
+.header-actions .nav-link {
+    color: var(--cor-texto-claro);
+    padding: var(--espacamento-pequeno);
+    font-size: 24px;
+    border-bottom: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.header-actions .nav-link:hover {
+    color: var(--cor-texto-claro);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-bottom-color: transparent;
+}
+
+.header-actions .nav-link.active {
+    color: var(--cor-destaque);
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .hamburger {
@@ -207,6 +240,15 @@
 
     body.no-scroll {
         overflow: hidden;
+    }
+
+    .nav-menu {
+        margin-left: 0;
+    }
+
+    .header-actions {
+        margin-left: auto;
+        gap: var(--espacamento-sm);
     }
 
     .header-icons-container {
