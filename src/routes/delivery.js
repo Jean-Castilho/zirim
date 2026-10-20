@@ -13,6 +13,9 @@ const orderIdRule = { orderId: rules.objectId("ID do pedido") };
 // Entregas atribuídas ao entregador autenticado
 router.get("/delivery/courier", requireCourier, generateCsrfToken, adminPages.handle("courierDashboard"));
 
+// Painel de preparo: itens dos pedidos pagos (Admin)
+router.get("/delivery/preparo", requireAdmin, generateCsrfToken, adminPages.handle("preparationPanel"));
+
 // Preparar pedido para envio (Admin / Logística)
 router.post("/delivery/prepare", requireAdmin, validateCsrfToken, validateBody(orderIdRule), delivery.handle("prepare"));
 router.post("/delivery/orders/:id/prepare", requireAdmin, validateCsrfToken, delivery.handle("prepare"));
@@ -20,6 +23,16 @@ router.post("/delivery/orders/:id/prepare", requireAdmin, validateCsrfToken, del
 // Selecionar pedido preparado para entrega
 router.post("/delivery/select", requireCourier, validateCsrfToken, validateBody(orderIdRule), delivery.handle("select"));
 router.post("/delivery/orders/:id/select", requireCourier, validateCsrfToken, delivery.handle("select"));
+
+// Liberar pedido aceito (entregador dono) e reatribuir (admin)
+router.post("/delivery/orders/:id/release", requireCourier, validateCsrfToken, delivery.handle("release"));
+router.post(
+  "/delivery/orders/:id/reassign",
+  requireAdmin,
+  validateCsrfToken,
+  validateBody({ courierId: rules.objectId("ID do entregador") }),
+  delivery.handle("reassign")
+);
 
 // Confirmação de entrega com código PIN
 router.post(

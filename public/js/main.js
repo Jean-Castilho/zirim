@@ -190,10 +190,28 @@ document.addEventListener('click', (event) => {
     if (focusLink) document.getElementById(focusLink.dataset.focusTarget)?.focus();
 });
 
-// <form data-confirm="mensagem">: pede confirmação antes de enviar
+// <form data-confirm="mensagem">: pede confirmação (diálogo do sistema) antes de enviar
 document.addEventListener('submit', (event) => {
-    const message = event.target?.dataset?.confirm;
-    if (message && !window.confirm(message)) event.preventDefault();
+    const form = event.target;
+    const message = form?.dataset?.confirm;
+    if (!message || form.dataset.confirmed === 'true') return;
+    event.preventDefault();
+    window.zirimDialog.confirm(message, { tone: 'danger' }).then((ok) => {
+        if (!ok) return;
+        form.dataset.confirmed = 'true';
+        form.requestSubmit();
+        delete form.dataset.confirmed;
+    });
+});
+
+// hx-confirm="mensagem" (HTMX): mesmo diálogo do sistema
+document.addEventListener('htmx:confirm', (event) => {
+    const question = event.detail?.question;
+    if (!question) return;
+    event.preventDefault();
+    window.zirimDialog.confirm(question, { tone: 'danger' }).then((ok) => {
+        if (ok) event.detail.issueRequest(true);
+    });
 });
 
 // <img data-fallback-src="url">: troca a imagem quebrada (uma única vez)

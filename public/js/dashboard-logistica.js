@@ -1,51 +1,38 @@
 /**
- * Script da página admin/logistica/dashboard-logistica.ejs (migrado do <script> inline da View).
+ * Painel de logística (admin/logistica/dashboard-logistica.ejs).
+ * Marcar pedido como pronto usa o cliente HTTP compartilhado (core/http.js).
  */
-(() => {
-      const refreshIcons = () => window.lucide?.createIcons();
-      refreshIcons();
+window.onPageReady(() => {
+  const { postJson, withBusy, reportError } = window.zirimHttp;
+  const refreshIcons = () => window.lucide?.createIcons();
 
-      async function prepareOrder(orderId) {
-          if (!confirm('Deseja marcar este pedido como pronto para envio? Isso gerará o código PIN e liberará o pedido no painel dos entregadores.')) {
-              return;
-          }
+  async function prepareOrder(orderId, button) {
+    const ok = await window.zirimDialog.confirm(
+      'Deseja marcar este pedido como pronto para envio? Isso gerará o código PIN e liberará o pedido no painel dos entregadores.',
+      { tone: 'warning', confirmLabel: 'Marcar como pronto', cancelLabel: 'Voltar' }
+    );
+    if (!ok) return;
 
-          const btn = document.getElementById(`btn-prepare-${orderId}`);
-          if (btn) {
-              btn.disabled = true;
-              btn.innerHTML = 'Preparando...';
-          }
-
-          const csrfToken = document.getElementById('csrf-token')?.value;
-          const headers = { 'Content-Type': 'application/json' };
-          if (csrfToken) headers['x-csrf-token'] = csrfToken;
-
-          try {
-              const response = await fetch(`/delivery/orders/${orderId}/prepare`, {
-                  method: 'POST',
-                  headers,
-                  body: JSON.stringify({ orderId })
-              });
-
-              const data = await response.json();
-              if (!response.ok || data.error) {
-                  throw new Error(data.error || 'Erro ao preparar pedido.');
-              }
-
-              alert(`Pedido preparado com sucesso! Código PIN gerado: ${data.confirmationCode}`);
-              window.location.reload();
-          } catch (err) {
-              alert(err.message);
-              if (btn) {
-                  btn.disabled = false;
-                  btn.innerHTML = '<i data-lucide="package-check" style="width: 13px; height: 13px;"></i> Preparar';
-                  refreshIcons();
-              }
-          }
+    await withBusy(button, 'Preparando...', async () => {
+      try {
+        await postJson(`/delivery/orders/${encodeURIComponent(orderId)}/prepare`, { orderId });
+        await window.zirimDialog.notify('Pedido preparado com sucesso! Ele já aparece para os entregadores.', {
+          tone: 'success',
+          title: 'Pedido pronto',
+        });
+        window.location.reload();
+      } catch (err) {
+        await reportError(err);
       }
+    });
+  }
 
-      // ---- Eventos (substituem os handlers inline on* da View) ----
-      document.querySelectorAll('[data-action="prepare-order"]').forEach((button) => {
-          button.addEventListener('click', () => prepareOrder(button.dataset.orderId));
-      });
-})();
+  const init = () => {
+    refreshIcons();
+    document.querySelectorAll('[data-action="prepare-order"]').forEach((button) => {
+      button.addEventListener('click', () => prepareOrder(button.dataset.orderId, button));
+    });
+  };
+
+  window.onPageReady(init);
+});

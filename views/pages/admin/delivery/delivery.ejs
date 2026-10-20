@@ -1,4 +1,5 @@
 <link rel="stylesheet" href="/css/pages/delivery.css">
+<input type="hidden" id="csrf-token" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
 <main class="delivery-container" id="delivery-page" data-orders="<%= JSON.stringify(activeOrders || []) %>">
     <aside class="delivery-sidebar">
@@ -8,9 +9,15 @@
                 <span class="orders-count-badge" id="orders-count"><%= (activeOrders && activeOrders.length) || 0 %></span>
             </div>
             <div class="panel-actions u-display-flex-gap-6px">
+                <% if (viewerIsAdmin) { %>
+                <a href="/delivery/preparo" class="btn-icon u-display-inline-flex-align-items-cent-bb3d31" title="Painel de Preparo">
+                    <i class="u-width-16px-height-16px" data-lucide="package-check"></i>
+                </a>
+                <% } else { %>
                 <a href="/delivery/courier" class="btn-icon u-display-inline-flex-align-items-cent-bb3d31" title="Abrir Painel do Entregador">
                     <i class="u-width-16px-height-16px" data-lucide="truck"></i>
                 </a>
+                <% } %>
                 <button type="button" class="btn-icon" title="Recentralizar entregas" data-action="fit-all">
                     <i class="u-width-16px-height-16px" data-lucide="maximize-2"></i>
                 </button>
@@ -26,30 +33,30 @@
 
         <div class="orders-list" id="orders-list">
             <% if (activeOrders && activeOrders.length > 0) { %>
-                <% activeOrders.forEach(order => { 
-                    const orderShortId = order._id ? order._id.toString().slice(-6).toUpperCase() : '------';
+                <% activeOrders.forEach(order => {
                     const lat = order.location?.lat != null && Number.isFinite(Number(order.location.lat)) ? Number(order.location.lat) : 'null';
                     const lng = order.location?.lng != null && Number.isFinite(Number(order.location.lng)) ? Number(order.location.lng) : 'null';
-                    const clientName = order.user?.name || 'Cliente Zirim';
-                    const rawPhone = order.user?.phone;
-                    const clientPhone = (typeof rawPhone === 'object' ? rawPhone?.number : rawPhone) || 'Não informado';
-                    const street = order.address?.street || '';
+                    const isRedacted = order.redacted === true;
+                    const clientName = isRedacted ? 'Pedido disponível' : (order.client?.name || 'Cliente Zirim');
+                    const clientPhone = isRedacted ? '' : (order.client?.phone || 'Não informado');
+                    const street = order.address?.street ? `${order.address.street}${order.address.number ? `, ${order.address.number}` : ''}` : '';
                     const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
-                    const cep = order.address?.cep ? ` (CEP: ${order.address.cep})` : '';
-                    const fullAddress = street ? `${street}${neighborhood}${cep}` : 'Endereço não informado';
-                    const status = order.statusInterno || 'pendente';
-                    const courierName = order.delivery?.courierName || '';
+                    const fullAddress = isRedacted
+                        ? (order.neighborhood ? `Bairro: ${order.neighborhood}` : 'Endereço após o aceite')
+                        : (street ? `${street}${neighborhood}` : 'Endereço não informado');
+                    const status = order.status || 'pendente';
+                    const courierName = order.courierName || '';
                 %>
-                    <article 
-                        class="order-card" 
+                    <article
+                        class="order-card order-card--<%= status %>"
                         id="order-card-<%= order._id %>"
-                        data-search="<%= (orderShortId + ' ' + clientName + ' ' + fullAddress + ' ' + courierName).toLowerCase() %>"
+                        data-search="<%= (order.shortId + ' ' + clientName + ' ' + fullAddress + ' ' + courierName).toLowerCase() %>"
                         data-action="focus-delivery" data-lat="<%= lat %>" data-lng="<%= lng %>" data-order-id="<%= order._id %>"
                     >
                         <div class="order-card-header">
                             <div class="order-card-id">
                                 <i data-lucide="package" class="icon-sm"></i>
-                                <span>#<%= orderShortId %></span>
+                                <span>#<%= order.shortId %></span>
                             </div>
                             <span class="status-badge <%= status === 'em_rota' ? 'status-transit' : (status === 'preparado' ? 'status-pending' : 'status-transit') %>">
                                 <span class="status-dot"></span>
@@ -68,15 +75,45 @@
                                     <span>Entregador: <strong><%= courierName %></strong></span>
                                 </div>
                             <% } %>
-                            <div class="order-info-row">
-                                <i data-lucide="phone" class="icon-sm"></i>
-                                <span><%= clientPhone %></span>
-                            </div>
+                            <% if (clientPhone) { %>
+                                <div class="order-info-row">
+                                    <i data-lucide="phone" class="icon-sm"></i>
+                                    <span><%= clientPhone %></span>
+                                </div>
+                            <% } %>
                             <div class="order-info-row address-row">
                                 <i data-lucide="map-pin" class="icon-sm pin-icon"></i>
                                 <span><%= fullAddress %></span>
                             </div>
                         </div>
+                        <% if (viewerIsAdmin && status === 'pago') { %>
+                        <div class="order-card-actions">
+                            <button type="button" class="btn-confirm" data-action="open-prep" data-order-id="<%= order._id %>" data-short-id="#<%= order.shortId %>">
+                                <i data-lucide="package-check"></i> Montar pedido
+                            </button>
+                        </div>
+                        <template id="prep-items-<%= order._id %>">
+                            <% (order.items || []).forEach(item => { %>
+                                <li class="prep-item">
+                                    <label>
+                                        <input type="checkbox" class="prep-check">
+                                        <% if (item.imagem) { %>
+                                            <img src="/image/<%= item.imagem %>" alt="" class="prep-img" loading="lazy" data-fallback-src="/img/placeholder-product.svg">
+                                        <% } %>
+                                        <span class="prep-info">
+                                            <strong><%= item.nome %></strong>
+                                            <small>
+                                                <% if (item.cor) { %>Cor: <%= item.cor %> &bull; <% } %>
+                                                <% if (item.tamanho) { %>Tamanho: <%= item.tamanho %> &bull; <% } %>
+                                                <% if (item.sku) { %>SKU: <%= item.sku %><% } %>
+                                            </small>
+                                        </span>
+                                        <span class="prep-qty">× <%= item.quantidade %></span>
+                                    </label>
+                                </li>
+                            <% }) %>
+                        </template>
+                        <% } %>
                     </article>
                 <% }) %>
             <% } else { %>
@@ -97,8 +134,32 @@
             <span>Monitoramento em Tempo Real</span>
         </div>
         <div id="map"></div>
+        <div class="route-panel" id="route-panel" style="display:none" role="status" aria-live="polite">
+            <div class="route-panel-head">
+                <strong id="route-title">Rota até o cliente</strong>
+                <button type="button" class="btn-cancel" id="route-recalc">Recalcular</button>
+            </div>
+            <p id="route-summary"></p>
+        </div>
     </section>
 </main>
+
+<!-- Montagem do pedido: checklist dos produtos antes de liberar para entrega -->
+<div class="courier-modal-backdrop u-display-none" id="prep-modal">
+    <div class="courier-modal" role="dialog" aria-modal="true" aria-labelledby="prep-modal-title">
+        <div class="courier-modal-header">
+            <h3 id="prep-modal-title">Montar pedido</h3>
+            <button type="button" class="btn-close-modal" data-action="close-prep">&times;</button>
+        </div>
+        <p class="modal-instruction">Separe cada item e marque. O pedido só é liberado para entrega quando todos estiverem marcados.</p>
+        <ul class="prep-items" id="prep-modal-items"></ul>
+        <div class="pin-error-feedback u-display-none" id="prep-error"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" data-action="close-prep">Cancelar</button>
+            <button type="button" class="btn-submit" id="prep-confirm" data-action="confirm-prep" disabled>Marcar como preparado</button>
+        </div>
+    </div>
+</div>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=<%= mapApiKey %>"></script>
 <script src="https://unpkg.com/lucide@latest"></script>

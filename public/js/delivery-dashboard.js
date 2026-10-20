@@ -1,131 +1,109 @@
 /**
- * Script da página admin/delivery/dashboard.ejs (migrado do <script> inline da View).
+ * Painel do entregador (admin/delivery/dashboard.ejs).
+ * Aceitar, liberar e confirmar entrega usam o cliente HTTP compartilhado (core/http.js).
  */
-(() => {
-      const refreshIcons = () => window.lucide?.createIcons();
-      refreshIcons();
+window.onPageReady(() => {
+  const { postJson, withBusy, reportError, SESSION_EXPIRED } = window.zirimHttp;
+  const refreshIcons = () => window.lucide?.createIcons();
 
-      let currentOrderId = null;
-      const modal = document.getElementById('pin-modal');
-      const pinInput = document.getElementById('pin-code-input');
-      const errorBox = document.getElementById('pin-error-msg');
-      const orderLabel = document.getElementById('modal-order-id');
-      const submitBtn = document.getElementById('btn-submit-pin');
+  const modal = document.getElementById('pin-modal');
+  const pinInput = document.getElementById('pin-code-input');
+  const errorBox = document.getElementById('pin-error-msg');
+  const orderLabel = document.getElementById('modal-order-id');
+  const submitBtn = document.getElementById('btn-submit-pin');
+  let currentOrderId = null;
 
-      async function selectOrder(orderId) {
-          const csrfToken = document.getElementById('csrf-token')?.value;
-          const headers = { 'Content-Type': 'application/json' };
-          if (csrfToken) headers['x-csrf-token'] = csrfToken;
-
-          try {
-              const response = await fetch('/delivery/select', {
-                  method: 'POST',
-                  headers,
-                  body: JSON.stringify({ orderId })
-              });
-
-              const data = await response.json();
-              if (!response.ok || data.error) {
-                  throw new Error(data.error || 'Erro ao aceitar pedido.');
-              }
-
-              alert(data.message || 'Pedido aceito! Rota iniciada.');
-              window.location.reload();
-          } catch (err) {
-              alert(err.message);
-          }
+  async function selectOrder(orderId, button) {
+    await withBusy(button, 'Aceitando...', async () => {
+      try {
+        const data = await postJson('/delivery/select', { orderId });
+        await window.zirimDialog.notify(data.message || 'Pedido aceito! Rota iniciada.', { tone: 'success', title: 'Pedido aceito' });
+        window.location.reload();
+      } catch (err) {
+        await reportError(err);
       }
+    });
+  }
 
-      function openPinModal(orderId, orderText) {
-          currentOrderId = orderId;
-          orderLabel.textContent = `Pedido ${orderText}`;
-          pinInput.value = '';
-          errorBox.style.display = 'none';
-          errorBox.textContent = '';
-          modal.style.display = 'flex';
-          setTimeout(() => pinInput.focus(), 150);
+  async function releaseOrder(orderId, button) {
+    const ok = await window.zirimDialog.confirm(
+      'Liberar este pedido? Ele volta para a lista de disponíveis e outro entregador poderá aceitá-lo.',
+      { tone: 'warning', confirmLabel: 'Liberar pedido', cancelLabel: 'Voltar' }
+    );
+    if (!ok) return;
+
+    await withBusy(button, 'Liberando...', async () => {
+      try {
+        const data = await postJson(`/delivery/orders/${encodeURIComponent(orderId)}/release`, {});
+        await window.zirimDialog.notify(data.message || 'Pedido liberado.', { tone: 'success', title: 'Pedido liberado' });
+        window.location.reload();
+      } catch (err) {
+        await reportError(err);
       }
+    });
+  }
 
-      function closePinModal() {
-          currentOrderId = null;
-          modal.style.display = 'none';
+  function openPinModal(orderId, orderText) {
+    currentOrderId = orderId;
+    orderLabel.textContent = `Pedido ${orderText}`;
+    pinInput.value = '';
+    errorBox.style.display = 'none';
+    errorBox.textContent = '';
+    modal.style.display = 'flex';
+    setTimeout(() => pinInput.focus(), 150);
+  }
+
+  function closePinModal() {
+    currentOrderId = null;
+    modal.style.display = 'none';
+  }
+
+  async function submitDeliveryCode(event) {
+    event.preventDefault();
+    if (!currentOrderId) return;
+
+    const code = pinInput.value.trim();
+    if (!code) return;
+
+    const orderId = currentOrderId;
+    errorBox.style.display = 'none';
+
+    await withBusy(submitBtn, 'Verificando...', async () => {
+      try {
+        await postJson('/delivery/confirm', { orderId, code });
+        closePinModal();
+        await window.zirimDialog.notify('Entrega confirmada! Bom trabalho.', { tone: 'success', title: 'Entrega finalizada' });
+        window.location.reload();
+      } catch (err) {
+        if (err.code === SESSION_EXPIRED) {
+          closePinModal();
+          await reportError(err);
+          return;
+        }
+        errorBox.textContent = err.message;
+        errorBox.style.display = 'block';
+        pinInput.select();
       }
+    });
+  }
 
-      async function submitDeliveryCode(event) {
-          event.preventDefault();
-          if (!currentOrderId) return;
+  const init = () => {
+    refreshIcons();
 
-          const code = pinInput.value.trim();
-          if (!code) return;
+    document.querySelectorAll('[data-action="select-order"]').forEach((button) => {
+      button.addEventListener('click', () => selectOrder(button.dataset.orderId, button));
+    });
+    document.querySelectorAll('[data-action="release-order"]').forEach((button) => {
+      button.addEventListener('click', () => releaseOrder(button.dataset.orderId, button));
+    });
+    document.querySelectorAll('[data-action="open-pin"]').forEach((button) => {
+      button.addEventListener('click', () => openPinModal(button.dataset.orderId, button.dataset.shortId));
+    });
+    document.querySelectorAll('[data-action="close-pin"]').forEach((button) => {
+      button.addEventListener('click', closePinModal);
+    });
+    document.getElementById('pin-form')?.addEventListener('submit', submitDeliveryCode);
+  };
 
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Verificando...';
-          errorBox.style.display = 'none';
-          const csrfToken = document.getElementById('csrf-token')?.value;
-          const headers = { 'Content-Type': 'application/json' };
-          if (csrfToken) {
-              headers['x-csrf-token'] = csrfToken;
-          }
-
-          try {
-              const response = await fetch('/delivery/confirm', {
-                  method: 'POST',
-                  headers,
-                  body: JSON.stringify({ orderId: currentOrderId, code })
-              });
-
-              const data = await response.json();
-
-              if (!response.ok || data.error) {
-                  throw new Error(data.error || 'Código incorreto.');
-              }
-
-              const card = document.getElementById(`card-${currentOrderId}`);
-              if (card) {
-                  card.style.transition = 'all 0.3s ease';
-                  card.style.opacity = '0';
-                  card.style.transform = 'scale(0.95)';
-                  setTimeout(() => card.remove(), 300);
-              }
-
-              const countEl = document.getElementById('deliveries-count');
-              if (countEl) {
-                  countEl.textContent = Math.max(0, Number(countEl.textContent || 1) - 1);
-                  if (Number(countEl.textContent) === 0) {
-                      const listEl = document.getElementById('courier-list');
-                      if (listEl) {
-                          listEl.innerHTML = `
-                              <div class="empty-orders-state" style="margin-top: 2rem;">
-                                  <div class="empty-icon-wrap"><i data-lucide="check-check"></i></div>
-                                  <h3>Nenhuma entrega pendente</h3>
-                                  <p>Bom trabalho! Todas as entregas sob sua responsabilidade foram concluídas.</p>
-                              </div>
-                          `;
-                          refreshIcons();
-                      }
-                  }
-              }
-
-              closePinModal();
-          } catch (err) {
-              errorBox.textContent = err.message;
-              errorBox.style.display = 'block';
-              pinInput.select();
-          } finally {
-              submitBtn.disabled = false;
-              submitBtn.textContent = 'Finalizar Entrega';
-          }
-      }
-
-      // ---- Eventos (substituem os handlers inline on* da View) ----
-      document.querySelectorAll('[data-action="select-order"]').forEach((button) => {
-          button.addEventListener('click', () => selectOrder(button.dataset.orderId));
-      });
-      document.querySelectorAll('[data-action="open-pin"]').forEach((button) => {
-          button.addEventListener('click', () => openPinModal(button.dataset.orderId, button.dataset.shortId));
-      });
-      document.querySelectorAll('[data-action="close-pin"]').forEach((button) => {
-          button.addEventListener('click', closePinModal);
-      });
-      document.getElementById('pin-form')?.addEventListener('submit', submitDeliveryCode);
-})();
+  window.onPageReady(init);
+});

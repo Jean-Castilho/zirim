@@ -77,12 +77,23 @@ export default class AdminPagesController extends BaseController {
   }
 
   async deliveryMap(req, res) {
-    const activeOrders = await this.delivery.getActiveDeliveriesForMap();
+    const user = req.session?.user;
+    const activeOrders = await this.delivery.getActiveDeliveriesForMap(user);
     return this.render(req, res, "../pages/admin/delivery/delivery", {
       titulo: "Monitoramento de Entregas",
       message: "Acompanhe os pedidos ativos no mapa",
+      viewerIsAdmin: user?.role === "admin",
       activeOrders,
       mapApiKey: process.env.GOOGLE_API_KEY || "",
+    });
+  }
+
+  async preparationPanel(req, res) {
+    const orders = await this.delivery.getPreparationPanel(req.session?.user);
+    return this.render(req, res, "../pages/admin/delivery/preparo", {
+      titulo: "Painel de Preparo",
+      message: "Separe os itens e marque o pedido como preparado",
+      orders,
     });
   }
 
@@ -100,12 +111,13 @@ export default class AdminPagesController extends BaseController {
     const user = req.session?.user;
     if (!user) return res.redirect("/login");
 
-    const { deliveries, availableOrders } = await this.delivery.getCourierDashboardData(user._id);
+    const { deliveries, availableOrders, history } = await this.delivery.getCourierDashboardData(user._id);
     return this.render(req, res, "../pages/admin/delivery/dashboard", {
       titulo: "Minhas Entregas",
       message: "Entregas atribuídas a você",
       deliveries,
       availableOrders,
+      history,
     });
   }
 }

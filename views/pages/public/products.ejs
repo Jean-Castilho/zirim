@@ -14,7 +14,7 @@
       </button>
 
 
-      <button id="filter-dropdown-button" class="filter-dropdown-button search-button" type="button" title="Filtros">
+      <button id="filter-dropdown-button" class="filter-dropdown-button search-button<%= category ? ' is-filtered' : '' %>" type="button" title="Filtros" aria-label="Filtrar por categoria">
         <i class="material-icons" translate="no">filter_list</i>
       </button>
 
@@ -27,7 +27,7 @@
           { value: 'acessorios', label: 'Acessórios' },
           { value: 'unissex', label: 'Unissex' },
         ].forEach(cat => { %>
-          <a href="/products<%= cat.value ? '?category=' + cat.value : '' %>" class="<%= category === cat.value ? 'active' : '' %>"><%= cat.label %></a>
+          <a href="/products<%= cat.value ? '?category=' + cat.value : '' %>" data-category="<%= cat.value %>" class="<%= category === cat.value ? 'active' : '' %>"><%= cat.label %></a>
         <% }) %>
       </div>
 

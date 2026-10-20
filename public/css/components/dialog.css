@@ -1,0 +1,127 @@
+/* Diálogos do sistema (zirimDialog): substituem alert() e confirm() do navegador */
+.zdlg-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    animation: zdlg-fade 0.15s ease-out;
+}
+
+.zdlg {
+    --zdlg-tone: #0284c7;
+    --zdlg-tone-soft: rgba(2, 132, 199, 0.12);
+    width: min(420px, 100%);
+    padding: 1.5rem 1.5rem 1.25rem;
+    border-radius: 16px;
+    background: var(--cor-fundo-claro, #ffffff);
+    color: var(--cor-texto-escuro, #0f172a);
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+    animation: zdlg-pop 0.18s ease-out;
+}
+
+.zdlg--success { --zdlg-tone: #15803d; --zdlg-tone-soft: rgba(21, 128, 61, 0.12); }
+.zdlg--warning { --zdlg-tone: #d97706; --zdlg-tone-soft: rgba(217, 119, 6, 0.14); }
+.zdlg--danger  { --zdlg-tone: #dc2626; --zdlg-tone-soft: rgba(220, 38, 38, 0.12); }
+
+.zdlg-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 0.9rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--zdlg-tone-soft);
+    color: var(--zdlg-tone);
+}
+
+.zdlg-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+.zdlg-title {
+    margin: 0 0 0.4rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.zdlg-message {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #475569;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.zdlg-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+    margin-top: 1.25rem;
+}
+
+.zdlg-btn {
+    flex: 1 1 140px;
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, filter 0.15s ease, transform 0.1s ease;
+}
+
+.zdlg-btn:active {
+    transform: scale(0.98);
+}
+
+.zdlg-btn:focus-visible {
+    outline: 3px solid var(--zdlg-tone-soft);
+    outline-offset: 2px;
+}
+
+.zdlg-btn--primary {
+    background: var(--zdlg-tone);
+    color: #ffffff;
+}
+
+.zdlg-btn--primary:hover {
+    filter: brightness(0.94);
+}
+
+.zdlg-btn--ghost {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.zdlg-btn--ghost:hover {
+    background: #f1f5f9;
+}
+
+@keyframes zdlg-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes zdlg-pop {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .zdlg-backdrop,
+    .zdlg {
+        animation: none;
+    }
+}

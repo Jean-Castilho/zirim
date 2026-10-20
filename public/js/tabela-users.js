@@ -68,7 +68,7 @@
           if (typeof showNotification === 'function') {
             showNotification(errorMsg, 'error');
           } else {
-            alert(errorMsg);
+            window.zirimDialog.notify(errorMsg, { tone: 'warning' });
           }
           return;
         }

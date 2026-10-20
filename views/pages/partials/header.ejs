@@ -29,7 +29,7 @@
                   </a>
                   <% } %>
 
-                    <% if (user.role==='entregador' || user.role==='delivery' || user.role==='admin' ) { %>
+                    <% if (user.role==='entregador' || user.role==='admin' ) { %>
                       <a href="<%= user.role==='admin' ? '/delivery' : '/delivery/courier' %>" class="nav-link <%= isActive('/delivery') ? 'active' : '' %>"
                         aria-label="<%= user.role==='admin' ? 'Monitoramento de Entregas' : 'Painel do Entregador' %>"
                         title="<%= user.role==='admin' ? 'Monitoramento de Entregas' : 'Painel do Entregador' %>">

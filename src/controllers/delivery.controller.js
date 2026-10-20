@@ -25,6 +25,17 @@ export default class DeliveryController extends BaseController {
         return this.ok(res, message, data);
     }
 
+    async release(req, res) {
+        const { message, data } = await this.delivery.releaseOrder(this.#orderId(req), req.session?.user);
+        return this.ok(res, message, data);
+    }
+
+    async reassign(req, res) {
+        const courierId = req.validated?.courierId || req.body?.courierId;
+        const { message, data } = await this.delivery.reassignOrder(this.#orderId(req), req.session?.user, courierId);
+        return this.ok(res, message, data);
+    }
+
     async confirm(req, res) {
         const code = req.validated?.code || req.body?.code;
         const { message } = await this.delivery.confirmDelivery(this.#orderId(req), req.session?.user?._id, code);

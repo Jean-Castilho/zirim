@@ -200,8 +200,11 @@
     loadCurrentStatus(orderId);
 
     const removeButton = document.getElementById('guest-order-remove');
-    removeButton?.addEventListener('click', () => {
-      if (!window.confirm('Remover este pedido da lista deste navegador? O pedido continua válido na loja.')) return;
+    removeButton?.addEventListener('click', async () => {
+      const ok = await window.zirimDialog.confirm('Remover este pedido da lista deste navegador? O pedido continua válido na loja.', {
+        tone: 'warning', confirmLabel: 'Remover', cancelLabel: 'Manter',
+      });
+      if (!ok) return;
       storage().remove(orderId);
       window.location.assign('/pedidos');
     });

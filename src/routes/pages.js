@@ -1,5 +1,5 @@
 import express from "express";
-import { generateCsrfToken, requireAuth, requireAdmin, requireCourier, validateCsrfToken } from "../middleware/auth.middleware.js";
+import { generateCsrfToken, requireAuth, requireAdmin, requireCourier, requireMapViewer, validateCsrfToken } from "../middleware/auth.middleware.js";
 
 import PublicPagesController from "../controllers/public-pages.controller.js";
 import AuthPagesController from "../controllers/auth-pages.controller.js";
@@ -42,7 +42,7 @@ router.post("/logout", validateCsrfToken, authController.handle("logout"));
 router.get("/dashboard", requireAdmin, adminPages.handle("dashboardPage"));
 router.get("/edit/home", requireAdmin, generateCsrfToken, adminPages.handle("editHome"));
 router.get("/users", requireAdmin, generateCsrfToken, adminPages.handle("usersPage"));
-router.get("/delivery", requireCourier, generateCsrfToken, adminPages.handle("deliveryMap"));
+router.get("/delivery", requireMapViewer, generateCsrfToken, adminPages.handle("deliveryMap"));
 router.get("/logistica", requireAdmin, generateCsrfToken, adminPages.handle("logistics"));
 router.get("/inventory", requireAdmin, generateCsrfToken, adminPages.handle("inventory"));
 router.get("/inventory/add", requireAdmin, generateCsrfToken, adminPages.handle("addProduct"));

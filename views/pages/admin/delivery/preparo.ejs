@@ -1,0 +1,70 @@
+<link rel="stylesheet" href="/css/pages/delivery.css">
+<input type="hidden" id="csrf-token" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+<div class="courier-container">
+    <header class="courier-header">
+        <div>
+            <h1>Painel de Preparo</h1>
+            <p class="courier-subtitle">
+                Pedidos pagos aguardando separação: <strong id="prep-count"><%= orders.length %></strong>
+            </p>
+        </div>
+        <a href="/delivery" class="btn-route u-text-decoration-none-display-inline-67f31f">
+            <i data-lucide="map"></i> Mapa de Entregas
+        </a>
+    </header>
+
+    <main class="courier-list" id="prep-list">
+        <% if (orders.length > 0) { %>
+            <% orders.forEach(order => {
+                const when = order.createdAt
+                    ? new Date(order.createdAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })
+                    : '';
+            %>
+                <article class="courier-card prep-card" id="prep-card-<%= order._id %>">
+                    <div class="courier-card-head">
+                        <span class="order-tag">#<%= order.shortId %></span>
+                        <span class="u-color-var-text-secondary-font-size-0-9rem"><%= order.customer %><% if (when) { %> &bull; <%= when %><% } %></span>
+                    </div>
+
+                    <ul class="prep-items">
+                        <% order.items.forEach(item => { %>
+                            <li class="prep-item">
+                                <label>
+                                    <input type="checkbox" class="prep-check">
+                                    <% if (item.imagem) { %>
+                                        <img src="/image/<%= item.imagem %>" alt="" class="prep-img" loading="lazy" data-fallback-src="/img/placeholder-product.svg">
+                                    <% } %>
+                                    <span class="prep-info">
+                                        <strong><%= item.nome %></strong>
+                                        <small>
+                                            <% if (item.cor) { %>Cor: <%= item.cor %> &bull; <% } %>
+                                            <% if (item.tamanho) { %>Tamanho: <%= item.tamanho %> &bull; <% } %>
+                                            <% if (item.sku) { %>SKU: <%= item.sku %><% } %>
+                                        </small>
+                                    </span>
+                                    <span class="prep-qty">× <%= item.quantidade %></span>
+                                </label>
+                            </li>
+                        <% }) %>
+                    </ul>
+
+                    <div class="courier-card-actions">
+                        <button type="button" class="btn-confirm" data-action="mark-prepared" data-order-id="<%= order._id %>" disabled>
+                            <i data-lucide="package-check"></i> Marcar como preparado
+                        </button>
+                    </div>
+                </article>
+            <% }) %>
+        <% } else { %>
+            <div class="empty-orders-state u-margin-top-2rem">
+                <div class="empty-icon-wrap"><i data-lucide="check-check"></i></div>
+                <h3>Nada para preparar</h3>
+                <p>Quando um pedido for pago, ele aparece aqui para separação.</p>
+            </div>
+        <% } %>
+    </main>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="/js/preparo.js"></script>

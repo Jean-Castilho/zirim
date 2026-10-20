@@ -1,8 +1,10 @@
 /**
- * Busca de produtos da loja (página /products).
+ * Busca e filtro de produtos da loja (página /products).
  *
  * - Busca automática após 300ms de pausa, a partir de 2 caracteres (Enter/botão pesquisam sempre).
- * - Mantém a categoria ativa da URL e grava a busca na URL (recarregar ou voltar preserva o resultado).
+ * - Botão de filtro: abre o painel de categorias; escolher uma categoria refaz a busca sem recarregar.
+ *   Fecha com outro clique, com Esc ou ao clicar fora.
+ * - Mantém busca e categoria na URL (recarregar ou voltar preserva o resultado).
  * - Cancela requisições antigas: só a resposta mais recente atualiza a lista.
  */
 (() => {
@@ -13,7 +15,8 @@
   let controller = null;
   let latestRequest = 0;
 
-  const currentCategory = () => new URLSearchParams(window.location.search).get('category') || '';
+  const categoryFromUrl = () => new URLSearchParams(window.location.search).get('category') || '';
+  let selectedCategory = categoryFromUrl();
 
   const buildUrl = (query, category) => {
     const params = new URLSearchParams();
@@ -35,8 +38,7 @@
     const query = input.value.trim();
     if (!force && query.length > 0 && query.length < MIN_AUTO_CHARS) return;
 
-    const category = currentCategory();
-    const url = buildUrl(query, category);
+    const url = buildUrl(query, selectedCategory);
 
     // Cancela a requisição anterior e identifica esta, para ignorar respostas fora de ordem
     if (controller) controller.abort();
@@ -65,13 +67,78 @@
     } catch (error) {
       if (error.name === 'AbortError') return;
       console.error('[Search] Erro na busca:', error);
-      if (typeof showNotification === 'function') {
-        showNotification('Não foi possível pesquisar agora. Tente novamente.', 'error');
+      if (window.zirimDialog) {
+        window.zirimDialog.notify('Não foi possível pesquisar agora. Tente novamente.', { tone: 'danger' });
       }
     } finally {
       if (requestId === latestRequest) setGridBusy(false);
     }
   };
+
+  const filterElements = () => ({
+    button: document.getElementById('filter-dropdown-button'),
+    panel: document.getElementById('filter-dropdown-content'),
+  });
+
+  const setFilterOpen = (open) => {
+    const { button, panel } = filterElements();
+    if (!button || !panel) return;
+    panel.classList.toggle('show', open);
+    button.setAttribute('aria-expanded', String(open));
+  };
+
+  const isFilterOpen = () => filterElements().panel?.classList.contains('show') === true;
+
+  const syncFilterState = () => {
+    const { button, panel } = filterElements();
+    if (!button || !panel) return;
+    button.classList.toggle('is-filtered', selectedCategory !== '');
+    panel.querySelectorAll('a[data-category]').forEach((link) => {
+      link.classList.toggle('active', (link.dataset.category || '') === selectedCategory);
+    });
+  };
+
+  const initFilter = () => {
+    const { button, panel } = filterElements();
+    if (!button || !panel || button.dataset.filterInitialized) return;
+    button.dataset.filterInitialized = 'true';
+
+    button.setAttribute('aria-haspopup', 'true');
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', 'filter-dropdown-content');
+
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setFilterOpen(!isFilterOpen());
+    });
+
+    panel.addEventListener('click', (event) => {
+      const link = event.target.closest('a[data-category]');
+      if (!link) return;
+      // Filtra na própria página: impede a navegação htmx e o recarregamento
+      event.preventDefault();
+      event.stopPropagation();
+      selectedCategory = link.dataset.category || '';
+      setFilterOpen(false);
+      syncFilterState();
+      clearTimeout(debounceTimer);
+      runSearch(document.getElementById('search-input'), { force: true });
+    });
+
+    syncFilterState();
+  };
+
+  // Listeners globais únicos: fecham o painel ao clicar fora ou pressionar Esc
+  if (!document.body.dataset.filterGlobalInitialized) {
+    document.body.dataset.filterGlobalInitialized = 'true';
+    document.addEventListener('click', (event) => {
+      if (isFilterOpen() && !event.target.closest('.filter-search')) setFilterOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && isFilterOpen()) setFilterOpen(false);
+    });
+  }
 
   const initializeSearch = () => {
     const searchInput = document.getElementById('search-input');
@@ -101,6 +168,8 @@
         runSearch(searchInput, { force: true });
       });
     }
+
+    initFilter();
   };
 
   // Listener global único: a página é trocada pelo htmx sem recarregar o script

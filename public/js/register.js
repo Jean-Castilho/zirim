@@ -35,7 +35,7 @@
             const errorMsg = 'Por favor, insira um número de telefone válido.';
             if (typeof showNotification === 'function') {
               showNotification(errorMsg, 'error');
-            } else { alert(errorMsg); }
+            } else { window.zirimDialog.notify(errorMsg, { tone: 'warning' }); }
             return;
           }
           // Substitui o valor do telefone pelo formato internacional (ex: +55...)
@@ -45,7 +45,7 @@
             if (typeof showNotification === 'function') {
               showNotification('As senhas não coincidem.', 'error');
             } else {
-              alert('As senhas não coincidem.');
+              window.zirimDialog.notify('As senhas não coincidem.', { tone: 'warning' });
             }
             return;
           }
@@ -65,19 +65,19 @@
             if (response.ok) {
               if (typeof showNotification === 'function') {
                   showNotification('Registro realizado com sucesso!', 'success');
+                  setTimeout(() => { window.location.href = '/'; }, 1000);
               } else {
-                  alert('Registro realizado com sucesso!');
+                  // Redireciona só depois que o usuário lê a confirmação
+                  await window.zirimDialog.notify('Registro realizado com sucesso!', { tone: 'success' });
+                  window.location.href = '/';
               }
-              setTimeout(() => {
-                  window.location.href = '/'; // Redireciona apenas em caso de sucesso absoluto
-              }, 1000);
             } else {
               console.error('Erro no registro:', result);
               // NÃO redireciona e NÃO permite login implícito
               if (typeof showNotification === 'function') {
                   showNotification(result.message || 'Erro ao realizar registro', 'error');
               } else {
-                  alert(result.message || 'Erro ao realizar registro');
+                  window.zirimDialog.notify(result.message || 'Erro ao realizar registro', { tone: 'danger' });
               }
             }
           } catch (error) {
@@ -85,7 +85,7 @@
             if (typeof showNotification === 'function') {
                 showNotification('Erro de conexão ao tentar fazer registro.', 'error');
             } else {
-                alert('Erro de conexão ao tentar fazer registro.');
+                window.zirimDialog.notify('Erro de conexão ao tentar fazer registro.', { tone: 'danger' });
             }
           }
         });

@@ -125,7 +125,7 @@
         const filesToProcess = Array.from(input.files).slice(0, 5);
 
         if (input.files.length > 5) {
-          alert("Você selecionou mais de 5 imagens. Apenas as 5 primeiras serão consideradas.");
+          window.zirimDialog.notify("Você selecionou mais de 5 imagens. Apenas as 5 primeiras serão consideradas.", { tone: 'info' });
         }
 
         filesToProcess.forEach((file) => {

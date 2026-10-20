@@ -9,11 +9,9 @@
                 Olá, <strong><%= (typeof user !== 'undefined' && user?.name) || 'Entregador' %></strong> &bull; Entregas em rota: <strong id="deliveries-count"><%= (deliveries && deliveries.length) || 0 %></strong>
             </p>
         </div>
-        <% if (typeof user !== 'undefined' && user?.role === 'admin') { %>
-            <a href="/delivery" class="btn-route u-text-decoration-none-display-inline-67f31f">
-                <i data-lucide="map"></i> Ver Mapa de Entregas
-            </a>
-        <% } %>
+        <a href="/delivery" class="btn-route u-text-decoration-none-display-inline-67f31f">
+            <i data-lucide="map"></i> Ver Mapa de Entregas
+        </a>
     </header>
 
     <section class="available-orders-section u-margin-bottom-2rem">
@@ -22,29 +20,20 @@
         </h2>
         <div class="courier-list" id="available-list">
             <% if (typeof availableOrders !== 'undefined' && availableOrders.length > 0) { %>
-                <% availableOrders.forEach(order => { 
-                    const shortId = order._id ? order._id.toString().slice(-6).toUpperCase() : '------';
-                    const clientName = order.user?.name || 'Cliente';
-                    const street = order.address?.street || '';
-                    const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
-                    const fullAddress = street ? `${street}${neighborhood}` : 'Endereço não informado';
-                %>
+                <% availableOrders.forEach(order => { %>
                     <article class="courier-card u-border-left-4px-solid-var-warning" id="available-card-<%= order._id %>">
                         <div class="courier-card-head">
-                            <span class="order-tag">#<%= shortId %></span>
+                            <span class="order-tag">#<%= order.shortId %></span>
                             <span class="status-badge status-pending">
                                 <span class="status-dot"></span> Pronto para Entrega
                             </span>
                         </div>
                         <div class="courier-card-info">
                             <div class="info-row">
-                                <i data-lucide="user"></i>
-                                <strong><%= clientName %></strong>
-                            </div>
-                            <div class="info-row">
                                 <i data-lucide="map-pin"></i>
-                                <span><%= fullAddress %></span>
+                                <span>Bairro: <%= order.neighborhood || 'não informado' %></span>
                             </div>
+                            <p class="u-color-var-text-secondary-font-size-0-9rem">Nome, telefone e endereço completo aparecem após o aceite.</p>
                         </div>
                         <div class="courier-card-actions u-grid-template-columns-1fr">
                             <button type="button" class="btn-confirm" data-action="select-order" data-order-id="<%= order._id %>">
@@ -65,27 +54,36 @@
 
     <main class="courier-list" id="courier-list">
         <% if (deliveries && deliveries.length > 0) { %>
-            <% deliveries.forEach(order => { 
-                const shortId = order._id ? order._id.toString().slice(-6).toUpperCase() : '------';
-                const clientName = order.user?.name || 'Cliente';
-                const rawPhone = order.user?.phone;
-                const clientPhone = (typeof rawPhone === 'object' ? rawPhone?.number : rawPhone) || '';
-                const street = order.address?.street || '';
+            <% deliveries.forEach(order => {
+                const clientName = order.client?.name || 'Cliente';
+                const clientPhone = order.client?.phone || null;
+                const street = order.address?.street ? `${order.address.street}${order.address.number ? `, ${order.address.number}` : ''}` : '';
                 const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
                 const fullAddress = street ? `${street}${neighborhood}` : 'Endereço não informado';
-                const lat = order.location?.lat;
-                const lng = order.location?.lng;
-                const routeUrl = (lat && lng) 
-                    ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` 
-                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
             %>
                 <article class="courier-card" id="card-<%= order._id %>">
                     <div class="courier-card-head">
-                        <span class="order-tag">#<%= shortId %></span>
+                        <span class="order-tag">#<%= order.shortId %></span>
                         <span class="status-badge status-transit">
                             <span class="status-dot"></span> Em Rota
                         </span>
                     </div>
+
+                    <% const firstItem = (order.items || [])[0]; %>
+                    <% if (firstItem) { %>
+                    <div class="courier-thumb-row">
+                        <img src="/image/<%= firstItem.imagem || '' %>" alt="<%= firstItem.nome %>" class="courier-thumb" loading="lazy" data-fallback-src="/img/placeholder-product.svg">
+                        <div class="courier-thumb-text">
+                            <strong><%= firstItem.nome %></strong>
+                            <small>
+                                <% if (firstItem.cor) { %><%= firstItem.cor %> &bull; <% } %>
+                                <% if (firstItem.tamanho) { %>Tam. <%= firstItem.tamanho %> &bull; <% } %>
+                                Qtd. <%= firstItem.quantidade %>
+                                <% if ((order.items || []).length > 1) { %> &bull; +<%= order.items.length - 1 %> item(ns)<% } %>
+                            </small>
+                        </div>
+                    </div>
+                    <% } %>
 
                     <div class="courier-card-info">
                         <div class="info-row">
@@ -97,6 +95,11 @@
                                 <i data-lucide="phone"></i>
                                 <a href="tel:<%= clientPhone %>" class="phone-link"><%= clientPhone %></a>
                             </div>
+                        <% } else { %>
+                            <div class="info-row">
+                                <i data-lucide="phone-off"></i>
+                                <span>Telefone não informado pelo cliente</span>
+                            </div>
                         <% } %>
                         <div class="info-row">
                             <i data-lucide="map-pin"></i>
@@ -105,10 +108,13 @@
                     </div>
 
                     <div class="courier-card-actions">
-                        <a href="<%= routeUrl %>" target="_blank" rel="noopener" class="btn-route">
+                        <a href="/delivery?route=<%= order._id %>" class="btn-route">
                             <i data-lucide="navigation"></i> Traçar Rota
                         </a>
-                        <button type="button" class="btn-confirm" data-action="open-pin" data-order-id="<%= order._id %>" data-short-id="#<%= shortId %>">
+                        <button type="button" class="btn-cancel" data-action="release-order" data-order-id="<%= order._id %>">
+                            <i data-lucide="undo-2"></i> Liberar pedido
+                        </button>
+                        <button type="button" class="btn-confirm" data-action="open-pin" data-order-id="<%= order._id %>" data-short-id="#<%= order.shortId %>">
                             <i data-lucide="check-circle-2"></i> Confirmar Entrega
                         </button>
                     </div>
@@ -124,6 +130,29 @@
             </div>
         <% } %>
     </main>
+
+    <section class="u-margin-top-2rem" id="history-section">
+        <header class="courier-header">
+            <h2 class="u-font-size-1-1rem-color-var-text-prim-41dd53">Entregas concluídas (últimas <%= (history && history.length) || 0 %>)</h2>
+        </header>
+        <% if (history && history.length > 0) { %>
+            <ul class="courier-list" id="history-list">
+                <% history.forEach(order => {
+                    const when = order.deliveredAt
+                        ? new Date(order.deliveredAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })
+                        : '';
+                %>
+                    <li class="courier-card-info">
+                        <strong>#<%= order.shortId %></strong> &bull; <%= order.client?.name || 'Cliente' %>
+                        <% if (order.neighborhood) { %> &bull; <%= order.neighborhood %><% } %>
+                        <% if (when) { %> &bull; <%= when %><% } %>
+                    </li>
+                <% }) %>
+            </ul>
+        <% } else { %>
+            <p class="u-color-var-text-secondary-font-size-0-9rem">Nenhuma entrega concluída ainda.</p>
+        <% } %>
+    </section>
 </div>
 
 <!-- Modal de Confirmação por Código -->
@@ -138,15 +167,15 @@
             <p class="modal-order-label" id="modal-order-id">Pedido #------</p>
 
             <div class="pin-input-wrap">
-                <input 
-                    type="text" 
-                    id="pin-code-input" 
-                    name="code" 
-                    inputmode="numeric" 
-                    pattern="[0-9]*" 
-                    maxlength="6" 
-                    placeholder="0000" 
-                    required 
+                <input
+                    type="text"
+                    id="pin-code-input"
+                    name="code"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="6"
+                    placeholder="0000"
+                    required
                     autocomplete="one-time-code"
                 />
             </div>

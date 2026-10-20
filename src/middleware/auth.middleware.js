@@ -89,9 +89,22 @@ export const requireAdmin = (req, res, next) => {
  */
 export const requireCourier = (req, res, next) => {
   const role = req.session?.user?.role;
+  // Papel de entregador é exclusivo: admin não executa ações de entregador.
+  if (!req.session?.user || role !== "entregador") {
+    if (expectsJson(req)) {
+      return next(new GeneralError("Acesso negado. Apenas entregadores podem realizar esta operação.", 403));
+    }
+    return res.redirect("/login");
+  }
+  next();
+};
+
+/** Mapa de entregas: admin (visão completa) ou entregador (seus pedidos). */
+export const requireMapViewer = (req, res, next) => {
+  const role = req.session?.user?.role;
   if (!req.session?.user || (role !== "entregador" && role !== "admin")) {
     if (expectsJson(req)) {
-      return next(new GeneralError("Acesso negado. Apenas entregadores autorizados podem realizar esta operação.", 403));
+      return next(new GeneralError("Acesso negado.", 403));
     }
     return res.redirect("/login");
   }

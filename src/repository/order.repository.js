@@ -25,6 +25,28 @@ const idVariants = (id) => ObjectId.isValid(id)
     ? [id, String(id), new ObjectId(id)]
     : [id, String(id)];
 
+/** Campos lidos pelas telas de entrega (lista branca: PIN, e-mail e CPF ficam de fora). */
+const DELIVERY_PROJECTION = {
+    _id: 1,
+    statusInterno: 1,
+    createdAt: 1,
+    location: 1,
+    address: 1,
+    "user.name": 1,
+    "user.phone": 1,
+    "delivery.courierId": 1,
+    "delivery.courierName": 1,
+    "delivery.courierPhone": 1,
+    "delivery.startedAt": 1,
+    "delivery.deliveredAt": 1,
+};
+
+/** Pedido disponível: não carrega nenhum dado pessoal (regra de aceite). */
+const AVAILABLE_PROJECTION = { _id: 1, statusInterno: 1, createdAt: 1, location: 1, "address.neighborhood": 1 };
+
+/** Condição "sem entregador atribuído". */
+const UNASSIGNED = { $or: [{ "delivery.courierId": { $exists: false } }, { "delivery.courierId": null }] };
+
 /**
  * Repository de pedidos: SOMENTE acesso a dados (queries, updates atômicos).
  * Chamadas ao gateway de pagamento ficam em PaymentService; regras de entrega em DeliveryService.
@@ -417,12 +439,6 @@ export default class OrderRepository extends BaseRepository {
         return await this.collection.countDocuments({ statusInterno });
     }
 
-    async getPaidOrders() {
-        return await this.collection.find({ 
-            statusInterno: { $in: ['pago', 'preparado', 'em_rota'] } 
-        }).sort({ createdAt: -1 }).toArray();
-    }
-
     async getLogisticsDashboardData() {
         const allOrders = await this.collection.find({}).sort({ createdAt: -1 }).toArray();
         const stats = {
@@ -464,32 +480,60 @@ export default class OrderRepository extends BaseRepository {
         return { orders: allOrders, stats };
     }
 
-    async getCourierDeliveries(courierId) {
-        const idVariants = ObjectId.isValid(courierId)
-            ? [courierId, String(courierId), new ObjectId(courierId)]
-            : [courierId, String(courierId)];
+    /** Pedidos pagos aguardando preparo (painel de preparo). Sem PIN e sem dados de pagamento. */
+    async getOrdersToPrepare() {
+        return await this.collection.find(
+            { statusInterno: "pago" },
+            { projection: { _id: 1, createdAt: 1, "user.name": 1, items: 1 } }
+        ).sort({ createdAt: 1 }).toArray();
+    }
 
+    /** Mapa do admin: todos os pedidos ativos, sem PIN. */
+    async getMapOrdersForAdmin() {
+        return await this.collection.find(
+            { statusInterno: { $in: ["pago", "preparado", "em_rota"] } },
+            { projection: DELIVERY_PROJECTION }
+        ).sort({ createdAt: -1 }).toArray();
+    }
+
+    /** Mapa do entregador: pedidos prontos sem entregador e os próprios pedidos em rota. */
+    async getMapOrdersForCourier(courierId) {
         return await this.collection.find({
-            "delivery.courierId": { $in: idVariants },
-            statusInterno: { $in: ["pago", "em_transporte", "em_rota"] }
-        }).sort({ updatedAt: -1, createdAt: -1 }).toArray();
+            $or: [
+                { $and: [{ statusInterno: "preparado" }, UNASSIGNED] },
+                { statusInterno: "em_rota", "delivery.courierId": { $in: idVariants(courierId) } }
+            ]
+        }, { projection: DELIVERY_PROJECTION }).sort({ createdAt: 1 }).toArray();
+    }
+
+    /** Pedidos aceitos e ainda em rota do entregador. */
+    async getCourierDeliveries(courierId) {
+        return await this.collection.find({
+            "delivery.courierId": { $in: idVariants(courierId) },
+            statusInterno: "em_rota"
+        }, { projection: DELIVERY_PROJECTION }).sort({ "delivery.startedAt": 1 }).toArray();
+    }
+
+    /** Entregas concluídas pelo entregador (últimas 50). */
+    async getCourierHistory(courierId, limit = 50) {
+        return await this.collection.find({
+            "delivery.courierId": { $in: idVariants(courierId) },
+            statusInterno: "entregue"
+        }, { projection: DELIVERY_PROJECTION }).sort({ "delivery.deliveredAt": -1 }).limit(limit).toArray();
     }
 
     async getAvailableDeliveries() {
         return await this.collection.find({
             statusInterno: "preparado",
-            $or: [
-                { "delivery.courierId": { $exists: false } },
-                { "delivery.courierId": null }
-            ]
-        }).sort({ createdAt: 1 }).toArray();
+            ...UNASSIGNED
+        }, { projection: AVAILABLE_PROJECTION }).sort({ createdAt: 1 }).toArray();
     }
 
     // ------------------------------------------------------------------
     // Entregas: primitivas de persistência (regras vivem em DeliveryService)
     // ------------------------------------------------------------------
 
-    async markPrepared(orderId, confirmationCode) {
+    async markPrepared(orderId, confirmationCode, preparedBy) {
         return await this.collection.updateOne(
             { _id: new ObjectId(orderId) },
             {
@@ -497,6 +541,7 @@ export default class OrderRepository extends BaseRepository {
                     statusInterno: "preparado",
                     "delivery.confirmationCodePlain": confirmationCode,
                     "delivery.preparedAt": new Date(),
+                    "delivery.preparedBy": String(preparedBy),
                     updatedAt: new Date()
                 }
             }
@@ -535,6 +580,48 @@ export default class OrderRepository extends BaseRepository {
             _id: new ObjectId(orderId),
             "delivery.courierId": { $in: idVariants(courierId) }
         });
+    }
+
+    /**
+     * Libera um pedido em rota: volta para 'preparado' sem entregador.
+     * O PIN é mantido. Retorna true quando o pedido foi liberado.
+     */
+    async releaseOrder(orderId, courierId) {
+        const result = await this.collection.updateOne(
+            {
+                _id: new ObjectId(orderId),
+                statusInterno: "em_rota",
+                "delivery.courierId": { $in: idVariants(courierId) }
+            },
+            {
+                $set: { statusInterno: "preparado", updatedAt: new Date() },
+                $unset: {
+                    "delivery.courierId": "",
+                    "delivery.courierName": "",
+                    "delivery.courierPhone": "",
+                    "delivery.startedAt": ""
+                }
+            }
+        );
+        return result.modifiedCount > 0;
+    }
+
+    /** Atribui um pedido preparado ou em rota a outro entregador. Retorna o pedido ou null. */
+    async reassignOrder(orderId, courier) {
+        return await this.collection.findOneAndUpdate(
+            { _id: new ObjectId(orderId), statusInterno: { $in: ["preparado", "em_rota"] } },
+            {
+                $set: {
+                    statusInterno: "em_rota",
+                    "delivery.courierId": String(courier.id),
+                    "delivery.courierName": courier.name,
+                    "delivery.courierPhone": courier.phone,
+                    "delivery.startedAt": new Date(),
+                    updatedAt: new Date()
+                }
+            },
+            { returnDocument: "after" }
+        );
     }
 
     /**
