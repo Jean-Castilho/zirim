@@ -139,8 +139,9 @@ export default class UserRepository extends BaseRepository {
     }, { projection: { _id: 1 } }));
   }
 
+  /** Redefine a senha pelo token. Retorna o id do usuário ou null. */
   async resetPasswordWithToken(tokenHash, passwordHash) {
-    const result = await this.collection.updateOne(
+    const updated = await this.collection.findOneAndUpdate(
       {
         passwordResetTokenHash: tokenHash,
         passwordResetExpiresAt: { $gt: new Date() },
@@ -151,9 +152,9 @@ export default class UserRepository extends BaseRepository {
           passwordResetTokenHash: "",
           passwordResetExpiresAt: "",
         },
-      }
+      },
+      { returnDocument: "before", projection: { _id: 1 } }
     );
-
-    return result.modifiedCount > 0;
+    return updated ? String(updated._id) : null;
   }
 }

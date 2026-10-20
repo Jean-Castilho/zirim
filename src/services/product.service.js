@@ -2,6 +2,7 @@ import ProductRepository from "../repository/product.repository.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
 import { ACTIVE_VARIATION_QUERY, toStorefrontProducts } from "../utils/product-visibility.js";
 import { parseSearchTerms } from "../utils/search-text.js";
+import { toPublicProjection, sanitizePublicProduct } from "../utils/public-product.js";
 
 const isBlankId = (id) => !id || id === "null" || id === "undefined";
 
@@ -84,11 +85,10 @@ export default class ProductService {
         if (!Array.isArray(ids) || ids.length === 0) {
             throw new ValidationError("IDs são requeridos para obter dados.");
         }
-        const keys = Object.keys(projection);
-        const safeProjection = keys.length > 0 && keys.some((k) => k.startsWith('variacoes'))
-            ? { ...projection, 'variacoes.ativo': 1 }
-            : projection;
-        return toStorefrontProducts(await this.repository.findByIds(ids, safeProjection));
+        // A projeção vinda do cliente é filtrada por lista branca; campos internos nunca saem.
+        const safeProjection = toPublicProjection(projection);
+        const products = await this.repository.findByIds(ids, safeProjection);
+        return toStorefrontProducts(products).map(sanitizePublicProduct);
     }
 
     /** Detalhe público: produto inexistente OU sem nenhuma variação ativa vira 404. */

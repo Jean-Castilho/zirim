@@ -208,21 +208,6 @@ export default class OrderService {
   // Consultas
   // ------------------------------------------------------------------
 
-  /** Status de pagamento (sincroniza com o gateway). */
-  async getPaymentStatus(paymentId) {
-    if (!paymentId || paymentId === "undefined" || paymentId === "null") {
-      throw new ValidationError("ID de pagamento obrigatório.");
-    }
-
-    const payment = await this.payments.syncPayment(paymentId);
-    return {
-      status: payment.status,
-      id: payment.id,
-      transaction_amount: payment.transaction_amount,
-      status_detail: payment.status_detail || null,
-    };
-  }
-
   /**
    * Pedido para a página de checkout, respeitando a posse (dono, admin ou convidado).
    * Falhas de autorização retornam 404 para não revelar a existência do pedido.

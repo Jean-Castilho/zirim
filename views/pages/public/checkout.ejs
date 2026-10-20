@@ -1,6 +1,7 @@
 <link rel="stylesheet" href="/css/pages/checkout.css">
 <div class="checkout-container">
     <div class="card" id="payment-card"
+        data-order-id="<%= order._id %>"
         data-payment-id="<%= order.payment?.id || '' %>"
         data-payment-status="<%= order.payment?.status || '' %>"
         data-order-status="<%= order.statusInterno || '' %>"

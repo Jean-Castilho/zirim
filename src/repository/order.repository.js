@@ -537,6 +537,25 @@ export default class OrderRepository extends BaseRepository {
         });
     }
 
+    /**
+     * Reserva uma tentativa de PIN de forma atômica. Retorna o número da tentativa
+     * ou null quando o limite já foi atingido (requisições paralelas não ultrapassam o limite).
+     */
+    async reserveDeliveryAttempt(orderId, maxAttempts) {
+        const updated = await this.collection.findOneAndUpdate(
+            {
+                _id: new ObjectId(orderId),
+                $or: [
+                    { "delivery.attempts": { $lt: maxAttempts } },
+                    { "delivery.attempts": { $exists: false } },
+                ],
+            },
+            { $inc: { "delivery.attempts": 1 } },
+            { returnDocument: "after", projection: { "delivery.attempts": 1 } }
+        );
+        return updated ? Number(updated.delivery?.attempts) : null;
+    }
+
     async incrementDeliveryAttempts(orderId) {
         return await this.collection.updateOne(
             { _id: new ObjectId(orderId) },

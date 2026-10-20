@@ -44,9 +44,12 @@
                           </a>
                           <% } %>
 
-                            <a href="/logout" class="nav-link" aria-label="Sair" hx-boost="false">
-                              <span class="material-icons notranslate md-22">logout</span>
-                            </a>
+                            <form method="post" action="/logout" hx-boost="false" class="logout-form">
+                              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                              <button type="submit" class="nav-link logout-button" aria-label="Sair">
+                                <span class="material-icons notranslate md-22">logout</span>
+                              </button>
+                            </form>
                             <% } else { %>
                               <a href="/login" class="nav-link <%= isActive('/login') ? 'active' : '' %>"
                                 aria-label="Login">

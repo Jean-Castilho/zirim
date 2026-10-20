@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url';
 import Server from "./src/server.js";
 import { connectDataBase, closeDataBase } from './src/config/db.js';
 import { errorMiddleware } from "./src/utils/handle-response.js";
+import { securityHeaders } from "./src/middleware/security-headers.middleware.js";
+import { generateCsrfToken } from "./src/middleware/auth.middleware.js";
 
 const app = express();
 const port = process.env.PORT || 3090;
@@ -17,6 +19,8 @@ let isShuttingDown = false;
 
 // 1. Configurações de Template e Assets
 app.set('trust proxy', 1); 
+app.disable('x-powered-by');
+app.use(securityHeaders);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -52,6 +56,9 @@ app.use((req, res, next) => {
     next();
 });
 
+// 4.1 Token CSRF disponível em todas as páginas (ex.: botão de sair no cabeçalho)
+app.use(generateCsrfToken);
+
 // 5. Inicialização de Rotas
 Server(app);
 
@@ -59,8 +66,20 @@ Server(app);
 app.use(errorMiddleware);
 
 // 7. Gerenciamento de Ciclo de Vida do Servidor
+/** Falha cedo, no boot, se a configuração obrigatória estiver ausente. */
+const assertRequiredConfig = () => {
+    const required = ['SESSION_SECRET', 'DATABASE_URL'];
+    if (isProd) required.push('MERCADOPAGO_ACCESS_TOKEN', 'MERCADOPAGO_WEBHOOK_SECRET');
+
+    const missing = required.filter((name) => !process.env[name]);
+    if (missing.length > 0) {
+        throw new Error(`Variáveis de ambiente obrigatórias ausentes: ${missing.join(', ')}`);
+    }
+};
+
 const start = async () => {
     try {
+        assertRequiredConfig();
         await connectDataBase();
         httpServer = app.listen(port, () => {
             console.log(`Servidor rodando na porta: http://localhost:${port}`);

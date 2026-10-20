@@ -1,4 +1,3 @@
-import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 export async function createHashPassword(password) {
@@ -7,15 +6,6 @@ export async function createHashPassword(password) {
   const hashedPassword = await bcrypt.hash(password, salt);
   return hashedPassword;
 };
-
-export function createToken(payload) {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET não está definido no arquivo .env.");
-  }
-  const expiresIn = process.env.JWT_EXPIRATION || "7d";
-  return jwt.sign(payload, secret, { expiresIn });
-}
 
 export async function compararPassword(password, hashedPassword) {
   const match = await bcrypt.compare(password, hashedPassword);

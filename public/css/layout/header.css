@@ -275,3 +275,16 @@
         justify-content: flex-start;
     }
 }
+/* Botão de sair (POST com CSRF): mantém a aparência do link de navegação */
+.logout-form {
+  display: inline-flex;
+  margin: 0;
+}
+
+.logout-form .logout-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}

@@ -1,6 +1,5 @@
 import BaseController from "./base.controller.js";
 import UserService from "../services/user.service.js";
-import { createToken } from "../services/auth.service.js";
 import { isHtmxRequest, sendSuccess } from "../utils/handle-response.js";
 import { regenerateSession, saveSession, requireSessionUser, toSessionUser } from "../utils/session.js";
 
@@ -13,20 +12,13 @@ export default class AuthController extends BaseController {
         this.users = userService;
     }
 
-    /** Cria uma sessão nova (anti session-fixation) e emite o cookie JWT. */
+    /** Cria uma sessão nova (anti session-fixation). */
     async #startSession(req, res, user, status, message) {
         await regenerateSession(req);
 
         const sessionUser = toSessionUser(user);
         req.session.user = sessionUser;
         await saveSession(req);
-
-        const token = createToken({ _id: sessionUser._id, email: sessionUser.email?.endereco });
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Lax",
-        });
 
         return sendSuccess(res, { status, message, data: { user: sessionUser } });
     }
@@ -47,7 +39,6 @@ export default class AuthController extends BaseController {
             req.session.destroy((error) => (error ? reject(error) : resolve()))
         );
         res.clearCookie("connect.sid");
-        res.clearCookie("token");
 
         if (isHtmxRequest(req)) {
             res.set("HX-Redirect", "/");
@@ -73,7 +64,7 @@ export default class AuthController extends BaseController {
     async updatePassword(req, res) {
         const user = requireSessionUser(req);
         const { currentPassword, password, confirmPassword } = req.body;
-        await this.users.changePassword(user._id, currentPassword, password, confirmPassword);
+        await this.users.changePassword(user._id, currentPassword, password, confirmPassword, req.sessionID);
         return this.ok(res, "Senha atualizada com sucesso.");
     }
 }

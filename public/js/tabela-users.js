@@ -118,7 +118,10 @@
 
           row.querySelector('.col-name').textContent = name;
           row.querySelector('.col-phone').textContent = phone || 'N/A';
-          row.querySelector('.col-role').innerHTML = `<span class="role-badge">${role}</span>`;
+          const roleBadge = document.createElement('span');
+          roleBadge.className = 'role-badge';
+          roleBadge.textContent = role;
+          row.querySelector('.col-role').replaceChildren(roleBadge);
           row.querySelector('.col-status').innerHTML = `
             <span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">
               ${isActive ? 'Ativo' : 'Inativo'}

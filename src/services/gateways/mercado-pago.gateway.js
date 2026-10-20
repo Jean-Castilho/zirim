@@ -65,7 +65,13 @@ export const getPayment = async (id) => {
 export const assertValidWebhookSignature = ({ headers, body }) => {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
   const xSignature = headers["x-signature"];
-  if (!xSignature || !secret) return;
+
+  // Falha fechada: sem segredo configurado ou sem assinatura, a requisição é rejeitada.
+  if (!secret) {
+    console.error("MERCADOPAGO_WEBHOOK_SECRET não configurado: webhook recusado.");
+    throw new UnauthorizedError("Webhook não configurado.");
+  }
+  if (!xSignature) throw new UnauthorizedError("Assinatura do webhook ausente.");
 
   try {
     const parts = xSignature.split(",");

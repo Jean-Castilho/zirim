@@ -27,11 +27,6 @@ export default class OrderController extends BaseController {
         return res.redirect(redirectUrl);
     }
 
-    async paymentStatus(req, res) {
-        const status = await this.orders.getPaymentStatus(req.params.id);
-        return this.json(res, status);
-    }
-
     async orderStatus(req, res) {
         // Status muda com o pagamento: nunca deixar o navegador guardar esta resposta
         res.set("Cache-Control", "no-store");

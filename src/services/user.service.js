@@ -6,6 +6,7 @@ import { compararPassword, createHashPassword } from "./auth.service.js";
 import { validateUser, assertEmail, assertNewPassword, normalizeEmail } from "./validation-data.js";
 import { sendWhatsAppOtp, sendEmailOtp, sendPasswordResetEmail } from "./contact.service.js";
 import { verifyOtpCode } from "./otp.service.js";
+import SessionRepository from "../repository/session.repository.js";
 
 const ALLOWED_ROLES = ["user", "entregador", "admin"];
 const PASSWORD_RESET_LIFETIME_MS = 30 * 60 * 1000;
@@ -14,6 +15,7 @@ const hashResetToken = (token) => createHash("sha256").update(token).digest("hex
 export default class UserService {
     constructor() {
         this.repository = new UserRepository();
+        this.sessions = new SessionRepository();
     }
 
     async authenticate(email, password) {
@@ -38,11 +40,13 @@ export default class UserService {
 
         const data = validation.data;
 
+        // Mensagem única para e-mail e telefone: não revela qual dado já está cadastrado.
+        const duplicateMessage = "Não foi possível concluir o cadastro com os dados informados. Tente fazer login.";
         const emailExists = await this.repository.findByEmail(data.email);
-        if (emailExists) throw new ConflictError("Este e-mail já está sendo utilizado.");
+        if (emailExists) throw new ConflictError(duplicateMessage);
 
         const phoneExists = await this.repository.findByPhone(data.phone);
-        if (phoneExists) throw new ConflictError("Este número de telefone já está sendo utilizado.");
+        if (phoneExists) throw new ConflictError(duplicateMessage);
 
         data.password = await createHashPassword(data.password);
         return await this.repository.create(data);
@@ -127,7 +131,12 @@ export default class UserService {
         if (!await this.repository.hasValidPasswordResetToken(tokenHash)) return false;
 
         const passwordHash = await createHashPassword(password);
-        return this.repository.resetPasswordWithToken(tokenHash, passwordHash);
+        const userId = await this.repository.resetPasswordWithToken(tokenHash, passwordHash);
+        if (!userId) return false;
+
+        // Senha redefinida: encerra todas as sessões ativas da conta.
+        await this.sessions.revokeForUser(userId);
+        return true;
     }
 
     async countUsers() {
@@ -162,7 +171,7 @@ export default class UserService {
         return await this.repository.findById(id, { password: 0 });
     }
 
-    async changePassword(userId, currentPassword, newPassword, confirmPassword) {
+    async changePassword(userId, currentPassword, newPassword, confirmPassword, keepSessionId = null) {
         if (!currentPassword) {
             throw new ValidationError("Preencha a senha atual, a nova senha e a confirmação.");
         }
@@ -176,6 +185,9 @@ export default class UserService {
 
         const passwordHash = await createHashPassword(newPassword);
         await this.repository.updateProfile(userId, { password: passwordHash });
+
+        // Mantém só a sessão atual; as demais (outros aparelhos) são encerradas.
+        await this.sessions.revokeForUser(userId, keepSessionId);
     }
 
     // ------------------------------------------------------------------

@@ -356,3 +356,16 @@
       box-shadow: none;
     }
   }
+
+/* Botão "Sair da Conta" é um formulário POST: ocupa a largura do link antigo */
+.profile-actions .logout-form {
+  display: block;
+  margin: 0;
+}
+
+.profile-actions .logout-form .btn-logout {
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

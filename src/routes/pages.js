@@ -1,5 +1,5 @@
 import express from "express";
-import { generateCsrfToken, requireAuth, requireAdmin, requireCourier } from "../middleware/auth.middleware.js";
+import { generateCsrfToken, requireAuth, requireAdmin, requireCourier, validateCsrfToken } from "../middleware/auth.middleware.js";
 
 import PublicPagesController from "../controllers/public-pages.controller.js";
 import AuthPagesController from "../controllers/auth-pages.controller.js";
@@ -36,7 +36,7 @@ router.get("/reset-password", generateCsrfToken, authPages.handle("resetPassword
 router.get("/verify-otp", generateCsrfToken, authPages.handle("verifyOtp"));
 router.get("/verify-contact", requireAuth, generateCsrfToken, authPages.handle("verifyContact"));
 router.get("/profile", requireAuth, generateCsrfToken, authPages.handle("profile"));
-router.get("/logout", authController.handle("logout"));
+router.post("/logout", validateCsrfToken, authController.handle("logout"));
 
 // Administração e operação
 router.get("/dashboard", requireAdmin, adminPages.handle("dashboardPage"));

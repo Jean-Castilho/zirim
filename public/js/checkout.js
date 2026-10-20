@@ -29,6 +29,7 @@
     const card = document.getElementById('payment-card');
     if (!card) return;
 
+    const orderId = card.dataset.orderId;
     const paymentId = card.dataset.paymentId;
     const paymentStatus = card.dataset.paymentStatus;
     const orderStatus = card.dataset.orderStatus;
@@ -56,14 +57,18 @@
 
     const legacyUnconfirmedCancellation = ['cancelado', 'expirado'].includes(orderStatus) &&
       ['cancelled', 'expired'].includes(paymentStatus) && !lastSynced;
-    if (!paymentId || terminalStatuses.has(paymentStatus) && !legacyUnconfirmedCancellation) return;
+    if (!orderId || !paymentId || terminalStatuses.has(paymentStatus) && !legacyUnconfirmedCancellation) return;
 
     const checkPaymentStatus = async () => {
       try {
-        const response = await fetch(`/orders/status/${encodeURIComponent(paymentId)}`);
+        const response = await fetch(`/orders/${encodeURIComponent(orderId)}/summary`, {
+          headers: { Accept: 'application/json' },
+          credentials: 'same-origin',
+        });
         if (!response.ok) return;
 
-        const payment = await response.json();
+        const summary = await response.json();
+        const payment = { status: summary.paymentStatus };
         if (['approved', 'authorized'].includes(payment.status)) {
           clearStatusPolling();
           if (title) title.textContent = 'Pagamento Confirmado!';

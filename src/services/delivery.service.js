@@ -111,14 +111,14 @@ export default class DeliveryService {
       throw new ValidationError("Este pedido já foi finalizado como entregue.");
     }
 
-    const attempts = Number(order.delivery?.attempts || 0);
-    if (attempts >= MAX_PIN_ATTEMPTS) {
+    // A tentativa é reservada antes de conferir o PIN: requisições paralelas não burlam o limite.
+    const attemptNumber = await this.repository.reserveDeliveryAttempt(order._id, MAX_PIN_ATTEMPTS);
+    if (attemptNumber === null) {
       throw new ValidationError(`Limite de tentativas excedido (${MAX_PIN_ATTEMPTS}x). Contate a central de suporte.`);
     }
 
     if (!this.#isPinValid(order.delivery, cleanCode)) {
-      await this.repository.incrementDeliveryAttempts(order._id);
-      throw new ValidationError(`Código incorreto. Tentativa ${attempts + 1} de ${MAX_PIN_ATTEMPTS}.`);
+      throw new ValidationError(`Código incorreto. Tentativa ${attemptNumber} de ${MAX_PIN_ATTEMPTS}.`);
     }
 
     await this.repository.markDelivered(order._id);
