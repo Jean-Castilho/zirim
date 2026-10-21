@@ -115,7 +115,6 @@
     display: flex;
     align-items: center;
     gap: var(--espacamento-md);
-    margin-left: var(--espacamento-md);
     flex-shrink: 0;
 }
 
