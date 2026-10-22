@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { mapPaymentStatus, normalizePaymentStatus, resolveOrderStatus, isTerminalPaymentStatus } from '../services/payment-state.js';
 import { ValidationError, GeneralError } from "../utils/errors.js";
+import { findLegacyVariations } from "../utils/variation-match.js";
 
 import BaseRepository from "./base.repository.js";
 
@@ -209,6 +210,29 @@ export default class OrderRepository extends BaseRepository {
         }
     }
 
+    /**
+     * Identificador da variação comprada.
+     * Pedidos novos trazem `variacaoId`. Pedidos antigos (sem ele) são resolvidos por SKU/cor/tamanho
+     * e só são aceitos com UMA correspondência: ambiguidade falha explicitamente, nunca debita "a primeira que casa".
+     */
+    async #resolveVariationId(productsCollection, item) {
+        if (item.variacaoId) return new ObjectId(item.variacaoId);
+
+        const product = await productsCollection.findOne(
+            { _id: new ObjectId(item.id) },
+            { projection: { variacoes: 1 } }
+        );
+        if (!product) throw new ValidationError(`Produto ID ${item.id} não encontrado para a baixa de estoque.`);
+
+        const matches = findLegacyVariations(product.variacoes, item);
+        if (matches.length !== 1 || !matches[0]._id) {
+            throw new ValidationError(
+                `Não foi possível identificar a variação do produto ID ${item.id} (${matches.length} correspondências).`
+            );
+        }
+        return matches[0]._id;
+    }
+
     async executarBaixaEstoque(order) {
         // 1. Trava atômica utilizando `this.collection` (herdada de BaseRepository para a collection "orders")
         const reservation = await this.collection.updateOne(
@@ -218,8 +242,8 @@ export default class OrderRepository extends BaseRepository {
                 inventoryProcessing: { $ne: true },
                 inventoryProcessingFailed: { $ne: true }
             },
-            { 
-                $set: {                      inventoryProcessing: true,                      inventoryProcessingAt: new Date(),                     updatedAt: new Date()                 },$inc: { stateVersion: 1 }
+            {
+                $set: { inventoryProcessing: true, inventoryProcessingAt: new Date(), updatedAt: new Date() }, $inc: { stateVersion: 1 }
             }
         );
 
@@ -235,25 +259,20 @@ export default class OrderRepository extends BaseRepository {
                 const quantityToSubtract = Number(item.quantidade || 0);
                 if (quantityToSubtract <= 0) continue;
 
-                const elemMatchFilter = {
-                    estoque: { $gte: quantityToSubtract }
-                };
+                const productId = new ObjectId(item.id);
+                const variationId = await this.#resolveVariationId(productsCollection, item);
 
-                if (item.sku) {
-                    elemMatchFilter.sku = item.sku;
-                } else {
-                    if (item.cor) elemMatchFilter.cores = { $in: [item.cor] };
-                    if (item.tamanho) elemMatchFilter.tamanhos = { $in: [String(item.tamanho)] };
-                }
-
-                // Atualização atômica estrita na collection de produtos
+                // Debita SOMENTE a variação exata (_id), ativa e com estoque suficiente, em uma operação atômica.
                 const updateResult = await productsCollection.updateOne(
                     {
-                        _id: new ObjectId(item.id),
+                        _id: productId,
                         variacoes: {
-                            // Nunca debita variação desativada (mesmo que tenha sido desativada após o checkout)
-                            $elemMatch: { ...elemMatchFilter, ativo: { $ne: false } }
-                        }
+                            $elemMatch: {
+                                _id: variationId,
+                                ativo: { $ne: false },
+                                estoque: { $gte: quantityToSubtract },
+                            },
+                        },
                     },
                     {
                         $inc: { "variacoes.$.estoque": -quantityToSubtract }
@@ -261,25 +280,23 @@ export default class OrderRepository extends BaseRepository {
                 );
 
                 if (updateResult.modifiedCount !== 1) {
-                    throw new ValidationError(`Estoque insuficiente ou variação indisponível para o produto ID ${item.id}.`);
+                    throw new ValidationError(
+                        `Estoque insuficiente ou variação indisponível para o produto ID ${item.id} (variação ${variationId}).`
+                    );
                 }
 
-                appliedOps.push({
-                    productId: item.id,
-                    filter: elemMatchFilter,
-                    quantity: quantityToSubtract
-                });
+                appliedOps.push({ productId, variationId, quantity: quantityToSubtract });
             }
 
             // 3. Confirmação do processamento usando `this.collection`
             await this.collection.updateOne(
                 { _id: order._id, inventoryProcessing: true },
                 {
-                    $set: {                         inventoryProcessed: true,                         inventoryProcessedAt: new Date(),                         updatedAt: new Date()                     },$unset: { 
-                        inventoryProcessing: "", 
-                        inventoryProcessingAt: "", 
-                        inventoryProcessingFailed: "", 
-                        inventoryProcessingError: "" 
+                    $set: { inventoryProcessed: true, inventoryProcessedAt: new Date(), updatedAt: new Date() }, $unset: {
+                        inventoryProcessing: "",
+                        inventoryProcessingAt: "",
+                        inventoryProcessingFailed: "",
+                        inventoryProcessingError: ""
                     }
                 }
             );
@@ -291,17 +308,13 @@ export default class OrderRepository extends BaseRepository {
             const rollbackErrors = [];
             for (const op of appliedOps.reverse()) {
                 try {
+                    // Reposição pela identidade da variação (sem filtrar por estoque: após o débito o saldo pode ser 0).
                     const rollbackResult = await productsCollection.updateOne(
-                        {
-                            _id: new ObjectId(op.productId),
-                            variacoes: { $elemMatch: { ...op.filter } }
-                        },
-                        {
-                            $inc: { "variacoes.$.estoque": op.quantity }
-                        }
+                        { _id: op.productId, "variacoes._id": op.variationId },
+                        { $inc: { "variacoes.$.estoque": op.quantity } }
                     );
                     if (rollbackResult.modifiedCount !== 1) {
-                        console.warn(`[Rollback] Falha ao reverter estoque do produto ${op.productId}`);
+                        console.warn(`[Rollback] Falha ao reverter estoque do produto ${op.productId} (variação ${op.variationId})`);
                     }
                 } catch (rollbackError) {
                     rollbackErrors.push(rollbackError.message);

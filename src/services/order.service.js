@@ -108,6 +108,8 @@ export default class OrderService {
 
       return {
         id: product._id,
+        // Variação exata comprada: a baixa de estoque debita este identificador, nunca "a primeira que casa".
+        variacaoId: variation._id,
         nome: product.nome,
         preco: variation.preco,
         imagem,

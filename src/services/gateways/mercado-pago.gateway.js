@@ -1,6 +1,7 @@
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import crypto from "crypto";
 import { ExternalServiceError, UnauthorizedError } from "../../utils/errors.js";
+import { buildPixPayer } from "./pix-payer.js";
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN });
 const paymentClient = new Payment(client);
@@ -13,7 +14,6 @@ const PIX_LIFETIME_MINUTES = 60;
  */
 export const createPixPayment = async ({ amount, payer }) => {
   const expirationDate = new Date(Date.now() + PIX_LIFETIME_MINUTES * 60 * 1000);
-  const [firstName, ...lastNameParts] = (payer.name || "Cliente").split(" ");
 
   const body = {
     transaction_amount: parseFloat(parseFloat(amount).toFixed(2)),
@@ -21,15 +21,7 @@ export const createPixPayment = async ({ amount, payer }) => {
     payment_method_id: "pix",
     notification_url: process.env.MERCADOPAGO_WEBHOOK_URL || "https://zirim.onrender.com/orders/webhook",
     date_of_expiration: expirationDate.toISOString(),
-    payer: {
-      email: payer.email?.endereco || payer.email || "contato@zirim.com",
-      first_name: firstName,
-      last_name: lastNameParts.join(" ") || "Zirim",
-      identification: {
-        type: "CPF",
-        number: payer.cpf || "17984881758", // CPF de teste (fallback)
-      },
-    },
+    payer: buildPixPayer(payer),
   };
 
   try {

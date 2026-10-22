@@ -10,11 +10,22 @@ export default class ProductRepository extends BaseRepository {
     super("products");
   }
 
-  #processVariationObject(variationSource) {
+  /**
+   * Normaliza uma variação do formulário/API.
+   * O `_id` é estável: se a variação enviada referencia uma variação existente do produto,
+   * mantém o mesmo `_id`; caso contrário, cria um novo. Pedidos guardam esse `_id`
+   * para debitar exatamente a variação comprada.
+   */
+  #processVariationObject(variationSource, existingVariationIds = new Set()) {
     const activeValue = Array.isArray(variationSource.ativo)
       ? variationSource.ativo
       : [variationSource.ativo];
+    const submittedId = String(variationSource._id ?? '');
+    const variationId = existingVariationIds.has(submittedId)
+      ? new ObjectId(submittedId)
+      : new ObjectId();
     return {
+      _id: variationId,
       sku: variationSource.sku || '',
       cores: variationSource.cores ? String(variationSource.cores).split(',').map(c => c.trim()).filter(Boolean) : [],
       tamanhos: variationSource.tamanhos ? String(variationSource.tamanhos).split(',').map(t => t.trim()).filter(Boolean) : [],
@@ -138,6 +149,7 @@ export default class ProductRepository extends BaseRepository {
     const rawVariations = submittedVariations.length ? submittedVariations : existingProduct.variacoes || [];
     // Imagens já existentes do produto: só podem ser reaproveitadas, nunca referenciadas de outro produto.
     const existingImageNames = new Set((existingProduct.variacoes || []).flatMap(v => v.imagens || []));
+    const existingVariationIds = new Set((existingProduct.variacoes || []).map(v => String(v._id)));
     const processedVariations = [];
 
     for (let index = 0; index < rawVariations.length; index++) {
@@ -152,7 +164,7 @@ export default class ProductRepository extends BaseRepository {
       const images = variationFiles.length
         ? await Promise.all(variationFiles.map(file => this.#uploadFileWithRetry(file)))
         : keptImages;
-      processedVariations.push(this.#processVariationObject({ ...variation, imagens: images }));
+      processedVariations.push(this.#processVariationObject({ ...variation, imagens: images }, existingVariationIds));
     }
 
     const productData = {

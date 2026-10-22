@@ -69,7 +69,7 @@ app.use(errorMiddleware);
 /** Falha cedo, no boot, se a configuração obrigatória estiver ausente. */
 const assertRequiredConfig = () => {
     const required = ['SESSION_SECRET', 'DATABASE_URL'];
-    if (isProd) required.push('MERCADOPAGO_ACCESS_TOKEN', 'MERCADOPAGO_WEBHOOK_SECRET');
+    if (isProd) required.push('MERCADOPAGO_ACCESS_TOKEN', 'MERCADOPAGO_WEBHOOK_SECRET', 'MERCADOPAGO_DEFAULT_CPF');
 
     const missing = required.filter((name) => !process.env[name]);
     if (missing.length > 0) {

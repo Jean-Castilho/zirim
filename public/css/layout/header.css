@@ -277,6 +277,7 @@
 /* Botão de sair (POST com CSRF): mantém a aparência do link de navegação */
 .logout-form {
   display: inline-flex;
+  padding: var(--espacamento-pequeno);
   margin: 0;
 }
 

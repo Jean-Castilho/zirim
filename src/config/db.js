@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { MongoClient, GridFSBucket } from "mongodb";
 import { backfillProductSearchText } from "../utils/search-text.js";
+import { backfillVariationIds } from "../utils/variation-backfill.js";
 dotenv.config();
 
 const uri = process.env.DATABASE_URL;
@@ -94,6 +95,15 @@ export const connectDataBase = async () => {
       if (updated) console.log(`Campo de busca preenchido em ${updated} produto(s).`);
     } catch (err) {
       console.warn("Aviso ao preencher o campo de busca:", err.message);
+    }
+
+    // Identificador estável por variação: obrigatório antes de processar pagamentos (baixa de estoque)
+    try {
+      const withIds = await backfillVariationIds(productsCollection);
+      if (withIds) console.log(`Identificador de variação criado em ${withIds} produto(s).`);
+    } catch (err) {
+      console.error("Falha ao criar identificadores de variação:", err.message);
+      throw err;
     }
 
     bucket = new GridFSBucket(db, { bucketName: "uploads" });
