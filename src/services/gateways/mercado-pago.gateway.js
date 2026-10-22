@@ -80,3 +80,28 @@ export const assertValidWebhookSignature = ({ headers, body }) => {
     throw new UnauthorizedError("Assinatura do webhook inválida.");
   }
 };
+
+/**
+ * Estorno total de um pagamento aprovado. A chave de idempotência garante que
+ * repetir a chamada não gera dois estornos.
+ */
+export const refundPayment = async (id, idempotencyKey) => {
+  const response = await fetch(
+    `https://api.mercadopago.com/v1/payments/${encodeURIComponent(id)}/refunds`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify({}),
+    }
+  );
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    console.error("Erro ao estornar pagamento:", response.status, data);
+    throw new ExternalServiceError(`Erro ao estornar pagamento ${id}.`);
+  }
+  return data;
+};

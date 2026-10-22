@@ -1,9 +1,21 @@
 import { ObjectId } from "mongodb";
-import { mapPaymentStatus, normalizePaymentStatus, resolveOrderStatus, isTerminalPaymentStatus } from '../services/payment-state.js';
+import {
+    mapPaymentStatus,
+    normalizePaymentStatus,
+    resolveOrderStatus,
+    isTerminalPaymentStatus,
+    isStockHeld,
+    SHIPPED_STATUSES,
+    APPROVED_PAYMENT_STATUSES,
+    RELEASING_PAYMENT_STATUSES,
+} from '../services/payment-state.js';
 import { ValidationError, GeneralError } from "../utils/errors.js";
 import { findLegacyVariations } from "../utils/variation-match.js";
 
 import BaseRepository from "./base.repository.js";
+
+/** Tempo após o qual a trava de estoque de um pedido é considerada abandonada (processo caiu). */
+const STOCK_LOCK_TTL_MS = 2 * 60 * 1000;
 
 const paymentFields = [
     "id",
@@ -199,22 +211,30 @@ export default class OrderRepository extends BaseRepository {
                 throw new GeneralError(`Não foi possível sincronizar o pagamento ${paymentId} após conflitos concorrentes.`, 409);
             }
 
-            if (paymentStatus === 'approved' || paymentStatus === 'authorized') {
-                await this.executarBaixaEstoque(updatedOrder);
+            if (APPROVED_PAYMENT_STATUSES.includes(paymentStatus)) {
+                await this.ensureStockHeld(updatedOrder._id);
+            } else if (RELEASING_PAYMENT_STATUSES.includes(paymentStatus)) {
+                await this.releaseStock(updatedOrder._id);
             }
 
-            return updatedOrder;
+            return await this.collection.findOne({ _id: updatedOrder._id });
         } catch (error) {
             console.error(`[sincronizarStatusPedido] Erro ao sincronizar o pedido (paymentId: ${paymentId}):`, error);
             throw error;
         }
     }
 
-    /**
-     * Identificador da variação comprada.
-     * Pedidos novos trazem `variacaoId`. Pedidos antigos (sem ele) são resolvidos por SKU/cor/tamanho
-     * e só são aceitos com UMA correspondência: ambiguidade falha explicitamente, nunca debita "a primeira que casa".
-     */
+    // ------------------------------------------------------------------
+    // Estoque
+    //
+    // Regra: quem PAGA primeiro fica com a unidade. O pedido NÃO reserva estoque na criação.
+    // O débito acontece na aprovação do pagamento (atômico, por variação). Se não houver
+    // mais unidade quando o pagamento for aprovado, o pedido vai para `erro_estoque`
+    // e o pagamento é estornado no Mercado Pago.
+    // Estoque é devolvido só quando um pagamento já aprovado é estornado (antes do envio).
+    // ------------------------------------------------------------------
+
+    /** Identificador da variação comprada (pedidos antigos resolvem por SKU/cor/tamanho, com correspondência única). */
     async #resolveVariationId(productsCollection, item) {
         if (item.variacaoId) return new ObjectId(item.variacaoId);
 
@@ -233,115 +253,182 @@ export default class OrderRepository extends BaseRepository {
         return matches[0]._id;
     }
 
-    async executarBaixaEstoque(order) {
-        // 1. Trava atômica utilizando `this.collection` (herdada de BaseRepository para a collection "orders")
-        const reservation = await this.collection.updateOne(
-            {
-                _id: order._id,
-                inventoryProcessed: { $ne: true },
-                inventoryProcessing: { $ne: true },
-                inventoryProcessingFailed: { $ne: true }
-            },
-            {
-                $set: { inventoryProcessing: true, inventoryProcessingAt: new Date(), updatedAt: new Date() }, $inc: { stateVersion: 1 }
-            }
-        );
+    /** Operações de estoque (produto, variação, quantidade) a partir dos itens do pedido. */
+    async #opsFor(items = []) {
+        const productsCollection = this.db.collection("products");
+        const ops = [];
+        for (const item of items) {
+            const quantity = Number(item.quantidade || 0);
+            if (quantity <= 0) continue;
+            ops.push({
+                productId: new ObjectId(item.id),
+                variationId: await this.#resolveVariationId(productsCollection, item),
+                quantity,
+            });
+        }
+        return ops;
+    }
 
-        if (reservation.modifiedCount === 0) return;
-
-        const appliedOps = [];
-        const db = this.db;
-        const productsCollection = db.collection("products"); // Acesso correto à collection de produtos
-
+    /**
+     * Debita todas as operações, uma a uma, com filtro de saldo na própria atualização.
+     * Tudo ou nada: se uma falhar, as anteriores são devolvidas.
+     */
+    async #debit(ops) {
+        const productsCollection = this.db.collection("products");
+        const applied = [];
         try {
-            // 2. Loop de baixa atômica por item do pedido
-            for (const item of order.items) {
-                const quantityToSubtract = Number(item.quantidade || 0);
-                if (quantityToSubtract <= 0) continue;
-
-                const productId = new ObjectId(item.id);
-                const variationId = await this.#resolveVariationId(productsCollection, item);
-
-                // Debita SOMENTE a variação exata (_id), ativa e com estoque suficiente, em uma operação atômica.
-                const updateResult = await productsCollection.updateOne(
+            for (const op of ops) {
+                const result = await productsCollection.updateOne(
                     {
-                        _id: productId,
+                        _id: op.productId,
                         variacoes: {
-                            $elemMatch: {
-                                _id: variationId,
-                                ativo: { $ne: false },
-                                estoque: { $gte: quantityToSubtract },
-                            },
+                            $elemMatch: { _id: op.variationId, ativo: { $ne: false }, estoque: { $gte: op.quantity } },
                         },
                     },
-                    {
-                        $inc: { "variacoes.$.estoque": -quantityToSubtract }
-                    }
+                    { $inc: { "variacoes.$.estoque": -op.quantity } }
                 );
-
-                if (updateResult.modifiedCount !== 1) {
+                if (result.modifiedCount !== 1) {
                     throw new ValidationError(
-                        `Estoque insuficiente ou variação indisponível para o produto ID ${item.id} (variação ${variationId}).`
+                        `Estoque insuficiente ou variação indisponível para o produto ID ${op.productId} (variação ${op.variationId}).`
                     );
                 }
-
-                appliedOps.push({ productId, variationId, quantity: quantityToSubtract });
+                applied.push(op);
             }
-
-            // 3. Confirmação do processamento usando `this.collection`
-            await this.collection.updateOne(
-                { _id: order._id, inventoryProcessing: true },
-                {
-                    $set: { inventoryProcessed: true, inventoryProcessedAt: new Date(), updatedAt: new Date() }, $unset: {
-                        inventoryProcessing: "",
-                        inventoryProcessingAt: "",
-                        inventoryProcessingFailed: "",
-                        inventoryProcessingError: ""
-                    }
-                }
-            );
-
+            return applied;
         } catch (error) {
-            console.error(`[BaixaEstoque] Falha ao processar estoque para o pedido ${order._id}:`, error.message);
-
-            // 4. Rollback (compensação) dos itens debitados em caso de falha parcial
-            const rollbackErrors = [];
-            for (const op of appliedOps.reverse()) {
-                try {
-                    // Reposição pela identidade da variação (sem filtrar por estoque: após o débito o saldo pode ser 0).
-                    const rollbackResult = await productsCollection.updateOne(
-                        { _id: op.productId, "variacoes._id": op.variationId },
-                        { $inc: { "variacoes.$.estoque": op.quantity } }
-                    );
-                    if (rollbackResult.modifiedCount !== 1) {
-                        console.warn(`[Rollback] Falha ao reverter estoque do produto ${op.productId} (variação ${op.variationId})`);
-                    }
-                } catch (rollbackError) {
-                    rollbackErrors.push(rollbackError.message);
-                }
-            }
-
-            const failureMessage = rollbackErrors.length > 0
-                ? `${error.message} | Erros no rollback: ${rollbackErrors.join('; ')}`
-                : error.message;
-
-            // 5. Atualização do status de erro utilizando `this.collection`
-            await this.collection.updateOne(
-                { _id: order._id, inventoryProcessing: true },
-                {
-                    $set: {
-                        inventoryProcessingFailed: true,
-                        inventoryProcessingError: failureMessage,
-                        inventoryProcessingFailedAt: new Date(),
-                        statusInterno: "erro_estoque",
-                        updatedAt: new Date()
-                    },
-                    $unset: { inventoryProcessing: "", inventoryProcessingAt: "" }
-                }
-            );
-
+            await this.#credit(applied);
             throw error;
         }
+    }
+
+    /** Devolve unidades ao estoque, sem checar saldo. Falhas são registradas em log, não lançadas. */
+    async #credit(ops) {
+        const productsCollection = this.db.collection("products");
+        for (const op of [...ops].reverse()) {
+            try {
+                const result = await productsCollection.updateOne(
+                    { _id: op.productId, "variacoes._id": op.variationId },
+                    { $inc: { "variacoes.$.estoque": op.quantity } }
+                );
+                if (result.modifiedCount !== 1) {
+                    console.warn(`[Estoque] Variação ${op.variationId} do produto ${op.productId} não encontrada para devolução.`);
+                }
+            } catch (error) {
+                console.error(`[Estoque] Falha ao devolver ${op.quantity} un. do produto ${op.productId}:`, error.message);
+            }
+        }
+    }
+
+    /**
+     * Executa `work(order)` com a trava do pedido. Webhook, consulta de status e varredura
+     * não mexem no estoque do mesmo pedido ao mesmo tempo. A trava expira sozinha
+     * se o processo cair no meio da operação.
+     * Retorna "busy" quando outra execução já está com o pedido.
+     */
+    async #withStockLock(orderId, work) {
+        const id = new ObjectId(orderId);
+        const staleBefore = new Date(Date.now() - STOCK_LOCK_TTL_MS);
+        const locked = await this.collection.findOneAndUpdate(
+            { _id: id, $or: [{ stockLocked: { $ne: true } }, { stockLockedAt: { $lt: staleBefore } }] },
+            { $set: { stockLocked: true, stockLockedAt: new Date() } }
+        );
+        if (!locked) return "busy";
+
+        try {
+            const order = await this.collection.findOne({ _id: id });
+            if (!order) return "missing";
+            return await work(order);
+        } finally {
+            await this.collection.updateOne({ _id: id }, { $unset: { stockLocked: "", stockLockedAt: "" } });
+        }
+    }
+
+    /** Cria o pedido sem reservar estoque. Retorna o _id (ObjectId). */
+    async createPendingOrder(order) {
+        const result = await this.collection.insertOne({ ...order, stockHeld: false });
+        return result.insertedId;
+    }
+
+    /**
+     * Garante o débito do estoque de um pedido aprovado. Não faz nada se a reserva existe.
+     * Se não houver saldo, marca `erro_estoque` (não vai para preparo). Retorna
+     * "held", "failed", "busy" ou "missing".
+     */
+    async ensureStockHeld(orderId) {
+        return await this.#withStockLock(orderId, async (order) => {
+            if (isStockHeld(order)) return "held";
+
+            try {
+                await this.#debit(await this.#opsFor(order.items));
+            } catch (error) {
+                console.error(`[Estoque] Pedido ${order._id} aprovado sem estoque: ${error.message}`);
+                await this.collection.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            statusInterno: "erro_estoque",
+                            stockRefundPending: true,
+                            inventoryProcessingFailed: true,
+                            inventoryProcessingError: error.message,
+                            inventoryProcessingFailedAt: new Date(),
+                            updatedAt: new Date(),
+                        },
+                    }
+                );
+                return "failed";
+            }
+
+            const set = { stockHeld: true, stockHeldAt: new Date(), updatedAt: new Date() };
+            // Recuperado: o pedido que estava sem estoque volta a "pago" (agora com reserva).
+            if (order.statusInterno === "erro_estoque") set.statusInterno = "pago";
+            await this.collection.updateOne(
+                { _id: order._id },
+                {
+                    $set: set,
+                    $unset: { inventoryProcessingFailed: "", inventoryProcessingError: "", inventoryProcessingFailedAt: "", stockRefundPending: "" },
+                }
+            );
+            return "held";
+        });
+    }
+
+    /**
+     * Devolve o estoque de um pedido que ainda o segura. Pedido já enviado não é devolvido
+     * automaticamente (vai para conferência manual). `statusInterno` ajusta o status junto,
+     * e `when` permite reconferir a condição dentro da trava.
+     * Retorna "released", "noop", "manual", "busy" ou "missing".
+     */
+    async releaseStock(orderId, { statusInterno = null, when = () => true } = {}) {
+        return await this.#withStockLock(orderId, async (order) => {
+            if (!isStockHeld(order) || !when(order)) return "noop";
+
+            if (SHIPPED_STATUSES.includes(order.statusInterno)) {
+                console.warn(`[Estoque] Pedido ${order._id} já enviado: devolução exige conferência manual.`);
+                await this.collection.updateOne(
+                    { _id: order._id },
+                    { $set: { stockReturnPending: true, updatedAt: new Date() } }
+                );
+                return "manual";
+            }
+
+            await this.#credit(await this.#opsFor(order.items));
+
+            const set = { stockHeld: false, stockReleasedAt: new Date(), updatedAt: new Date() };
+            if (statusInterno) set.statusInterno = statusInterno;
+            await this.collection.updateOne(
+                { _id: order._id },
+                { $set: set, $unset: { inventoryProcessed: "" } }
+            );
+            return "released";
+        });
+    }
+
+    /** Registra que o estorno sem estoque foi solicitado (evita pedir de novo). */
+    async markStockRefundRequested(orderId) {
+        return await this.collection.updateOne(
+            { _id: new ObjectId(orderId) },
+            { $set: { stockRefundRequestedAt: new Date(), updatedAt: new Date() } }
+        );
     }
 
     /**

@@ -6,7 +6,7 @@ import { ValidationError, NotFoundError } from "../utils/errors.js";
 import { isVariationActive } from "../utils/product-visibility.js";
 
 const SHIPPING_PRICES = { padrao: 0, expresso: 14.9 };
-const REFRESHABLE_STATUSES = ["pendente", "cancelado", "expirado"];
+const REFRESHABLE_STATUSES = ["pendente", "cancelado", "expirado", "erro_estoque"];
 
 const variationLabel = (item) => `Cor: ${item.cor || "N/A"}, Tamanho: ${item.tamanho || "N/A"}`;
 
@@ -165,7 +165,7 @@ export default class OrderService {
     const shippingCost = SHIPPING_PRICES[shippingMethod];
     const total = subtotal + shippingCost;
 
-    const orderId = await this.repository.create({
+    const orderId = await this.repository.createPendingOrder({
       user: {
         _id: buyer._id,
         name: buyer.name || "Cliente Zirim",
@@ -200,6 +200,7 @@ export default class OrderService {
       await this.repository.updateOrderPayment(orderId, payment, this.repository.mapStatus(payment.status));
     } catch (error) {
       await this.repository.updateOrderPayment(orderId, { error: error.message }, "pagamento_falhou");
+      await this.repository.releaseStock(orderId);
       throw error;
     }
 

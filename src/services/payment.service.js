@@ -1,6 +1,7 @@
 import OrderRepository from "../repository/order.repository.js";
 import * as gateway from "./gateways/mercado-pago.gateway.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
+import { needsStockRefund } from "./payment-state.js";
 
 /**
  * Orquestra gateway de pagamento + persistência do pedido.
@@ -23,8 +24,18 @@ export default class PaymentService {
 
     await this.repository.touchPaymentSync(paymentId);
     const paymentInfo = await this.gateway.getPayment(paymentId);
-    if (paymentInfo) await this.repository.sincronizarStatusPedido(paymentInfo);
+    if (paymentInfo) await this.refundIfWithoutStock(await this.repository.sincronizarStatusPedido(paymentInfo));
     return paymentInfo;
+  }
+
+  /**
+   * Pagamento aprovado sem unidade disponível: pede o estorno ao Mercado Pago uma única vez.
+   * Se o pedido de estorno falhar, lança erro: o webhook responde com falha e o MP reenvia.
+   */
+  async refundIfWithoutStock(order) {
+    if (!needsStockRefund(order)) return;
+    await this.gateway.refundPayment(order.payment.id, `stock-refund-${order._id}`);
+    await this.repository.markStockRefundRequested(order._id);
   }
 
   /** Versão tolerante: falha de gateway não derruba a página. */
@@ -43,7 +54,7 @@ export default class PaymentService {
     if (!order.payment?.id) throw new ValidationError("Pagamento não associado a este pedido.");
 
     const paymentInfo = await this.gateway.getPayment(order.payment.id);
-    await this.repository.sincronizarStatusPedido(paymentInfo);
+    await this.refundIfWithoutStock(await this.repository.sincronizarStatusPedido(paymentInfo));
     return { status: this.repository.mapStatus(paymentInfo.status) };
   }
 

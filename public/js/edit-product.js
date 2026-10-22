@@ -53,6 +53,7 @@
             <input type="file" id="file_${variationIndex}" name="variacoes[${variationIndex}][imagens]" multiple hidden data-variation-index="${variationIndex}">
           </div>
           <input type="hidden" name="variacoes[${variationIndex}][_id]" value="${escapeAttr(data._id || '')}">
+          <input type="hidden" name="variacoes[${variationIndex}][estoqueBase]" value="${escapeAttr(data.estoque)}">
           <input type="hidden" name="variacoes[${variationIndex}][imagensAtuais]" value="${escapeAttr((data.imagens || []).join(','))}">
           <div id="preview-${variationIndex}" class="image-preview-container">
             ${(data.imagens || []).map(img => `<img src="/image/${encodeURIComponent(img)}" class="image-preview-item" alt="">`).join('')}

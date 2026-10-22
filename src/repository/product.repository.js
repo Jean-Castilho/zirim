@@ -140,32 +140,61 @@ export default class ProductRepository extends BaseRepository {
 
   async updateProductWithImages(id, body, files = []) {
     if (!ObjectId.isValid(id)) throw new ValidationError("ID de produto inválido.");
-
-    const existingProduct = await super.findById(id);
-    if (!existingProduct) throw new NotFoundError("Produto não encontrado.");
+    if (!await super.findById(id)) throw new NotFoundError("Produto não encontrado.");
 
     const filesByVariation = this.#mapVariationFiles(files);
     const submittedVariations = this.#extractVariations(body);
+
+    // Imagens novas são enviadas uma vez, antes da gravação (as tentativas abaixo não reenviam).
+    const uploadedByIndex = new Map();
+    for (const [index, variationFiles] of filesByVariation) {
+      uploadedByIndex.set(index, await Promise.all(variationFiles.map(file => this.#uploadFileWithRetry(file))));
+    }
+
+    // Gravação condicional: só grava se a lista de variações não mudou desde a leitura.
+    // Se uma venda alterou o estoque durante a edição, relê e recalcula.
+    for (let attempt = 1; attempt <= MAX_UPDATE_ATTEMPTS; attempt++) {
+      const existingProduct = await super.findById(id);
+      if (!existingProduct) throw new NotFoundError("Produto não encontrado.");
+
+      const productData = this.#buildProductUpdate(existingProduct, body, submittedVariations, uploadedByIndex);
+      const result = await this.collection.updateOne(
+        { _id: new ObjectId(id), variacoes: existingProduct.variacoes ?? { $exists: false } },
+        { $set: productData }
+      );
+      if (result.matchedCount === 1) return await super.findById(id);
+    }
+
+    throw new ConflictError("O estoque mudou durante a edição. Revise os valores e salve novamente.");
+  }
+
+  /** Monta os dados gravados. Estoque de variação existente é ajustado sobre o valor atual. */
+  #buildProductUpdate(existingProduct, body, submittedVariations, uploadedByIndex) {
     const rawVariations = submittedVariations.length ? submittedVariations : existingProduct.variacoes || [];
     // Imagens já existentes do produto: só podem ser reaproveitadas, nunca referenciadas de outro produto.
     const existingImageNames = new Set((existingProduct.variacoes || []).flatMap(v => v.imagens || []));
-    const existingVariationIds = new Set((existingProduct.variacoes || []).map(v => String(v._id)));
-    const processedVariations = [];
+    const existingById = new Map((existingProduct.variacoes || []).map(v => [String(v._id), v]));
+    const existingVariationIds = new Set(existingById.keys());
 
-    for (let index = 0; index < rawVariations.length; index++) {
-      const variation = rawVariations[index];
-      const variationFiles = filesByVariation.get(index) || [];
+    const processedVariations = rawVariations.map((variation, index) => {
       // O formulário envia as imagens atuais de CADA variação (imagensAtuais), para que a
       // remoção/renumeração de variações no front não troque imagens entre variações.
-      // Sem o campo (clientes da API), mantém o comportamento anterior por índice.
       const keptImages = variation.imagensAtuais !== undefined
         ? String(variation.imagensAtuais).split(',').map(name => name.trim()).filter(name => existingImageNames.has(name))
         : existingProduct.variacoes?.[index]?.imagens || [];
-      const images = variationFiles.length
-        ? await Promise.all(variationFiles.map(file => this.#uploadFileWithRetry(file)))
-        : keptImages;
-      processedVariations.push(this.#processVariationObject({ ...variation, imagens: images }, existingVariationIds));
-    }
+      const images = uploadedByIndex.has(index) ? uploadedByIndex.get(index) : keptImages;
+
+      const processed = this.#processVariationObject({ ...variation, imagens: images }, existingVariationIds);
+      const current = existingById.get(String(processed._id));
+      if (current) {
+        processed.estoque = resolveAdjustedStock({
+          requested: variation.estoque,
+          base: variation.estoqueBase,
+          current: current.estoque,
+        });
+      }
+      return processed;
+    });
 
     const productData = {
       nome: body.name || body.nome,
@@ -174,9 +203,7 @@ export default class ProductRepository extends BaseRepository {
       descricao: body.descricao,
     };
     productData.searchText = buildSearchText(productData);
-
-    await super.update(id, productData);
-    return await super.findById(id);
+    return productData;
   }
 
   async deleteProductAndImages(id) {

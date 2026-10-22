@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import crypto from "crypto";
 import OrderRepository from "../repository/order.repository.js";
 import UserRepository from "../repository/user.repository.js";
+import { isStockHeld } from "./payment-state.js";
 import {
   toAvailableView,
   toAssignedView,
@@ -94,8 +95,9 @@ export default class DeliveryService {
     const order = await this.repository.findById(orderId);
     if (!order) throw new NotFoundError("Pedido não encontrado.");
 
-    if (order.statusInterno !== "pago" && order.payment?.status !== "approved") {
-      throw new ValidationError("Apenas pedidos com pagamento confirmado podem ser preparados para entrega.");
+    // Só sai para entrega pedido pago COM estoque reservado (erro_estoque nunca é preparado).
+    if (order.statusInterno !== "pago" || !isStockHeld(order)) {
+      throw new ValidationError("Apenas pedidos pagos com estoque confirmado podem ser preparados para entrega.");
     }
 
     // O PIN fica só no pedido (o cliente o vê no checkout). Quem prepara não o recebe de volta.
