@@ -154,6 +154,32 @@ document.body.addEventListener('htmx:beforeSwap', (event) => {
     });
 });
 
+// ---------------------------------------------------------------------------
+// Voltar/avançar do navegador.
+// O cache de histórico do htmx guarda só o HTML do <body>, sem as folhas de
+// estilo da página. Ao voltar, ele restaura esse HTML sobre o CSS da página
+// atual (que pode ser de outra rota) e a página fica sem estilo. Por isso a
+// volta refaz a página pela mesma rota da navegação normal (fragmento GET),
+// que carrega o CSS da página antes de trocar o conteúdo.
+// ---------------------------------------------------------------------------
+const currentUrl = () => window.location.pathname + window.location.search;
+let renderedUrl = currentUrl();
+
+document.body.addEventListener('htmx:afterSettle', () => {
+    renderedUrl = currentUrl();
+});
+
+window.addEventListener('popstate', (event) => {
+    if (currentUrl() === renderedUrl) return; // mesma página (ex.: só hash): deixa o htmx seguir
+    event.stopImmediatePropagation();         // impede a restauração pelo cache do htmx
+    renderedUrl = currentUrl();
+    window.htmx.ajax('GET', currentUrl(), {
+        target: '#main-content',
+        swap: 'innerHTML',
+        headers: { 'HX-History-Restore-Request': 'true' },
+    });
+}, true);
+
 
 // Erros de requisições htmx (hx-put/hx-delete/hx-post e navegações boostadas).
 // O htmx não troca o conteúdo em respostas 4xx/5xx; sem este handler a falha ficava silenciosa.
