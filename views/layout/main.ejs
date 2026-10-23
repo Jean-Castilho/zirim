@@ -14,7 +14,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= locals.titulo ? titulo + ' | Zirim' : 'Zirim' %></title>
+    <title><%= locals.titulo ? titulo + ' | ' + storeName : storeName %></title>
+    <meta name="store-name" content="<%= storeName %>">
+    <script src="/js/core/store.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

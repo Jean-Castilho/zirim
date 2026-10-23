@@ -1,3 +1,4 @@
+import { STORE_NAME } from "../../config/store.js";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import crypto from "crypto";
 import { ExternalServiceError, UnauthorizedError } from "../../utils/errors.js";
@@ -17,7 +18,7 @@ export const createPixPayment = async ({ amount, payer }) => {
 
   const body = {
     transaction_amount: parseFloat(parseFloat(amount).toFixed(2)),
-    description: "Pagamento PIX - Zirim Store",
+    description: `Pagamento PIX - ${STORE_NAME} Store`,
     payment_method_id: "pix",
     notification_url: process.env.MERCADOPAGO_WEBHOOK_URL || "https://zirim.onrender.com/orders/webhook",
     date_of_expiration: expirationDate.toISOString(),

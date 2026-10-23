@@ -1,3 +1,4 @@
+import { STORE_NAME } from "../config/store.js";
 import BaseController from "./base.controller.js";
 import ProductService from "../services/product.service.js";
 import BannerService from "../services/banner.service.js";
@@ -26,7 +27,7 @@ export default class PublicPagesController extends BaseController {
 
     return this.render(req, res, "../pages/public/home", {
       titulo: "Moda e Calçados",
-      message: "Bem-vindo à Zirim, a sua loja de roupas e calçados!",
+      message: `Bem-vindo à ${STORE_NAME}, a sua loja de roupas e calçados!`,
       products,
       banner: homePageData?.banner,
     });

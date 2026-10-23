@@ -1,3 +1,4 @@
+import { STORE_NAME } from "../config/store.js";
 import { ObjectId } from "mongodb";
 import ProductRepository from "../repository/product.repository.js";
 import OrderRepository from "../repository/order.repository.js";
@@ -168,7 +169,7 @@ export default class OrderService {
     const orderId = await this.repository.createPendingOrder({
       user: {
         _id: buyer._id,
-        name: buyer.name || "Cliente Zirim",
+        name: buyer.name || `Cliente ${STORE_NAME}`,
         phone: buyer.phone?.number || buyer.phone || "Não informado",
         email: buyer.email?.endereco || buyer.email || "",
       },

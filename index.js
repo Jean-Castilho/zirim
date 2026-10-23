@@ -9,6 +9,7 @@ import { connectDataBase, closeDataBase } from './src/config/db.js';
 import { errorMiddleware } from "./src/utils/handle-response.js";
 import { securityHeaders } from "./src/middleware/security-headers.middleware.js";
 import { generateCsrfToken } from "./src/middleware/auth.middleware.js";
+import { STORE_NAME } from "./src/config/store.js";
 
 const app = express();
 const port = process.env.PORT || 3090;
@@ -23,6 +24,7 @@ app.disable('x-powered-by');
 app.use(securityHeaders);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.locals.storeName = STORE_NAME;
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 2. Middlewares de Parseamento

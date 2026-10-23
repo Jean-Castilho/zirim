@@ -67,7 +67,7 @@
 
               const orderShortId = order.shortId || '------';
               const isRedacted = order.redacted === true;
-              const clientName = isRedacted ? 'Pedido disponível' : (order.client?.name || 'Cliente Zirim');
+              const clientName = isRedacted ? 'Pedido disponível' : (order.client?.name || ('Cliente ' + window.zirimStoreName));
               const street = order.address?.street || '';
               const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
               const fullAddress = isRedacted

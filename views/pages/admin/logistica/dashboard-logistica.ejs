@@ -76,7 +76,7 @@
                                 <td class="u-font-weight-600">#<%= shortId %></td>
                                 <td><%= order.createdAt ? new Date(order.createdAt).toLocaleDateString('pt-BR') : 'N/A' %></td>
                                 <td>
-                                    <div class="u-font-weight-500"><%= order.user?.name || 'Cliente Zirim' %></div>
+                                    <div class="u-font-weight-500"><%= order.user?.name || ('Cliente ' + storeName) %></div>
                                     <div class="u-font-size-0-75rem-color-var-text-secondary"><%= order.user?.phone || '' %></div>
                                 </td>
                                 <td class="u-font-weight-600-color-var-accent-color">

@@ -274,7 +274,7 @@
     el.specStock.textContent = `${totalStock} unidades`;
     el.amount.textContent = money(initial.preco);
     el.description.textContent = product.descricao || 'Sem descrição disponível.';
-    document.title = `${product.nome} | Zirim`;
+    document.title = `${product.nome} | ${window.zirimStoreName}`;
 
     unskeleton(el.stockBadge, el.title, el.breadcrumb, el.specCategory, el.specStock, el.priceBox, el.description);
 

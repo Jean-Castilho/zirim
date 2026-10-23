@@ -1,3 +1,4 @@
+import { STORE_NAME } from "../../config/store.js";
 /**
  * Monta o objeto `payer` do PIX no Mercado Pago.
  *
@@ -16,7 +17,7 @@ export const buildPixPayer = (payer = {}, storeCpf = process.env.MERCADOPAGO_DEF
   return {
     email,
     first_name: firstName,
-    last_name: lastNameParts.join(" ") || "Zirim",
+    last_name: lastNameParts.join(" ") || STORE_NAME,
     // Sem a variável (apenas em desenvolvimento), o bloco não é enviado.
     ...(cpf ? { identification: { type: "CPF", number: cpf } } : {}),
   };

@@ -37,7 +37,7 @@
                     const lat = order.location?.lat != null && Number.isFinite(Number(order.location.lat)) ? Number(order.location.lat) : 'null';
                     const lng = order.location?.lng != null && Number.isFinite(Number(order.location.lng)) ? Number(order.location.lng) : 'null';
                     const isRedacted = order.redacted === true;
-                    const clientName = isRedacted ? 'Pedido disponível' : (order.client?.name || 'Cliente Zirim');
+                    const clientName = isRedacted ? 'Pedido disponível' : (order.client?.name || <%- JSON.stringify('Cliente ' + storeName) %>);
                     const clientPhone = isRedacted ? '' : (order.client?.phone || 'Não informado');
                     const street = order.address?.street ? `${order.address.street}${order.address.number ? `, ${order.address.number}` : ''}` : '';
                     const neighborhood = order.address?.neighborhood ? `, ${order.address.neighborhood}` : '';
