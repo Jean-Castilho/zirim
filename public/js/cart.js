@@ -62,6 +62,9 @@
             googleMapInstance: null,
             googleMapMarker: null,
             locationDetailsOverlay: null,
+            cepLookupTimer: null,
+            cepLookupRequestId: 0,
+            cepLookupInFlight: '',
 
             elements: {
                 itemsContainer: document.getElementById('cart-items'),
@@ -171,11 +174,13 @@
                         if (this.elements.cepError) {
                             this.elements.cepError.style.display = 'none';
                         }
+                        this.onCepTyping(val);
                     });
 
                     this.elements.cepInput.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
+                            this.cancelScheduledCepLookup();
                             this.handleCepLookup();
                         }
                     });
@@ -189,7 +194,50 @@
 
             },
 
+            /** Enquanto o CEP é digitado: limpa a confirmação anterior e agenda a consulta quando houver 8 dígitos. */
+            onCepTyping(digits) {
+                const savedCepData = this.getSavedCepData();
+                if (savedCepData?.cep && savedCepData.cep !== digits) {
+                    // O endereço confirmado não corresponde mais ao que está digitado.
+                    this.cancelScheduledCepLookup();
+                    if (this.elements.cepResult) this.elements.cepResult.style.display = 'none';
+                    if (this.elements.mapStatusBadge) {
+                        this.elements.mapStatusBadge.innerText = digits.length === 8 ? 'Confirmando CEP...' : 'Digitando CEP...';
+                        this.elements.mapStatusBadge.classList.remove('active');
+                    }
+                }
+
+                if (digits.length !== 8) {
+                    this.cancelScheduledCepLookup();
+                    return;
+                }
+
+                if (this.cepLookupInFlight === digits || savedCepData?.cep === digits) return;
+
+                this.cancelScheduledCepLookup();
+                this.cepLookupTimer = window.setTimeout(() => {
+                    this.cepLookupTimer = null;
+                    this.handleCepLookup();
+                }, 350);
+            },
+
+            cancelScheduledCepLookup() {
+                if (this.cepLookupTimer) {
+                    window.clearTimeout(this.cepLookupTimer);
+                    this.cepLookupTimer = null;
+                }
+            },
+
+            getSavedCepData() {
+                try {
+                    return JSON.parse(localStorage.getItem('cart_cep_data') || 'null');
+                } catch (e) {
+                    return null;
+                }
+            },
+
             async handleCepLookup() {
+                this.cancelScheduledCepLookup();
                 const rawValue = this.elements.cepInput.value;
                 const cleanCep = rawValue.replace(/\D/g, '');
 
@@ -198,19 +246,35 @@
                     return;
                 }
 
+                // Se este CEP já está confirmado, apenas reaplica o resultado salvo.
+                const savedCepData = this.getSavedCepData();
+                if (savedCepData?.cep === cleanCep && hasValidCoordinates(savedCepData.lat, savedCepData.lng)) {
+                    this.applyCepResult(savedCepData, false);
+                    return;
+                }
+
+                const requestId = ++this.cepLookupRequestId;
+                this.cepLookupInFlight = cleanCep;
                 this.showCepLoading(true);
 
                 try {
                     const data = await this.fetchAddressAndCoords(cleanCep);
+                    // Descarta respostas antigas se o usuário já digitou outro CEP.
+                    if (requestId !== this.cepLookupRequestId) return;
+
                     data.formattedCep = cleanCep.slice(0, 5) + '-' + cleanCep.slice(5);
                     data.cep = cleanCep;
                     localStorage.setItem('cart_cep_data', JSON.stringify(data));
                     this.applyCepResult(data, true);
                 } catch (error) {
+                    if (requestId !== this.cepLookupRequestId) return;
                     console.error('Erro na consulta do CEP:', error);
                     this.showCepError(error.message || 'Não foi possível consultar este CEP.');
                 } finally {
-                    this.showCepLoading(false);
+                    if (requestId === this.cepLookupRequestId) {
+                        this.cepLookupInFlight = '';
+                        this.showCepLoading(false);
+                    }
                 }
             },
 
@@ -704,12 +768,18 @@
 
                 const currentCepDigits = this.elements.cepInput ? this.elements.cepInput.value.replace(/\D/g, '') : '';
 
-                if (!savedCepData || !savedCepData.cep || currentCepDigits.length !== 8) {
+                if (!savedCepData || !savedCepData.cep || currentCepDigits !== savedCepData.cep) {
                     if (this.elements.cepInput) {
                         this.elements.cepInput.focus();
                         this.elements.cepInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                    this.showCepError('Por favor, informe seu CEP para calcular a entrega antes de finalizar a compra.');
+                    if (currentCepDigits.length === 8) {
+                        // CEP completo mas ainda não confirmado: confirma agora e pede nova tentativa.
+                        this.showCepError('Aguarde a confirmação do CEP antes de finalizar a compra.');
+                        if (this.cepLookupInFlight !== currentCepDigits) this.handleCepLookup();
+                    } else {
+                        this.showCepError('Por favor, informe seu CEP para calcular a entrega antes de finalizar a compra.');
+                    }
                     return;
                 }
 
