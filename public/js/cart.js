@@ -417,8 +417,11 @@
                     this.googleMapMarker = new google.maps.Marker({
                         position: { lat, lng },
                         map: this.googleMapInstance,
-                        title: 'Ponto exato de entrega'
+                        title: 'Ponto exato de entrega',
+                        draggable: true
                     });
+                    // O marcador é o ponto de entrega: arrastá-lo atualiza a localização salva.
+                    this.googleMapMarker.addListener('dragend', event => this.selectMapPoint(event.latLng));
                 } else {
                     this.googleMapMarker.setPosition({ lat, lng });
                 }
