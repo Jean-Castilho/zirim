@@ -88,6 +88,7 @@
             </div>
 
             <div class="cart-maps"> 
+                
                 <div class="cart-map-title">
                     <div class="u-display-flex-align-items-center-gap-4px">
                         <span class="material-icons u-font-size-1-1rem-color-var-cor-secundaria">pin_drop</span>
@@ -95,6 +96,8 @@
                     </div>
                     <span id="map-status-badge" class="map-status-badge">Aguardando CEP</span>
                 </div>
+                <p id="cart-map-point" class="cart-map-point">Clique no mapa para marcar o ponto exato de entrega.</p>
+            
                 <div id="cart-mini-map" class="cart-mini-map" data-map-api-key="<%= mapApiKey %>">
                     <div id="cart-map-placeholder" class="map-placeholder">
                         <span class="material-icons">explore</span>
@@ -113,8 +116,7 @@
                         </dl>
                     </article>
                 </div>
-                <p id="cart-map-point" class="cart-map-point">Clique no mapa para marcar o ponto exato de entrega.</p>
-            </div>
+               </div>
         </div>
 
         <div class="cart-summary-container">

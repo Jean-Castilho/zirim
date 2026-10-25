@@ -25,6 +25,53 @@
             Number.isFinite(latitude) && Number.isFinite(longitude) &&
             latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 
+        // Versão da lógica de geolocalização do CEP. Dados salvos com versão antiga
+        // (coordenada do CEP inteiro) são recalculados para cair na rua exata.
+        const CEP_GEO_VERSION = 2;
+
+        // Nome da rua sem acento, caixa ou tipo ("Rua", "Av.", "Avenida"...), para comparar com o retorno do geocodificador.
+        const streetCoreName = (value) => String(value ?? '')
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9 ]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(/^(rua|r|avenida|av|alameda|al|travessa|tv|praca|pc|estrada|rodovia|rod|largo|viela|beco|via)\s+/, '')
+            .trim();
+
+        /**
+         * Busca a rua retornada pelo CEP no OpenStreetMap Nominatim.
+         * Só aceita um resultado cujo nome de via seja o mesmo do logradouro do CEP,
+         * para não marcar uma rua homônima de outro ponto da cidade.
+         */
+        const geocodeStreet = async (address) => {
+            const wanted = streetCoreName(address.street);
+            if (wanted.length < 3) return null;
+
+            try {
+                const url = new URL('https://nominatim.openstreetmap.org/search');
+                url.search = new URLSearchParams({
+                    format: 'jsonv2',
+                    q: [address.street, address.city, address.state, 'Brasil'].filter(Boolean).join(', '),
+                    addressdetails: '1',
+                    limit: '5'
+                });
+                const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+                if (!res.ok) return null;
+
+                const matches = await res.json();
+                const sameStreet = (match) => streetCoreName(match.address?.road || match.name) === wanted;
+                // Prioriza a própria via (highway) sobre estabelecimentos situados nela.
+                const match = matches.find(m => m.class === 'highway' && sameStreet(m))
+                    || matches.find(sameStreet);
+                if (!match || !hasValidCoordinates(Number(match.lat), Number(match.lon))) return null;
+
+                return { lat: Number(match.lat), lng: Number(match.lon) };
+            } catch (error) {
+                console.warn('Busca da rua pelo CEP falhou:', error);
+                return null;
+            }
+        };
+
         const loadCartItems = () => {
             try {
                 const storedCart = window.CartStorage.read();
@@ -129,6 +176,12 @@
                             this.elements.cepInput.value = savedCepData.formattedCep || savedCepData.cep;
                         }
                         this.applyCepResult(savedCepData, false);
+
+                        // Resultado salvo com a lógica antiga: refaz a busca para marcar a rua exata.
+                        // Um ponto ajustado manualmente pelo cliente é preservado.
+                        if (savedCepData.geoVersion !== CEP_GEO_VERSION && !savedCepData.locationSelectedManually && this.elements.cepInput) {
+                            this.handleCepLookup({ force: true });
+                        }
                     }
                 } catch (e) {
                     console.warn('Erro ao carregar CEP salvo:', e);
@@ -181,14 +234,14 @@
                         if (e.key === 'Enter') {
                             e.preventDefault();
                             this.cancelScheduledCepLookup();
-                            this.handleCepLookup();
+                            this.handleCepLookup({ force: true });
                         }
                     });
                 }
 
                 if (this.elements.cepBtn) {
                     this.elements.cepBtn.addEventListener('click', () => {
-                        this.handleCepLookup();
+                        this.handleCepLookup({ force: true });
                     });
                 }
 
@@ -236,7 +289,13 @@
                 }
             },
 
-            async handleCepLookup() {
+            /**
+             * @param {{ force?: boolean }} options
+             * force = busca explícita (botão/Enter): sempre consulta o CEP e recentraliza o marcador
+             * na localização do CEP, descartando um ponto ajustado manualmente.
+             * Sem force (consulta automática ao digitar): reaproveita o CEP já confirmado.
+             */
+            async handleCepLookup({ force = false } = {}) {
                 this.cancelScheduledCepLookup();
                 const rawValue = this.elements.cepInput.value;
                 const cleanCep = rawValue.replace(/\D/g, '');
@@ -248,8 +307,8 @@
 
                 // Se este CEP já está confirmado, apenas reaplica o resultado salvo.
                 const savedCepData = this.getSavedCepData();
-                if (savedCepData?.cep === cleanCep && hasValidCoordinates(savedCepData.lat, savedCepData.lng)) {
-                    this.applyCepResult(savedCepData, false);
+                if (!force && savedCepData?.cep === cleanCep && savedCepData.geoVersion === CEP_GEO_VERSION && hasValidCoordinates(savedCepData.lat, savedCepData.lng)) {
+                    this.applyCepResult(savedCepData, true);
                     return;
                 }
 
@@ -322,7 +381,17 @@
                     };
                 }
 
-                // 3. Se ainda não temos coordenadas, geocodifica via OpenStreetMap Nominatim
+                // 3. Com logradouro, procura a rua exata (o centroide do CEP pode cair em outra rua).
+                const streetPoint = result.street ? await geocodeStreet(result) : null;
+                if (streetPoint) {
+                    result.lat = streetPoint.lat;
+                    result.lng = streetPoint.lng;
+                    result.geoPrecision = 'street';
+                } else if (hasValidCoordinates(result.lat, result.lng)) {
+                    result.geoPrecision = 'cep';
+                }
+
+                // 4. Se ainda não temos coordenadas, usa o centroide do CEP via OpenStreetMap Nominatim
                 if (!hasValidCoordinates(result.lat, result.lng)) {
                     try {
                         const nomUrl = new URL('https://nominatim.openstreetmap.org/search');
@@ -341,6 +410,7 @@
                             if (match) {
                                 result.lat = Number(match.lat);
                                 result.lng = Number(match.lon);
+                                result.geoPrecision = 'postal';
                             }
                         }
                     } catch (geoErr) {
@@ -352,6 +422,7 @@
                     throw new Error('Não foi possível localizar esse CEP no mapa. Confira o CEP e tente novamente.');
                 }
 
+                result.geoVersion = CEP_GEO_VERSION;
                 return result;
             },
 
@@ -776,7 +847,7 @@
                     if (currentCepDigits.length === 8) {
                         // CEP completo mas ainda não confirmado: confirma agora e pede nova tentativa.
                         this.showCepError('Aguarde a confirmação do CEP antes de finalizar a compra.');
-                        if (this.cepLookupInFlight !== currentCepDigits) this.handleCepLookup();
+                        if (this.cepLookupInFlight !== currentCepDigits) this.handleCepLookup({ force: true });
                     } else {
                         this.showCepError('Por favor, informe seu CEP para calcular a entrega antes de finalizar a compra.');
                     }
