@@ -5,6 +5,7 @@ import OrderRepository from "../repository/order.repository.js";
 import PaymentService from "./payment.service.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
 import { isVariationActive } from "../utils/product-visibility.js";
+import { toBrazilLocation } from "../utils/geo.js";
 
 const SHIPPING_PRICES = { padrao: 0, expresso: 14.9 };
 const REFRESHABLE_STATUSES = ["pendente", "cancelado", "expirado", "erro_estoque"];
@@ -182,10 +183,9 @@ export default class OrderService {
         state: address.state || "",
         complement: address.complement || "",
       },
-      location: {
-        lat: Number(address.lat || -23.5505),
-        lng: Number(address.lng || -46.6333),
-      },
+      // Localização do CEP no mapa da entrega. Sem coordenada válida, fica null (não aparece no mapa)
+      // em vez de cair no centro de São Paulo.
+      location: toBrazilLocation(address.lat, address.lng),
       shipping: { method: shippingMethod, cost: shippingCost },
       subtotal,
       total,

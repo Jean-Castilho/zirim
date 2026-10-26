@@ -25,51 +25,145 @@
             Number.isFinite(latitude) && Number.isFinite(longitude) &&
             latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 
-        // Versão da lógica de geolocalização do CEP. Dados salvos com versão antiga
-        // (coordenada do CEP inteiro) são recalculados para cair na rua exata.
-        const CEP_GEO_VERSION = 2;
+        // Converte coordenada vinda de API. Number("") e Number(null) dão 0 (ponto no Golfo da Guiné),
+        // por isso valores vazios viram null antes da conversão.
+        const toCoordinate = (value) => {
+            if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return null;
+            const number = Number(value);
+            return Number.isFinite(number) ? number : null;
+        };
 
-        // Nome da rua sem acento, caixa ou tipo ("Rua", "Av.", "Avenida"...), para comparar com o retorno do geocodificador.
-        const streetCoreName = (value) => String(value ?? '')
-            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        // Todo CEP é do Brasil: aceita apenas pontos dentro do retângulo que cobre o país.
+        const isBrazilPoint = (latitude, longitude) =>
+            latitude !== null && longitude !== null &&
+            latitude >= -34 && latitude <= 6 && longitude >= -74 && longitude <= -28;
+
+        // Versão da lógica de geolocalização do CEP. Dados salvos com versão antiga
+        // (coordenada do CEP inteiro, ou (0,0) vindo de API vazia) são recalculados.
+        const CEP_GEO_VERSION = 5;
+
+        // Texto sem acento, caixa ou pontuação, para comparar com o retorno do geocodificador.
+        const normalizeText = (value) => String(value ?? '')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
             .toLowerCase()
             .replace(/[^a-z0-9 ]/g, ' ')
             .replace(/\s+/g, ' ')
+            .trim();
+
+        // Nome da via sem o tipo ("Rua", "Av.", "Avenida"...).
+        const streetCoreName = (value) => normalizeText(value)
             .replace(/^(rua|r|avenida|av|alameda|al|travessa|tv|praca|pc|estrada|rodovia|rod|largo|viela|beco|via)\s+/, '')
             .trim();
 
+        // Mesmo nome de via, tolerando abreviações ("dr" x "doutor") e uma palavra a mais ou a menos.
+        const sameName = (a, b) => {
+            if (!a || !b) return false;
+            if (a === b) return true;
+            const wordsA = new Set(a.split(' '));
+            const wordsB = new Set(b.split(' '));
+            const common = [...wordsA].filter(word => wordsB.has(word)).length;
+            return common / Math.max(wordsA.size, wordsB.size) >= 0.75;
+        };
+
+        const searchNominatim = async (params) => {
+            const url = new URL('https://nominatim.openstreetmap.org/search');
+            url.search = new URLSearchParams({
+                format: 'jsonv2',
+                addressdetails: '1',
+                countrycodes: 'br',
+                limit: '5',
+                ...params
+            });
+            const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+            if (!res.ok) return [];
+            const matches = await res.json();
+            return Array.isArray(matches) ? matches : [];
+        };
+
         /**
-         * Busca a rua retornada pelo CEP no OpenStreetMap Nominatim.
-         * Só aceita um resultado cujo nome de via seja o mesmo do logradouro do CEP,
-         * para não marcar uma rua homônima de outro ponto da cidade.
+         * Localiza o logradouro encontrado pelo CEP (rua + cidade + UF) no OpenStreetMap Nominatim.
+         * Tenta a busca estruturada e, depois, a busca por texto completo com o bairro.
+         * Só aceita uma via com o mesmo nome do CEP, para não marcar uma rua homônima de outra região.
          */
         const geocodeStreet = async (address) => {
-            const wanted = streetCoreName(address.street);
+            const wantedStreet = streetCoreName(address.street);
+            if (wantedStreet.length < 3) return null;
+
+            const wantedNeighborhood = normalizeText(address.neighborhood);
+            const queries = [
+                { street: address.street, city: address.city, state: address.state, country: 'Brasil' },
+                { q: [address.street, address.neighborhood, address.city, address.state, 'Brasil'].filter(Boolean).join(', ') }
+            ];
+
+            for (const params of queries) {
+                try {
+                    const matches = await searchNominatim(params);
+                    const candidates = matches.filter(match =>
+                        sameName(streetCoreName(match.address?.road || match.name), wantedStreet)
+                        && isBrazilPoint(toCoordinate(match.lat), toCoordinate(match.lon))
+                    );
+                    if (candidates.length === 0) continue;
+
+                    // Prefere o trecho no bairro do CEP, depois a própria via (highway) sobre estabelecimentos.
+                    const inNeighborhood = (match) => [match.address?.suburb, match.address?.neighbourhood, match.address?.quarter]
+                        .some(name => wantedNeighborhood && sameName(normalizeText(name), wantedNeighborhood));
+                    const best = candidates.find(inNeighborhood)
+                        || candidates.find(match => match.class === 'highway')
+                        || candidates[0];
+
+                    return { lat: toCoordinate(best.lat), lng: toCoordinate(best.lon) };
+                } catch (error) {
+                    console.warn('Busca da rua pelo CEP falhou:', error);
+                }
+            }
+            return null;
+        };
+
+        // Bairro do CEP: busca o nome do bairro dentro da cidade (nunca só a cidade).
+        const geocodeNeighborhood = async (address) => {
+            const wanted = normalizeText(address.neighborhood);
             if (wanted.length < 3) return null;
-
             try {
-                const url = new URL('https://nominatim.openstreetmap.org/search');
-                url.search = new URLSearchParams({
-                    format: 'jsonv2',
-                    q: [address.street, address.city, address.state, 'Brasil'].filter(Boolean).join(', '),
-                    addressdetails: '1',
-                    limit: '5'
+                const matches = await searchNominatim({
+                    q: [address.neighborhood, address.city, address.state, 'Brasil'].filter(Boolean).join(', ')
                 });
-                const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
-                if (!res.ok) return null;
-
-                const matches = await res.json();
-                const sameStreet = (match) => streetCoreName(match.address?.road || match.name) === wanted;
-                // Prioriza a própria via (highway) sobre estabelecimentos situados nela.
-                const match = matches.find(m => m.class === 'highway' && sameStreet(m))
-                    || matches.find(sameStreet);
-                if (!match || !hasValidCoordinates(Number(match.lat), Number(match.lon))) return null;
-
-                return { lat: Number(match.lat), lng: Number(match.lon) };
+                const match = matches.find(item => {
+                    const names = [item.address?.suburb, item.address?.neighbourhood, item.address?.quarter, item.name];
+                    return names.some(name => sameName(normalizeText(name), wanted))
+                        && isBrazilPoint(toCoordinate(item.lat), toCoordinate(item.lon));
+                });
+                return match ? { lat: toCoordinate(match.lat), lng: toCoordinate(match.lon) } : null;
             } catch (error) {
-                console.warn('Busca da rua pelo CEP falhou:', error);
+                console.warn('Busca do bairro pelo CEP falhou:', error);
                 return null;
             }
+        };
+
+        // Centro da cidade do CEP: usado só para recusar pontos que cairiam no centro.
+        const geocodeCityCenter = async (address) => {
+            const wanted = normalizeText(address.city);
+            if (!wanted) return null;
+            try {
+                const matches = await searchNominatim({
+                    q: [address.city, address.state, 'Brasil'].filter(Boolean).join(', ')
+                });
+                const match = matches.find(item => sameName(normalizeText(item.name), wanted)
+                    && isBrazilPoint(toCoordinate(item.lat), toCoordinate(item.lon)));
+                return match ? { lat: toCoordinate(match.lat), lng: toCoordinate(match.lon) } : null;
+            } catch (error) {
+                console.warn('Busca do centro da cidade falhou:', error);
+                return null;
+            }
+        };
+
+        // Distância aproximada em km entre dois pontos (fórmula de Haversine).
+        const distanceKm = (a, b) => {
+            const toRad = (degrees) => degrees * Math.PI / 180;
+            const dLat = toRad(b.lat - a.lat);
+            const dLng = toRad(b.lng - a.lng);
+            const h = Math.sin(dLat / 2) ** 2
+                + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+            return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(h)));
         };
 
         const loadCartItems = () => {
@@ -108,7 +202,6 @@
             mapApiKey: document.getElementById('cart-mini-map')?.dataset.mapApiKey || '',
             googleMapInstance: null,
             googleMapMarker: null,
-            locationDetailsOverlay: null,
             cepLookupTimer: null,
             cepLookupRequestId: 0,
             cepLookupInFlight: '',
@@ -127,9 +220,6 @@
                 cepStreet: document.getElementById('cep-res-street'),
                 cepNeighborhood: document.getElementById('cep-res-neighborhood'),
                 mapPointLabel: document.getElementById('cart-map-point'),
-                locationArticle: document.getElementById('cart-map-location-details'),
-                locationLatitude: document.getElementById('cart-map-location-latitude'),
-                locationLongitude: document.getElementById('cart-map-location-longitude'),
                 miniMap: document.getElementById('cart-mini-map'),
                 mapPlaceholder: document.getElementById('cart-map-placeholder'),
                 mapStatusBadge: document.getElementById('map-status-badge'),
@@ -307,7 +397,7 @@
 
                 // Se este CEP já está confirmado, apenas reaplica o resultado salvo.
                 const savedCepData = this.getSavedCepData();
-                if (!force && savedCepData?.cep === cleanCep && savedCepData.geoVersion === CEP_GEO_VERSION && hasValidCoordinates(savedCepData.lat, savedCepData.lng)) {
+                if (!force && savedCepData?.cep === cleanCep && savedCepData.geoVersion === CEP_GEO_VERSION && isBrazilPoint(savedCepData.lat, savedCepData.lng)) {
                     this.applyCepResult(savedCepData, true);
                     return;
                 }
@@ -345,19 +435,16 @@
                     const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${cleanCep}`);
                     if (res.ok) {
                         const data = await res.json();
-                        let lat = null;
-                        let lng = null;
-                        if (data.location?.coordinates) {
-                            lng = Number(data.location.coordinates.longitude);
-                            lat = Number(data.location.coordinates.latitude);
-                        }
+                        // A BrasilAPI costuma devolver coordenadas vazias: toCoordinate descarta esses casos.
+                        const lat = toCoordinate(data.location?.coordinates?.latitude);
+                        const lng = toCoordinate(data.location?.coordinates?.longitude);
                         result = {
                             street: data.street || '',
                             neighborhood: data.neighborhood || '',
                             city: data.city || '',
                             state: data.state || '',
-                            lat,
-                            lng
+                            lat: isBrazilPoint(lat, lng) ? lat : null,
+                            lng: isBrazilPoint(lat, lng) ? lng : null
                         };
                     }
                 } catch (e) {
@@ -381,45 +468,41 @@
                     };
                 }
 
-                // 3. Com logradouro, procura a rua exata (o centroide do CEP pode cair em outra rua).
+                // 3. Rua do CEP (campos "street" e "neighborhood" da consulta do CEP).
                 const streetPoint = result.street ? await geocodeStreet(result) : null;
-                if (streetPoint) {
-                    result.lat = streetPoint.lat;
-                    result.lng = streetPoint.lng;
-                    result.geoPrecision = 'street';
-                } else if (hasValidCoordinates(result.lat, result.lng)) {
-                    result.geoPrecision = 'cep';
-                }
+                // 4. Sem rua localizada, usa o bairro do CEP.
+                const neighborhoodPoint = !streetPoint && result.neighborhood ? await geocodeNeighborhood(result) : null;
 
-                // 4. Se ainda não temos coordenadas, usa o centroide do CEP via OpenStreetMap Nominatim
-                if (!hasValidCoordinates(result.lat, result.lng)) {
-                    try {
-                        const nomUrl = new URL('https://nominatim.openstreetmap.org/search');
-                        nomUrl.search = new URLSearchParams({
-                            format: 'jsonv2',
-                            postalcode: cleanCep,
-                            country: 'Brazil',
-                            addressdetails: '1',
-                            limit: '1'
-                        });
-                        const nomRes = await fetch(nomUrl, {
-                            headers: { 'Accept-Language': 'pt-BR' }
-                        });
-                        if (nomRes.ok) {
-                            const [match] = await nomRes.json();
-                            if (match) {
-                                result.lat = Number(match.lat);
-                                result.lng = Number(match.lon);
-                                result.geoPrecision = 'postal';
-                            }
+                const precise = streetPoint || neighborhoodPoint;
+                if (precise) {
+                    result.lat = precise.lat;
+                    result.lng = precise.lng;
+                    result.geoPrecision = streetPoint ? 'street' : 'neighborhood';
+                } else {
+                    // 5. Último recurso (CEP sem rua nem bairro encontrados): coordenada do CEP,
+                    // mas recusa qualquer ponto que caia no centro da cidade.
+                    const cityCenter = await geocodeCityCenter(result);
+                    const notCityCenter = (point) => isBrazilPoint(point?.lat, point?.lng)
+                        && (!cityCenter || distanceKm(point, cityCenter) > 1);
+
+                    let fallback = isBrazilPoint(result.lat, result.lng) ? { lat: result.lat, lng: result.lng } : null;
+                    if (!notCityCenter(fallback)) {
+                        fallback = null;
+                        try {
+                            const [match] = await searchNominatim({ postalcode: cleanCep, country: 'Brasil', limit: '1' });
+                            const point = match && { lat: toCoordinate(match.lat), lng: toCoordinate(match.lon) };
+                            if (notCityCenter(point)) fallback = point;
+                        } catch (geoErr) {
+                            console.warn('Busca da localização pelo CEP falhou:', geoErr);
                         }
-                    } catch (geoErr) {
-                        console.warn('Busca da localização pelo CEP falhou:', geoErr);
                     }
-                }
 
-                if (!hasValidCoordinates(result.lat, result.lng)) {
-                    throw new Error('Não foi possível localizar esse CEP no mapa. Confira o CEP e tente novamente.');
+                    if (!fallback) {
+                        throw new Error('Não foi possível localizar a rua ou o bairro deste CEP no mapa. Confira o CEP e tente novamente.');
+                    }
+                    result.lat = fallback.lat;
+                    result.lng = fallback.lng;
+                    result.geoPrecision = 'cep';
                 }
 
                 result.geoVersion = CEP_GEO_VERSION;
@@ -452,22 +535,7 @@
                         ? 'Clique no mapa para ajustar o ponto de entrega.'
                         : 'Clique no mapa para marcar o ponto exato de entrega.';
                 }
-                this.updateLocationArticle(data);
                 this.renderMiniMap(data.lat, data.lng, isNewSearch);
-            },
-
-            updateLocationArticle(data) {
-                if (!this.elements.locationArticle) return;
-
-                this.elements.locationArticle.hidden = !data.locationSelectedManually;
-                if (!data.locationSelectedManually) return;
-
-                if (this.elements.locationLatitude) {
-                    this.elements.locationLatitude.textContent = Number(data.lat).toFixed(6);
-                }
-                if (this.elements.locationLongitude) {
-                    this.elements.locationLongitude.textContent = Number(data.lng).toFixed(6);
-                }
             },
 
             showCepLoading(isLoading) {
@@ -561,88 +629,10 @@
                     this.googleMapMarker.setPosition({ lat, lng });
                 }
 
-                this.attachLocationDetailsOverlay();
-                if (this.locationDetailsOverlay && this.googleMapMarker) {
-                    this.locationDetailsOverlay.setLocation(this.googleMapMarker.getPosition());
-                }
 
                 if (this.elements.mapPlaceholder) {
                     this.elements.mapPlaceholder.style.display = 'none';
                 }
-            },
-
-            attachLocationDetailsOverlay() {
-                if (this.locationDetailsOverlay || !this.elements.locationArticle || !google.maps.OverlayView) return;
-
-                const article = this.elements.locationArticle;
-                this.locationDetailsOverlay = new class extends google.maps.OverlayView {
-                    position = null;
-
-                    onAdd() {
-                        this.getPanes().floatPane.appendChild(article);
-                        this.draw();
-                        this.getMap().addListener('idle', () => this.ensureSpaceAbovePoint());
-                        this.ensureSpaceAbovePoint();
-                    }
-
-                    draw() {
-                        if (!this.position || article.hidden) return;
-
-                        const pixel = this.getProjection()?.fromLatLngToContainerPixel(this.position);
-                        const mapElement = this.getMap()?.getDiv();
-                        const pane = this.getPanes()?.floatPane;
-                        if (!pixel || !mapElement || !pane) return;
-
-                        const margin = 10;
-                        const halfWidth = article.offsetWidth / 2;
-                        const left = Math.max(halfWidth + margin, Math.min(
-                            pixel.x,
-                            mapElement.clientWidth - halfWidth - margin
-                        ));
-                        const topAbovePoint = pixel.y - article.offsetHeight - 18;
-                        const isBelowPoint = topAbovePoint < margin;
-                        const top = isBelowPoint
-                            ? Math.min(pixel.y + 20, mapElement.clientHeight - article.offsetHeight - margin)
-                            : topAbovePoint;
-                        const mapRect = mapElement.getBoundingClientRect();
-                        const paneRect = pane.getBoundingClientRect();
-
-                        article.style.left = `${mapRect.left - paneRect.left + left}px`;
-                        article.style.top = `${mapRect.top - paneRect.top + Math.max(margin, top)}px`;
-                        article.style.setProperty('--location-anchor-x', `${pixel.x - left + halfWidth}px`);
-                        article.classList.toggle('is-below-point', isBelowPoint);
-                    }
-
-                    onRemove() {
-                        article.remove();
-                    }
-
-                    ensureSpaceAbovePoint() {
-                        if (this.adjustingMap || !this.position || article.hidden) return;
-
-                        const map = this.getMap();
-                        const pixel = this.getProjection()?.fromLatLngToContainerPixel(this.position);
-                        if (!map || !pixel) return;
-
-                        const mapHeight = map.getDiv().clientHeight;
-                        const desiredY = Math.min(article.offsetHeight + 28, mapHeight - 10);
-                        if (pixel.y >= desiredY) return;
-
-                        this.adjustingMap = true;
-                        google.maps.event.addListenerOnce(map, 'idle', () => {
-                            this.adjustingMap = false;
-                            this.draw();
-                        });
-                        map.panBy(0, pixel.y - desiredY);
-                    }
-
-                    setLocation(position) {
-                        this.position = position;
-                        this.draw();
-                        this.ensureSpaceAbovePoint();
-                    }
-                }();
-                this.locationDetailsOverlay.setMap(this.googleMapInstance);
             },
 
             selectMapPoint(latLng) {
@@ -676,8 +666,6 @@
                 if (this.elements.mapPointLabel) {
                     this.elements.mapPointLabel.textContent = 'Clique no mapa para ajustar o ponto de entrega.';
                 }
-                this.updateLocationArticle(updatedData);
-                this.locationDetailsOverlay?.setLocation(this.googleMapMarker?.getPosition());
             },
 
             toggleSelection(index, isChecked) {

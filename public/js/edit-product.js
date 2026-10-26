@@ -56,7 +56,11 @@
           <input type="hidden" name="variacoes[${variationIndex}][estoqueBase]" value="${escapeAttr(data.estoque)}">
           <input type="hidden" name="variacoes[${variationIndex}][imagensAtuais]" value="${escapeAttr((data.imagens || []).join(','))}">
           <div id="preview-${variationIndex}" class="image-preview-container">
-            ${(data.imagens || []).map(img => `<img src="/image/${encodeURIComponent(img)}" class="image-preview-item" alt="">`).join('')}
+            ${(data.imagens || []).map(img => `
+              <div class="image-preview-wrap" data-existing="${escapeAttr(img)}">
+                <img src="/image/${encodeURIComponent(img)}" class="image-preview-item" alt="">
+                <button type="button" class="image-remove-btn" data-action="remove-existing-image" title="Remover imagem" aria-label="Remover imagem">&times;</button>
+              </div>`).join('')}
           </div>
         </div>
         <div class="form-group variation-active-toggle">
@@ -109,20 +113,66 @@
       updateStoreVisibility();
     }
 
-    function previewImages(input) {
-      const container = input.closest('.variation-card')?.querySelector('.image-preview-container');
-      if (!container) return;
-      container.innerHTML = '';
-      Array.from(input.files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.className = 'image-preview-item';
-          container.appendChild(img);
-        };
-        reader.readAsDataURL(file);
+    /** Grava no campo oculto as imagens atuais que ainda estão na lista (sem as removidas). */
+    function syncKeptImages(block) {
+      const names = Array.from(block.querySelectorAll('[data-existing]')).map(el => el.dataset.existing);
+      block.querySelector('input[name$="[imagensAtuais]"]').value = names.join(',');
+    }
+
+    /** Remove uma imagem já salva da variação (ela sai ao salvar, pois a lista atual é reenviada sem ela). */
+    function removeExistingImage(button) {
+      const block = button.closest('.variation-card');
+      button.closest('[data-existing]').remove();
+      syncKeptImages(block);
+    }
+
+    /** Mostra as imagens novas escolhidas. Enquanto houver novas, as atuais ficam ocultas: elas serão substituídas. */
+    function renderNewPreviews(block) {
+      const input = block.querySelector('input[type="file"]');
+      const container = block.querySelector('.image-preview-container');
+      if (!input || !container) return;
+
+      container.querySelectorAll('[data-new]').forEach(el => el.remove());
+      const files = Array.from(input.files);
+      container.querySelectorAll('[data-existing]').forEach(el => { el.hidden = files.length > 0; });
+
+      files.forEach((file, index) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'image-preview-wrap';
+        wrap.dataset.new = index;
+
+        const img = document.createElement('img');
+        img.className = 'image-preview-item';
+        img.alt = '';
+        img.src = URL.createObjectURL(file);
+        img.onload = () => URL.revokeObjectURL(img.src);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'image-remove-btn';
+        button.dataset.action = 'remove-new-image';
+        button.dataset.fileIndex = index;
+        button.title = 'Remover imagem';
+        button.setAttribute('aria-label', 'Remover imagem');
+        button.innerHTML = '&times;';
+
+        wrap.append(img, button);
+        container.appendChild(wrap);
       });
+    }
+
+    /** Remove uma imagem nova da seleção antes de salvar. */
+    function removeNewImage(button) {
+      const block = button.closest('.variation-card');
+      const input = block.querySelector('input[type="file"]');
+      const removeIndex = Number(button.dataset.fileIndex);
+
+      const remaining = new DataTransfer();
+      Array.from(input.files).forEach((file, index) => {
+        if (index !== removeIndex) remaining.items.add(file);
+      });
+      input.files = remaining.files;
+      renderNewPreviews(block);
     }
 
     const initializeEditProductPage = () => {
@@ -135,6 +185,12 @@
         const remove = event.target.closest('[data-action="remove-variation"]');
         if (remove) return removeVariationBlock(remove);
 
+        const removeExisting = event.target.closest('[data-action="remove-existing-image"]');
+        if (removeExisting) return removeExistingImage(removeExisting);
+
+        const removeNew = event.target.closest('[data-action="remove-new-image"]');
+        if (removeNew) return removeNewImage(removeNew);
+
         const zone = event.target.closest('[data-action="pick-images"]');
         if (zone && !event.target.matches('input[type="file"]')) {
           zone.querySelector('input[type="file"]')?.click();
@@ -142,7 +198,7 @@
       });
       container.addEventListener('change', (event) => {
         if (event.target.matches('input[type="file"]')) {
-          previewImages(event.target);
+          renderNewPreviews(event.target.closest('.variation-card'));
         } else if (event.target.matches('input[name$="[ativo]"]')) {
           updateVariationStatus(event.target.closest('.variation-card'));
         }

@@ -3,7 +3,11 @@ import sharp from 'sharp';
 import BaseRepository from "./base.repository.js";
 import { buildSearchText } from "../utils/search-text.js";
 
-import { ValidationError, NotFoundError, GeneralError } from "../utils/errors.js";
+import { ValidationError, NotFoundError, GeneralError, ConflictError } from "../utils/errors.js";
+import { resolveAdjustedStock } from "../utils/stock-adjust.js";
+
+/** Quantas vezes a edição relê o produto e tenta gravar antes de desistir (conflito de estoque). */
+const MAX_UPDATE_ATTEMPTS = 3;
 
 export default class ProductRepository extends BaseRepository {
   constructor() {
@@ -158,8 +162,12 @@ export default class ProductRepository extends BaseRepository {
       if (!existingProduct) throw new NotFoundError("Produto não encontrado.");
 
       const productData = this.#buildProductUpdate(existingProduct, body, submittedVariations, uploadedByIndex);
+      // Se o campo `variacoes` não existia, o filtro precisa ser `$exists: false` (não um valor igual a um objeto).
+      const variationsGuard = existingProduct.variacoes === undefined
+        ? { $exists: false }
+        : existingProduct.variacoes;
       const result = await this.collection.updateOne(
-        { _id: new ObjectId(id), variacoes: existingProduct.variacoes ?? { $exists: false } },
+        { _id: new ObjectId(id), variacoes: variationsGuard },
         { $set: productData }
       );
       if (result.matchedCount === 1) return await super.findById(id);
