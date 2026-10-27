@@ -7,7 +7,7 @@
 
 .cart-page-header {
   max-width: 1240px;
-  margin: 0 auto 30px;
+  margin: 0 auto 15px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -324,7 +324,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--cor-borda);
   background: #fff;
 }
@@ -354,7 +354,7 @@
 }
 
 .cart-cep-form {
-  padding: 16px 18px 18px;
+  padding: 10px 18px;
 }
 
 .cep-input-group {
@@ -366,7 +366,7 @@
   min-width: 0;
   flex: 1;
   height: 44px;
-  padding: 0 13px;
+  padding: 10px;
   border: 1px solid var(--cor-borda-forte);
   border-radius: 10px;
   color: var(--cor-primaria);
@@ -436,7 +436,7 @@
 }
 
 .cart-cep-result {
-  padding: 0 18px 18px;
+  padding: 0 0px 0px;
   flex-direction: column;
   gap: 13px;
 }
@@ -493,7 +493,7 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 13px;
+  padding: 0px 0px 10px 20px;
   border-radius: 12px;
   background: var(--cor-fundo-site);
 }
@@ -560,7 +560,7 @@
 }
 
 .cart-map-point {
-  margin: 0 12px 12px;
+  margin: 0 12px 05px;
   color: var(--cor-texto-suave);
   font-size: 0.7rem;
   line-height: 1.4;

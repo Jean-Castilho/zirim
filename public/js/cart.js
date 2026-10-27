@@ -689,16 +689,11 @@
                             <a href="/products" class="btn-primary">Explorar Produtos</a>
                         </div>
                     `;
-                    if (this.elements.mapsContainer) {
-                        this.elements.mapsContainer.style.display = 'none';
-                    }
+                    // O painel de frete (CEP), o mini-mapa e os dados do cliente continuam visíveis
+                    // mesmo com o carrinho vazio; só o botão de checkout é desabilitado.
                     this.updateTotals(0);
                     this.elements.checkoutBtn.disabled = true;
                     return;
-                }
-
-                if (this.elements.mapsContainer) {
-                    this.elements.mapsContainer.style.display = 'flex';
                 }
 
                 let html = '';
