@@ -245,6 +245,10 @@
         margin-left: 0;
     }
 
+    .header {
+    width: 100%;
+    height: var(--altura-header, 65px);
+}
     .header-actions {
         margin-left: auto;
         gap: var(--espacamento-sm);

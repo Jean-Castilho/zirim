@@ -160,8 +160,7 @@
 
 @media (max-width: 480px) {
   .featured-products-wrapper {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
 
