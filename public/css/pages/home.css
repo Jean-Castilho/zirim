@@ -30,7 +30,7 @@
 }
 
 .hero.preload-bg {
-  min-height: 320px;
+  min-height: 280px;
 }
 
 .hero-with-overlay::before {
@@ -214,15 +214,13 @@
 @media (max-width: 768px) {
   .hero,
   .hero.preload-bg {
-    min-height: 320px;
+    min-height: 380px;
     padding: 30px 15px;
     margin: var(--hero-gap-top, clamp(8px, 1.2vw, 12px)) 0 30px 0;
   }
 
 .view-details-btn {
-
-  
-    margin: 10px 20px;
+  margin: 10px 20px;
   
 }
   .hero h1 {
@@ -312,9 +310,20 @@
 }
 
 @media (max-width: 500px) {
+
+  .hero.preload-bg {
+    min-height: 180px;
+  }
+
   .hero .btn {
-  
     padding: 8px 12px;
-    
+    font-size: 0.8rem;
+  }
+  .hero.preload-bg{
+    margin-bottom: 0.8rem;
+  }
+
+  .featured-products h2{
+    margin-bottom: 0.8rem;
   }
 }
