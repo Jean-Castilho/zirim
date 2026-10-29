@@ -713,7 +713,7 @@
                     html += `
                         <div class="cart-item">
                             <div class="item-selection">
-                                <input type="checkbox" class="item-checkbox" data-index="${index}" ${item.selected ? 'checked' : ''}>
+                                <input type="checkbox" class="item-checkbox" data-index="${index}" ${item.selected ? 'checked' : ''} aria-label="Selecionar ${escapeHtml(item.nome)}">
                             </div>
                             <div class="item-image">
                                 <img src="${escapeHtml(item.imagem || '/img/placeholder-product.svg')}" alt="${escapeHtml(item.nome)}">
@@ -721,18 +721,16 @@
                             <div class="item-details">
                                 <h3 class="item-name">${escapeHtml(item.nome)}</h3>
                                 <p class="item-variation">${escapeHtml(item.cor)} ${item.tamanho ? '| ' + escapeHtml(item.tamanho) : ''}</p>
-                                <div class="item-price-qty">
-                                    <span class="item-price">R$ ${item.preco.toFixed(2)}</span>
-                                    <div class="quantity-control">
-                                        <button class="qty-btn" data-index="${index}" data-change="-1">-</button>
-                                        <input type="text" value="${item.quantidade}" readonly>
-                                        <button class="qty-btn" data-index="${index}" data-change="1" ${item.quantidade >= (item.estoqueMax ?? Infinity) ? 'disabled' : ''}>+</button>
-                                    </div>
+                                <div class="quantity-control">
+                                    <button class="qty-btn" data-index="${index}" data-change="-1" aria-label="Diminuir quantidade">-</button>
+                                    <input type="text" value="${item.quantidade}" readonly aria-label="Quantidade">
+                                    <button class="qty-btn" data-index="${index}" data-change="1" aria-label="Aumentar quantidade" ${item.quantidade >= (item.estoqueMax ?? Infinity) ? 'disabled' : ''}>+</button>
                                 </div>
+                                <span class="item-price">R$ ${item.preco.toFixed(2)}</span>
+                                ${item.quantidade > 1 ? `<span class="item-total">Total: R$ ${itemTotal.toFixed(2)}</span>` : ''}
                             </div>
                             <div class="item-actions">
-                                <span class="item-total">R$ ${itemTotal.toFixed(2)}</span>
-                                <button class="remove-item" data-index="${index}" title="Remover item">
+                                <button class="remove-item" data-index="${index}" title="Remover item" aria-label="Remover item">
                                     <span class="material-icons">delete_outline</span>
                                 </button>
                             </div>

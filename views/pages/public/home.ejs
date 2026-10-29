@@ -79,6 +79,52 @@
         </section>
 
 
+        <section class="benefits-strip" aria-label="Vantagens de comprar na loja">
+          <div class="benefit-item">
+            <span class="material-icons" aria-hidden="true">local_shipping</span>
+            <div>
+              <strong>Calcule o frete</strong>
+              <span>Informe seu CEP no carrinho</span>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <span class="material-icons" aria-hidden="true">shield</span>
+            <div>
+              <strong>Compra segura</strong>
+              <span>Seus dados protegidos do início ao fim</span>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <span class="material-icons" aria-hidden="true">payments</span>
+            <div>
+              <strong>Pix ou cartão</strong>
+              <span>Escolha a forma de pagamento</span>
+            </div>
+          </div>
+        </section>
+
+        <% if (locals.newProducts && newProducts.length > 0) { %>
+        <section class="featured-products new-products" aria-labelledby="new-products-title">
+          <h2 id="new-products-title">Novidades</h2>
+          <div class="featured-products-wrapper">
+            <% newProducts.forEach(product => { %>
+              <div class="product-card">
+                <% let newImgSrc = 'https://via.placeholder.com/400x400'; if (Array.isArray(product.variacoes?.[0]?.imagens) && product.variacoes[0].imagens.length > 0) { newImgSrc = '/image/' + product.variacoes[0].imagens[0]; } %>
+                <img
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3C/svg%3E"
+                  data-src="<%= newImgSrc %>"
+                  alt="<%= product.nome %>"
+                  width="400"
+                  height="400"
+                  class="preload-img skeleton-loader"
+                >
+                <a href="/product/<%= product._id %>" class="view-details-btn">Detalhes</a>
+              </div>
+            <% }) %>
+          </div>
+        </section>
+        <% } %>
+
         <section class="featured-products">
           <h2>Destaque</h2>
 
