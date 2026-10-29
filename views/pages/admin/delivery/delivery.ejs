@@ -5,8 +5,10 @@
     <aside class="delivery-sidebar">
         <header class="panel-header">
             <div class="panel-header-title">
-                <h2>Entregas Ativas</h2>
-                <span class="orders-count-badge" id="orders-count"><%= (activeOrders && activeOrders.length) || 0 %></span>
+                <div class="search-input-wrapper">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="order-search" placeholder="Buscar por cliente, pedido ou rua...">
+            </div>
             </div>
             <div class="panel-actions u-display-flex-gap-6px">
                 <% if (viewerIsAdmin) { %>
@@ -23,13 +25,6 @@
                 </button>
             </div>
         </header>
-
-        <div class="sidebar-search">
-            <div class="search-input-wrapper">
-                <i data-lucide="search" class="search-icon"></i>
-                <input type="text" id="order-search" placeholder="Buscar por cliente, pedido ou rua...">
-            </div>
-        </div>
 
         <div class="orders-list" id="orders-list">
             <% if (activeOrders && activeOrders.length > 0) { %>

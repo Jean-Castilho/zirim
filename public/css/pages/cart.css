@@ -311,7 +311,7 @@
 
 .cart-maps-container,
 .cart-summary-container {
-  flex-direction: column;  
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-grande);
@@ -498,7 +498,7 @@
   background: var(--cor-fundo-site);
 }
 
-.cep-address-info > .material-icons {
+.cep-address-info>.material-icons {
   flex: 0 0 auto;
   color: var(--cor-secundaria);
 }
@@ -628,7 +628,7 @@
   font-weight: 800;
 }
 
-.summary-total > span:last-child {
+.summary-total>span:last-child {
   color: var(--cor-secundaria);
   font-size: 1.35rem;
 }
@@ -749,6 +749,10 @@
   .item-selection {
     align-self: start;
     padding-top: 7px;
+  }
+
+  .cart-page-title h1 {
+    font-size: 1.8rem;
   }
 
   .item-image {

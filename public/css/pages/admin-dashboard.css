@@ -159,11 +159,9 @@
     }
 
     .panel {
-        background-color: var(--bg-card);
         border: 1px solid var(--border-color);
         border-radius: var(--raio-grande, 16px);
         overflow: hidden;
-        box-shadow: var(--sombra-suave, 0 2px 4px rgba(0,0,0,0.05));
     }
 
     .panel-header {

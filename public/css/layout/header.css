@@ -247,7 +247,7 @@
 
     .header {
     width: 100%;
-    height: var(--altura-header, 65px);
+    height: var(--altura-header, 60px);
 }
     .header-actions {
         margin-left: auto;
