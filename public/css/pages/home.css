@@ -1,6 +1,6 @@
 .home-container {
   margin: 0 auto;
-  padding: 0 20px 0px 20px;
+  padding: 0 5px 0px 5px;
 }
 
 /* Hero Banner */
@@ -83,7 +83,7 @@
 
 /* Categorias */
 .categories {
-  margin-bottom: 20px;
+  margin: 18px;
 }
 
 .categories-wrapper {
@@ -155,12 +155,12 @@
 .featured-products-wrapper {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 25px;
+  gap: 10px;
 }
 
 @media (max-width: 480px) {
   .featured-products-wrapper {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }
 
