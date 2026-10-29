@@ -20,16 +20,6 @@ export default class ProductService {
         return toStorefrontProducts(products);
     }
 
-    /** Vitrine da home: os produtos ativos cadastrados mais recentemente. */
-    async listNewProductsForHome(limit = 4) {
-        const products = await this.repository.findAll(ACTIVE_VARIATION_QUERY, {
-            projection: { nome: 1, 'variacoes.imagens': { $slice: 1 }, 'variacoes.ativo': 1 },
-            sort: { _id: -1 },
-            limit
-        });
-        return toStorefrontProducts(products);
-    }
-
     /**
      * Busca da loja: cada termo digitado deve aparecer (substring, sem acentos) no texto do produto.
      * Só produtos com variação ativa; categoria opcional.

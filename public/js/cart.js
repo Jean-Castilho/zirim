@@ -711,34 +711,56 @@
                     }
 
                     html += `
-                        <div class="cart-item">
-                            <div class="item-selection">
+                        <tr class="cart-item">
+                            <td class="item-selection" data-label="Selecionar">
                                 <input type="checkbox" class="item-checkbox" data-index="${index}" ${item.selected ? 'checked' : ''} aria-label="Selecionar ${escapeHtml(item.nome)}">
-                            </div>
-                            <div class="item-image">
-                                <img src="${escapeHtml(item.imagem || '/img/placeholder-product.svg')}" alt="${escapeHtml(item.nome)}">
-                            </div>
-                            <div class="item-details">
-                                <h3 class="item-name">${escapeHtml(item.nome)}</h3>
-                                <p class="item-variation">${escapeHtml(item.cor)} ${item.tamanho ? '| ' + escapeHtml(item.tamanho) : ''}</p>
+                            </td>
+                            <td class="item-product" data-label="Produto">
+                                <div class="item-product-body">
+                                    <div class="item-image">
+                                        <img src="${escapeHtml(item.imagem || '/img/placeholder-product.svg')}" alt="${escapeHtml(item.nome)}">
+                                    </div>
+                                    <div class="item-details">
+                                        <h3 class="item-name">${escapeHtml(item.nome)}</h3>
+                                        <p class="item-variation">${escapeHtml(item.cor)} ${item.tamanho ? '| ' + escapeHtml(item.tamanho) : ''}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="item-price" data-label="Preço">R$ ${item.preco.toFixed(2)}</td>
+                            <td class="item-qty" data-label="Quantidade">
                                 <div class="quantity-control">
                                     <button class="qty-btn" data-index="${index}" data-change="-1" aria-label="Diminuir quantidade">-</button>
                                     <input type="text" value="${item.quantidade}" readonly aria-label="Quantidade">
                                     <button class="qty-btn" data-index="${index}" data-change="1" aria-label="Aumentar quantidade" ${item.quantidade >= (item.estoqueMax ?? Infinity) ? 'disabled' : ''}>+</button>
                                 </div>
-                                <span class="item-price">R$ ${item.preco.toFixed(2)}</span>
-                                ${item.quantidade > 1 ? `<span class="item-total">Total: R$ ${itemTotal.toFixed(2)}</span>` : ''}
-                            </div>
-                            <div class="item-actions">
+                            </td>
+                            <td class="item-total" data-label="Total">R$ ${itemTotal.toFixed(2)}</td>
+                            <td class="item-actions" data-label="Remover">
                                 <button class="remove-item" data-index="${index}" title="Remover item" aria-label="Remover item">
                                     <span class="material-icons">delete_outline</span>
                                 </button>
-                            </div>
-                        </div>
+                            </td>
+                        </tr>
                     `;
                 });
 
-                this.elements.itemsContainer.innerHTML = html;
+                this.elements.itemsContainer.innerHTML = `
+                    <div class="cart-table-wrap">
+                        <table class="cart-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Selecionar</th>
+                                    <th scope="col">Produto</th>
+                                    <th scope="col">Preço</th>
+                                    <th scope="col">Quantidade</th>
+                                    <th scope="col">Total</th>
+                                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>${html}</tbody>
+                        </table>
+                    </div>
+                `;
                 this.updateTotals(total);
                 this.elements.checkoutBtn.disabled = !hasSelected;
             },

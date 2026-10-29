@@ -17,7 +17,7 @@
   text-align: center;
   padding: 40px 20px;
   /* Espaço mínimo entre o header sticky e o banner (fluido: menor em telas pequenas) */
-  margin: var(--hero-gap-top, clamp(8px, 1vw, 12px)) 0 20px 0;
+  margin: var(--hero-gap-top, clamp(8px, 1.2vw, 12px)) 0 40px 0;
   overflow: hidden;
   color: #fff;
 }
@@ -30,7 +30,7 @@
 }
 
 .hero.preload-bg {
-  min-height: 320px;
+  min-height: 280px;
 }
 
 .hero-with-overlay::before {
@@ -214,9 +214,9 @@
 @media (max-width: 768px) {
   .hero,
   .hero.preload-bg {
-    min-height: 320px;
+    min-height: 380px;
     padding: 30px 15px;
-    margin: var(--hero-gap-top, clamp(8px, 1.2vw, 12px)) 0 10px 0;
+    margin: var(--hero-gap-top, clamp(8px, 1.2vw, 12px)) 0 30px 0;
   }
 
 .view-details-btn {
@@ -325,53 +325,5 @@
 
   .featured-products h2{
     margin-bottom: 0.8rem;
-  }
-}
-/* Faixa de benefícios */
-.benefits-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-  max-width: 900px;
-  margin: 0 auto 15px;
-}
-
-.benefit-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio-padrao, 8px);
-  background: #fff;
-}
-
-.benefit-item .material-icons {
-  flex: 0 0 auto;
-  color: var(--cor-secundaria);
-  font-size: 1.6rem;
-}
-
-.benefit-item strong {
-  display: block;
-  color: var(--cor-primaria);
-  font-size: 0.92rem;
-}
-
-.benefit-item span:last-child {
-  display: block;
-  margin-top: 2px;
-  color: var(--cor-texto-suave);
-  font-size: 0.78rem;
-}
-
-/* Novidades usa o mesmo grid de cards de Destaque */
-.new-products {
-  margin-bottom: 50px;
-}
-
-@media (max-width: 500px) {
-  .benefits-strip {
-    margin-bottom: 10px;
   }
 }

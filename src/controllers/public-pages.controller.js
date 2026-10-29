@@ -20,9 +20,8 @@ export default class PublicPagesController extends BaseController {
   }
 
   async home(req, res) {
-    const [products, newProducts, homePageData] = await Promise.all([
+    const [products, homePageData] = await Promise.all([
       this.products.listProductsForHome(),
-      this.products.listNewProductsForHome(4),
       this.banners.getHomeBanner(),
     ]);
 
@@ -30,7 +29,6 @@ export default class PublicPagesController extends BaseController {
       titulo: "Moda e Calçados",
       message: `Bem-vindo à ${STORE_NAME}, a sua loja de roupas e calçados!`,
       products,
-      newProducts,
       banner: homePageData?.banner,
     });
   }
