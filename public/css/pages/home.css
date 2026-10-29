@@ -214,7 +214,7 @@
 @media (max-width: 768px) {
   .hero,
   .hero.preload-bg {
-    min-height: 380px;
+    min-height: 320px;
     padding: 30px 15px;
     margin: var(--hero-gap-top, clamp(8px, 1.2vw, 12px)) 0 10px 0;
   }
