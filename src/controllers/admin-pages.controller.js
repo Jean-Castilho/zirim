@@ -71,7 +71,7 @@ export default class AdminPagesController extends BaseController {
     const homePageData = await this.banners.getHomeBanner();
     return this.render(req, res, "../pages/admin/edit-home", {
       titulo: "Editar Página Inicial",
-      message: "Personalize o banner principal e os destaques em tempo real.",
+      message: "Personalize o banner principal e os destaques.",
       homePageData,
     });
   }
