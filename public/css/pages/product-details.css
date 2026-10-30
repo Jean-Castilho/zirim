@@ -165,7 +165,7 @@
 
 .specifications h3 {
     margin: 0 0 var(--espacamento-md) 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--cor-primaria);
     font-family: var(--fonte-titulo);
     text-transform: uppercase;
@@ -512,13 +512,15 @@
         grid-template-columns: 1fr;
     }
 
-    .specifications {
-        margin: 0 var(--espacamento-md);
+
+    .pill-option {
+        font-size: 0.75rem;
+        padding: 8px 12px;
     }
 
-    .selectors{
-        
-    margin: var(--espacamento-md);
+    .selectors {
+        gap: var(--espacamento-md);
+        margin: var(--espacamento-md);
     }
 
     .product-info {
