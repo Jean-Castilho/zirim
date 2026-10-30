@@ -8,9 +8,11 @@
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.15);
   }
+
   100% {
     transform: scale(1);
   }
@@ -52,12 +54,11 @@
 }
 
 .filter-search input[type="search"] {
-  padding: 8px 12px;
+    padding: 0px 0px 0px 10px;
   border: none;
   font-size: 1rem;
   transition: all 0.3s ease;
   flex-grow: 1;
-  padding: 10px 15px;
   border-radius: 25px;
 }
 
@@ -216,7 +217,7 @@
 
 @media (max-width: 768px) {
   .filters {
-    padding: 15px;
+    padding: 15px 0px 0px;
   }
 
   .filter-search {
@@ -249,7 +250,11 @@
 
 @media (max-width: 480px) {
   .products-container {
-    padding: 1rem 12px 40px 12px;
+    padding: 0px 12px 40px 12px;
+  }
+
+  .btn-view-details {
+    font-size: 0.8rem;
   }
 
   .products-grid {
@@ -282,7 +287,6 @@
 
 .product-image-wrapper img {
   width: 100%;
-  height: 250px;
   object-fit: cover;
 }
 
@@ -314,7 +318,7 @@
 }
 
 .product-details {
-  padding: 15px;
+  padding: 10px 0px;
   text-align: center;
 }
 
@@ -344,7 +348,6 @@
 
 .btn-view-details {
   display: inline-block;
-  margin-bottom: 10px;
   width: 80%;
   padding: 7px;
   background-color: transparent;
@@ -377,6 +380,7 @@
   color: #777;
   margin-top: 10px;
 }
+
 /* Filtro com categoria ativa */
 .filter-dropdown-button.is-filtered {
   box-shadow: inset 0 0 0 2px #fff;
