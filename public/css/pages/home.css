@@ -1,6 +1,6 @@
 .home-container {
   margin: 0 auto;
-  padding: 0 5px 0px 5px;
+  padding: 0 10px 0px 10px;
 }
 
 /* Hero Banner */
@@ -237,10 +237,10 @@
   }
   
 .category-card {
-  height: 220px;
+  height: 200px;
 }
 .category-card-content{
-  padding: 0px 25px 15px 15px;
+  padding: 0px 35px 15px 15px;
 }
 }
 
