@@ -54,6 +54,17 @@
                 </div>
                 <div id="cart-cep-error" class="cart-cep-error u-display-none"></div>
             </div>
+            
+            <div id="cart-cep-result" class="cart-cep-result u-display-none">
+                <div class="cep-address-info">
+                    <span class="material-icons">place</span>
+                    <div class="cep-address-text">
+                        <strong id="cep-res-street"></strong>
+                        <span id="cep-res-neighborhood"></span>
+                    </div>
+                </div>
+            </div>
+
 
             <% if (!user) { %>
                 <div class="guest-checkout-fields" id="guest-checkout-fields">
@@ -75,17 +86,6 @@
                     </label>
                 </div>
             <% } %>
-
-            <div id="cart-cep-result" class="cart-cep-result u-display-none">
-                <div class="cep-address-info">
-                    <span class="material-icons">place</span>
-                    <div class="cep-address-text">
-                        <strong id="cep-res-street"></strong>
-                        <span id="cep-res-neighborhood"></span>
-                    </div>
-                </div>
-
-            </div>
 
             <div class="cart-maps"> 
                 

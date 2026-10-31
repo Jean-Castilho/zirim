@@ -334,7 +334,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 5px;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -508,19 +508,38 @@
         margin: var(--espacamento-md) var(--espacamento-xs);
     }
 
+
+    .guarantee-item i {
+        color: var(--cor-secundaria);
+        font-size: 24px;
+    }
+
     .product-details-container {
         grid-template-columns: 1fr;
     }
 
+    .specifications h3 {
+        margin: 0 0 var(--espacamento-xs);
+    }
+
+    .action-buttons .btn-primary {
+        padding: 12px 20px;
+        margin: 0px 20px;
+        font-size: 1rem;
+    }
+
+    .guarantee-item {
+        margin: 0px;
+    }
 
     .pill-option {
         font-size: 0.75rem;
-        padding: 8px 12px;
+        padding: 8px 10px;
     }
 
     .selectors {
-        gap: var(--espacamento-md);
-        margin: var(--espacamento-md);
+        gap: var(--espacamento-sm);
+        margin: 20px 0px 0px var(--espacamento-md);
     }
 
     .product-info {
@@ -542,6 +561,7 @@
 }
 
 @media (max-width: 768px) {
+
 
 
     .main-image-container {
