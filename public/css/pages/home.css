@@ -235,6 +235,13 @@
   .categories-wrapper {
     grid-template-columns: 1fr;
   }
+  
+.category-card {
+  height: 140px;
+}
+.category-card-content{
+  padding: 0px 15px 15px 15px;
+}
 }
 
 .category-card,
@@ -312,7 +319,7 @@
 @media (max-width: 500px) {
 
   .hero.preload-bg {
-    min-height: 180px;
+    min-height: 210px;
   }
 
   .hero .btn {
